@@ -1,4 +1,4 @@
-import type { Biomarkers, EventLook, InventoryItem, LookStatus, Product, ScanCategory, CareNeedTag } from "./types";
+import type { Biomarkers, EventLook, InventoryItem, LookStatus, Product, ScanCategory } from "./types";
 
 /** Pure Glowtrace AI logic: gauge specs, shelf matching, lookbook status. */
 
@@ -56,10 +56,16 @@ export const CARE_NEEDS: CareNeed[] = [
 
 export const activeNeeds = (b: Biomarkers, category: ScanCategory): CareNeed[] =>
   CARE_NEEDS.filter((need) => {
-    if (need.id === "strength") return category === "hair";
-    if (need.id === "nails") return category === "nails";
-    return category !== "hair" || need.id === "strength";
-  }).filter((need) => b[need.biomarker] >= need.threshold);
+    const categoryFit =
+      need.id === "strength"
+        ? category === "hair"
+        : need.id === "nails"
+          ? category === "nails"
+          : need.id === "smooth"
+            ? category !== "nails"
+            : true;
+    return categoryFit && b[need.biomarker] >= need.threshold;
+  });
 
 export const DIY_ALTERNATIVES: Record<string, string> = {
   calm: "p_diy_aloe",
