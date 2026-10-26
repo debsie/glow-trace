@@ -118,9 +118,10 @@ export const GlowTraceCanvas = () => {
     ctx.lineJoin = "round";
     ctx.beginPath();
     for (let i = 0; i < pts.length; i++) {
-      const [x, y] = pts[i];
-      if (i === 0) ctx.moveTo(x * size, y * size);
-      else ctx.lineTo(x * size, y * size);
+      const pt = pts[i];
+      if (!pt) continue;
+      if (i === 0) ctx.moveTo(pt[0] * size, pt[1] * size);
+      else ctx.lineTo(pt[0] * size, pt[1] * size);
     }
     ctx.stroke();
     ctx.setLineDash([]);
@@ -133,28 +134,33 @@ export const GlowTraceCanvas = () => {
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
     for (let i = 0; i <= traced && i < pts.length; i++) {
-      const [x, y] = pts[i];
-      if (i === 0) ctx.moveTo(x * size, y * size);
-      else ctx.lineTo(x * size, y * size);
+      const pt = pts[i];
+      if (!pt) continue;
+      if (i === 0) ctx.moveTo(pt[0] * size, pt[1] * size);
+      else ctx.lineTo(pt[0] * size, pt[1] * size);
     }
     ctx.stroke();
 
     // Starting dot pulses so the child knows where to begin.
-    const [sx, sy] = pts[0];
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = primary;
-    ctx.shadowBlur = size * 0.08;
-    ctx.beginPath();
-    ctx.arc(sx * size, sy * size, lineWidth * 0.9, 0, Math.PI * 2);
-    ctx.fill();
+    const start = pts[0];
+    if (start) {
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = primary;
+      ctx.shadowBlur = size * 0.08;
+      ctx.beginPath();
+      ctx.arc(start[0] * size, start[1] * size, lineWidth * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // Sparkle rides the finger while tracing.
     if (!completeRef.current && traced > 0) {
-      const [cx, cy] = pts[Math.min(traced, pts.length - 1)];
-      ctx.fillStyle = amber;
-      ctx.beginPath();
-      ctx.arc(cx * size, cy * size, lineWidth * 0.7, 0, Math.PI * 2);
-      ctx.fill();
+      const current = pts[Math.min(traced, pts.length - 1)];
+      if (current) {
+        ctx.fillStyle = amber;
+        ctx.beginPath();
+        ctx.arc(current[0] * size, current[1] * size, lineWidth * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
