@@ -14,7 +14,7 @@ type ErrorBoundaryState = { hasError: boolean };
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false };
 
-  override static getDerivedStateFromError(): ErrorBoundaryState {
+  static override getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 
