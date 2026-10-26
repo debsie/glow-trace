@@ -14,11 +14,11 @@ type ErrorBoundaryState = { hasError: boolean };
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false };
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
+  override static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 
-  componentDidCatch(error: unknown) {
+  override componentDidCatch(error: unknown) {
     reportLovableError(error, { boundary: this.props.label ?? "error_boundary" });
   }
 
