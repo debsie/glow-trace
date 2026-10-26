@@ -23,7 +23,12 @@ type AppState = {
   setWorkspace: (workspace: Workspace) => void;
   addClient: (input: NewClientInput) => Client;
   addScan: (input: { category: ScanCategory; biomarkers: Biomarkers; image_url: string; client_id?: string }) => DiagnosticScan;
-  updateLook: (clientId: string, patch: Partial<Pick<EventLook, "occasion" | "lighting" | "hair_wig_style" | "nail_design" | "makeup_base">>) => void;
+  updateLook: (
+    clientId: string,
+    patch: Partial<
+      Pick<EventLook, "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base">
+    >,
+  ) => void;
   sendLookForClient: (clientId: string) => void;
   approveLookForClient: (clientId: string, clientNotes?: string) => void;
   toggleLighting: (clientId: string, preset: LightingPreset) => void;
