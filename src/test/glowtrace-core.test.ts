@@ -37,7 +37,7 @@ describe("Shelf matcher", () => {
     const skinNeeds = activeNeeds(MOCK_BIOMARKERS.skin, "skin");
     expect(skinNeeds.map((need) => need.id)).toEqual(["calm", "hydrate", "smooth"]);
     const hairNeeds = activeNeeds(MOCK_BIOMARKERS.hair, "hair");
-    expect(hairNeeds.map((need) => need.id)).toEqual(["strength", "hydrate"]);
+    expect(hairNeeds.map((need) => need.id)).toEqual(["hydrate", "strength"]);
     const nailNeeds = activeNeeds(MOCK_BIOMARKERS.nails, "nails");
     expect(nailNeeds.map((need) => need.id)).toEqual(["hydrate", "nails"]);
   });
