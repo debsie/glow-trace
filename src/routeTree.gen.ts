@@ -15,6 +15,7 @@ import { Route as ScanRouteImport } from './routes/scan'
 import { Route as ProClientsRouteImport } from './routes/pro.clients'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
 import { Route as ProClientsIdRouteImport } from './routes/pro.clients.$id'
+import { Route as ProClientsIdIndexRouteImport } from './routes/pro.clients.$id.index'
 import { Route as ProClientsIdLookbookRouteImport } from './routes/pro.clients.$id.lookbook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const ProClientsIdRoute = ProClientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ProClientsRoute,
 } as any)
+const ProClientsIdIndexRoute = ProClientsIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProClientsIdRoute,
+} as any)
 const ProClientsIdLookbookRoute = ProClientsIdLookbookRouteImport.update({
   id: '/lookbook',
   path: '/lookbook',
@@ -61,14 +67,15 @@ export interface FileRoutesByFullPath {
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id/': typeof ProClientsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
-  '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients': typeof ProClientsIndexRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id': typeof ProClientsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,6 +86,7 @@ export interface FileRoutesById {
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id/': typeof ProClientsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,14 +98,15 @@ export interface FileRouteTypes {
     | '/pro/clients/$id'
     | '/pro/clients/'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/routine'
     | '/scan'
-    | '/pro/clients/$id'
     | '/pro/clients'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id'
   id:
     | '__root__'
     | '/'
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/pro/clients/$id'
     | '/pro/clients/'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -160,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProClientsIdRouteImport
       parentRoute: typeof ProClientsRoute
     }
+    '/pro/clients/$id/': {
+      id: '/pro/clients/$id/'
+      path: '/'
+      fullPath: '/pro/clients/$id/'
+      preLoaderRoute: typeof ProClientsIdIndexRouteImport
+      parentRoute: typeof ProClientsIdRoute
+    }
     '/pro/clients/$id/lookbook': {
       id: '/pro/clients/$id/lookbook'
       path: '/lookbook'
@@ -172,10 +189,12 @@ declare module '@tanstack/react-router' {
 
 interface ProClientsIdRouteChildren {
   ProClientsIdLookbookRoute: typeof ProClientsIdLookbookRoute
+  ProClientsIdIndexRoute: typeof ProClientsIdIndexRoute
 }
 
 const ProClientsIdRouteChildren: ProClientsIdRouteChildren = {
   ProClientsIdLookbookRoute: ProClientsIdLookbookRoute,
+  ProClientsIdIndexRoute: ProClientsIdIndexRoute,
 }
 
 const ProClientsIdRouteWithChildren = ProClientsIdRoute._addFileChildren(
