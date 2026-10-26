@@ -1,97 +1,119 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Lock } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowRight, ScanLine, Sparkles, Users } from "lucide-react";
 
-import { ErrorBoundary } from "@/components/common/error-boundary";
-import { GlowTraceCanvas } from "@/components/glow-trace-canvas";
-import { TaskChecklist } from "@/components/task-checklist";
-import { useFocusTasks } from "@/hooks/use-focus-tasks";
-import { countDone, progressPercent } from "@/lib/focus";
+import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
+import { useAppState } from "@/context/app-state";
+import { wellnessScore } from "@/lib/beauty";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Glow Trace — Focus Board" },
+      { title: "Glowtrace AI — Beauty Dashboard" },
       {
         name: "description",
-        content: "A calm focus board and glowing tracing activity that help kids find their focus.",
+        content: "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
       },
-      { property: "og:title", content: "Glow Trace — Focus Board" },
+      { property: "og:title", content: "Glowtrace AI — Beauty Dashboard" },
       {
         property: "og:description",
-        content: "A calm focus board and glowing tracing activity that help kids find their focus.",
+        content: "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Index,
+  component: Dashboard,
 });
 
-function Index() {
-  const { tasks, hydrated, toggleTask } = useFocusTasks();
-  const done = countDone(tasks);
-  const percent = progressPercent(tasks);
+const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nails: "Nails" };
 
-  const handleToggle = (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    toggleTask(id);
-    if (task && !task.done) {
-      toast.success("Glowing! One more step done.");
-    }
-  };
+function Dashboard() {
+  const { profile, scans, clients, looks } = useAppState();
+  const recent = [...scans]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 3);
+  const pendingSignoff = looks.filter((look) => look.status === "sent").length;
+
+  const actions = [
+    { to: "/scan", label: "New Scan", description: "Analyze skin, hair or nails", icon: ScanLine },
+    { to: "/routine", label: "Daily Routine", description: "Match products on your shelf", icon: Sparkles },
+    { to: "/pro/clients", label: "MUA Portal", description: `${clients.length} clients in your roster`, icon: Users },
+  ];
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-5 pt-8 pb-12">
-        <header className="flex items-center justify-between">
-          <h1 className="glow-text text-3xl font-bold text-primary">Glow Trace</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title={`Welcome back, ${profile.display_name.split(" ")[0]}`}
+        subtitle="Your AI beauty command center — one place for diagnostics, routines and client work."
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {actions.map((action) => (
           <Link
-            to="/parent"
-            aria-label="Open Parent Mode"
-            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+            key={action.to}
+            to={action.to}
+            className="glass group flex min-h-[96px] items-center gap-4 p-5 transition-transform hover:scale-[1.015]"
           >
-            <Lock className="h-5 w-5" aria-hidden="true" />
+            <span className="ai-gradient flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white">
+              <action.icon className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <span className="font-display block text-lg font-bold">{action.label}</span>
+              <span className="block truncate text-sm text-muted-foreground">{action.description}</span>
+            </span>
+            <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
           </Link>
-        </header>
+        ))}
+      </div>
 
-        <section aria-labelledby="glow-meter" className="rounded-3xl border border-border bg-card p-5">
-          <h2 id="glow-meter" className="label-tracking text-sm font-bold text-muted-foreground uppercase">
-            Today's glow
-          </h2>
-          <p aria-live="polite" className="mt-1 text-2xl font-semibold text-foreground">
-            {done} of {tasks.length} tasks glowing
-          </p>
-          <div
-            className="mt-3 h-3 overflow-hidden rounded-full bg-secondary"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-            aria-label="Tasks completed today"
-          >
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-        </section>
+      <SectionCard title="Recent scans">
+        <ul className="space-y-3">
+          {recent.map((scan) => (
+            <li key={scan.id} className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-border bg-card/60 p-3">
+              <img
+                src={scan.image_url}
+                alt={`${CATEGORY_LABEL[scan.category]} scan`}
+                width={56}
+                height={56}
+                loading="lazy"
+                className="h-14 w-14 shrink-0 rounded-xl object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-display font-bold">
+                  {CATEGORY_LABEL[scan.category]} scan
+                  {scan.client_id && <span className="ml-2 text-xs font-medium text-muted-foreground">client scan</span>}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </p>
+              </div>
+              <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
+                Score {wellnessScore(scan.biomarkers)}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/scan"
+          className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-primary hover:underline"
+        >
+          Run a new analysis <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </SectionCard>
 
-        <section aria-labelledby="tasks-heading">
-          <h2 id="tasks-heading" className="label-tracking mb-3 text-sm font-bold text-muted-foreground uppercase">
-            Focus steps
-          </h2>
-          <TaskChecklist tasks={tasks} hydrated={hydrated} onToggle={handleToggle} />
-        </section>
-
-        <section aria-labelledby="trace-heading">
-          <h2 id="trace-heading" className="label-tracking mb-3 text-sm font-bold text-muted-foreground uppercase">
-            Glow trace break
-          </h2>
-          <ErrorBoundary label="glow_trace_canvas">
-            <GlowTraceCanvas />
-          </ErrorBoundary>
-        </section>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <SectionCard>
+          <p className="font-display text-3xl font-bold text-foreground">{scans.length}</p>
+          <p className="text-sm text-muted-foreground">Total AI scans</p>
+        </SectionCard>
+        <SectionCard>
+          <p className="font-display text-3xl font-bold text-foreground">{clients.length}</p>
+          <p className="text-sm text-muted-foreground">MUA clients</p>
+        </SectionCard>
+        <SectionCard>
+          <p className="font-display text-3xl font-bold text-foreground">{pendingSignoff}</p>
+          <p className="text-sm text-muted-foreground">Looks awaiting sign-off</p>
+        </SectionCard>
       </div>
     </div>
   );
