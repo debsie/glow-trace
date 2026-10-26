@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture
+- Glow Trace state (focus tasks, parent PIN) persists in localStorage via `src/hooks/use-focus-tasks.ts` and `src/hooks/use-parent-pin.ts`; when accounts are added, move this data to Lovable Cloud tables owned by the parent account (hackathon COPPA/GDPR-K rule).
+- The theme is dark-only; all colors are semantic oklch tokens in `src/styles.css` (amber accent is `--glow`). Never hardcode colors in components.
+- Pure app logic (tasks, PIN, progress) lives in `src/lib/focus.ts` and is covered by `src/test/glow-trace-core.test.ts` — extend those tests when the rules change.
