@@ -12,9 +12,9 @@ type ErrorBoundaryState = { hasError: boolean };
 
 /** Wraps a major app flow so one broken section never blanks the whole page. */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false };
+  override state: ErrorBoundaryState = { hasError: false };
 
-  static override getDerivedStateFromError(): ErrorBoundaryState {
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 
