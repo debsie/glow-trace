@@ -194,7 +194,9 @@ export const GlowTraceCanvas = () => {
     let bestDist = TOUCH_RADIUS;
     const limit = Math.min(pts.length, traced + LOOKAHEAD);
     for (let i = traced; i < limit; i++) {
-      const dist = Math.hypot(pts[i][0] - x, pts[i][1] - y);
+      const pt = pts[i];
+      if (!pt) continue;
+      const dist = Math.hypot(pt[0] - x, pt[1] - y);
       if (dist < bestDist) {
         bestDist = dist;
         bestIdx = i;
