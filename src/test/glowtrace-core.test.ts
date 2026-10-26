@@ -51,7 +51,7 @@ describe("Shelf matcher", () => {
     const smooth = matches.find((match) => match.need.id === "smooth");
     expect(smooth?.inStock).toBe(false);
     expect(smooth?.product.name).toBe("2% BHA Polish Toner");
-    expect(smooth?.diy?.id).toBe(DIY_ALTERNATIVES.smooth);
+    expect(smooth?.diy?.id).toBe(DIY_ALTERNATIVES["smooth"]);
     expect(smooth?.diy?.is_diy).toBe(true);
     expect(smooth?.diy?.recipe_instructions).toBeTruthy();
   });

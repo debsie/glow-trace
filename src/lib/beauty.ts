@@ -117,12 +117,15 @@ export const LOOK_STATUS_META: Record<LookStatus, { label: string; tone: "muted"
   approved: { label: "Approved by Client", tone: "success", icon: "check" },
 };
 
-export const approveLook = (look: EventLook, clientNotes?: string): EventLook => ({
-  ...look,
-  status: "approved",
-  approved: true,
-  client_notes: clientNotes?.trim() || look.client_notes,
-});
+export const approveLook = (look: EventLook, clientNotes?: string): EventLook => {
+  const notes = clientNotes?.trim();
+  return {
+    ...look,
+    status: "approved",
+    approved: true,
+    ...(notes ? { client_notes: notes } : {}),
+  };
+};
 
 export const sendLook = (look: EventLook): EventLook =>
   look.status === "drafting" ? { ...look, status: "sent" } : look;

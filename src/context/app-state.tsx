@@ -78,7 +78,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const updateLook = useCallback(
     (
       clientId: string,
-      patch: Partial<Pick<EventLook, "occasion" | "lighting" | "hair_wig_style" | "nail_design" | "makeup_base">>,
+      patch: Partial<
+        Pick<EventLook, "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base">
+      >,
     ) => {
       setLooks((current) => {
         const existing = current.find((look) => look.client_id === clientId);
