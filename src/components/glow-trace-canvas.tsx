@@ -44,15 +44,17 @@ const SHAPES: readonly TraceShape[] = [
         const r = i % 2 === 0 ? 0.42 : 0.18;
         corners.push([0.5 + r * Math.cos(angle), 0.5 + r * Math.sin(angle)]);
       }
-      corners.push(corners[0]);
+      const first = corners[0];
+      if (first) corners.push(first);
       const perEdge = Math.max(2, Math.floor(n / corners.length));
       const pts: Point[] = [];
       for (let i = 0; i < corners.length - 1; i++) {
-        const [ax, ay] = corners[i];
-        const [bx, by] = corners[i + 1];
+        const a = corners[i];
+        const b = corners[i + 1];
+        if (!a || !b) continue;
         for (let s = 0; s < perEdge; s++) {
           const f = s / perEdge;
-          pts.push([ax + (bx - ax) * f, ay + (by - ay) * f]);
+          pts.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
         }
       }
       return pts;

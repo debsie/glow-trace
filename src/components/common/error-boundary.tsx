@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     reportLovableError(error, { boundary: this.props.label ?? "error_boundary" });
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
