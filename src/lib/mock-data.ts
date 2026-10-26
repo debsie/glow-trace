@@ -152,7 +152,7 @@ export const MOCK_LOOKS: EventLook[] = [
 
 /** Deterministic mock analysis result per category — keeps previews and tests stable. */
 export const MOCK_BIOMARKERS: Record<ScanCategory, Biomarkers> = {
-  skin: { redness: 38, dryness: 26, texture: 34, porosity: 20, discoloration: 29 },
+  skin: { redness: 38, dryness: 36, texture: 36, porosity: 20, discoloration: 29 },
   hair: { redness: 6, dryness: 44, texture: 28, porosity: 52, discoloration: 10 },
   nails: { redness: 7, dryness: 41, texture: 20, porosity: 16, discoloration: 24 },
 };
