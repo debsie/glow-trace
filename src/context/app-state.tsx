@@ -1,4 +1,16 @@
-import type { Biomarkers, Client, DiagnosticScan, EventLook, InventoryItem, LightingPreset, NewClientInput, Product, Profile, ScanCategory, Workspace } from "@/lib/types";
+import type {
+  Biomarkers,
+  Client,
+  DiagnosticScan,
+  EventLook,
+  InventoryItem,
+  LightingPreset,
+  NewClientInput,
+  Product,
+  Profile,
+  ScanCategory,
+  Workspace,
+} from "@/lib/types";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
@@ -10,7 +22,11 @@ import {
   MOCK_PROFILE,
   MOCK_SCANS,
 } from "@/lib/mock-data";
-import { approveLook as approveLookPure, lookForClient, sendLook as sendLookPure } from "@/lib/beauty";
+import {
+  approveLook as approveLookPure,
+  lookForClient,
+  sendLook as sendLookPure,
+} from "@/lib/beauty";
 
 type AppState = {
   profile: Profile;
@@ -22,11 +38,19 @@ type AppState = {
   looks: EventLook[];
   setWorkspace: (workspace: Workspace) => void;
   addClient: (input: NewClientInput) => Client;
-  addScan: (input: { category: ScanCategory; biomarkers: Biomarkers; image_url: string; client_id?: string }) => DiagnosticScan;
+  addScan: (input: {
+    category: ScanCategory;
+    biomarkers: Biomarkers;
+    image_url: string;
+    client_id?: string;
+  }) => DiagnosticScan;
   updateLook: (
     clientId: string,
     patch: Partial<
-      Pick<EventLook, "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base">
+      Pick<
+        EventLook,
+        "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base"
+      >
     >,
   ) => void;
   sendLookForClient: (clientId: string) => void;
@@ -64,7 +88,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addScan = useCallback(
-    (input: { category: ScanCategory; biomarkers: Biomarkers; image_url: string; client_id?: string }): DiagnosticScan => {
+    (input: {
+      category: ScanCategory;
+      biomarkers: Biomarkers;
+      image_url: string;
+      client_id?: string;
+    }): DiagnosticScan => {
       const scan: DiagnosticScan = {
         id: nextId("s"),
         user_id: MOCK_PROFILE.id,
@@ -84,13 +113,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     (
       clientId: string,
       patch: Partial<
-        Pick<EventLook, "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base">
+        Pick<
+          EventLook,
+          "occasion" | "lighting" | "skin_prep" | "hair_wig_style" | "nail_design" | "makeup_base"
+        >
       >,
     ) => {
       setLooks((current) => {
         const existing = current.find((look) => look.client_id === clientId);
         if (existing) {
-          return current.map((look) => (look.client_id === clientId ? { ...look, ...patch } : look));
+          return current.map((look) =>
+            look.client_id === clientId ? { ...look, ...patch } : look,
+          );
         }
         const fresh: EventLook = {
           id: nextId("look"),
@@ -119,7 +153,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const approveLookForClient = useCallback((clientId: string, clientNotes?: string) => {
     setLooks((current) =>
-      current.map((look) => (look.client_id === clientId ? approveLookPure(look, clientNotes) : look)),
+      current.map((look) =>
+        look.client_id === clientId ? approveLookPure(look, clientNotes) : look,
+      ),
     );
   }, []);
 
@@ -140,7 +176,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const saveLookToHistory = useCallback((clientId: string) => {
     setLooks((current) =>
-      current.map((look) => (look.client_id === clientId ? { ...look, saved_to_history: true } : look)),
+      current.map((look) =>
+        look.client_id === clientId ? { ...look, saved_to_history: true } : look,
+      ),
     );
   }, []);
 
@@ -162,7 +200,20 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       toggleLighting,
       saveLookToHistory,
     }),
-    [workspace, clients, scans, inventory, looks, addClient, addScan, updateLook, sendLookForClient, approveLookForClient, toggleLighting, saveLookToHistory],
+    [
+      workspace,
+      clients,
+      scans,
+      inventory,
+      looks,
+      addClient,
+      addScan,
+      updateLook,
+      sendLookForClient,
+      approveLookForClient,
+      toggleLighting,
+      saveLookToHistory,
+    ],
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

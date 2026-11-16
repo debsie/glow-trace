@@ -3,7 +3,14 @@ import { ArrowRight, Camera, ImageIcon, Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge, Gauge, GhostButton, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
+import {
+  Badge,
+  Gauge,
+  GhostButton,
+  PageHeader,
+  PrimaryButton,
+  SectionCard,
+} from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scoreVerdict, wellnessScore } from "@/lib/beauty";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
@@ -19,12 +26,14 @@ export const Route = createFileRoute("/scan")({
       { title: "Glowtrace AI — Diagnostic Scan" },
       {
         name: "description",
-        content: "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
+        content:
+          "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
       },
       { property: "og:title", content: "Glowtrace AI — Diagnostic Scan" },
       {
         property: "og:description",
-        content: "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
+        content:
+          "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -75,14 +84,20 @@ const UploadZone = ({
       }`}
     >
       {previewUrl ? (
-        <img src={previewUrl} alt={`Selected ${category} photo preview`} className="mx-auto max-h-72 w-full rounded-3xl object-cover" />
+        <img
+          src={previewUrl}
+          alt={`Selected ${category} photo preview`}
+          className="mx-auto max-h-72 w-full rounded-3xl object-cover"
+        />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
           <span className="ai-gradient flex h-14 w-14 items-center justify-center rounded-2xl text-white">
             <Camera className="h-7 w-7" aria-hidden="true" />
           </span>
           <p className="font-display text-lg font-bold">Drop a {category} photo here</p>
-          <p className="text-sm text-muted-foreground">Or use your camera roll — analysis runs on-device in this preview.</p>
+          <p className="text-sm text-muted-foreground">
+            Or use your camera roll — analysis runs on-device in this preview.
+          </p>
         </div>
       )}
       <input
@@ -130,7 +145,8 @@ function ScanPage() {
       const scan = addScan({
         category,
         biomarkers: MOCK_BIOMARKERS[category],
-        image_url: previewUrl ?? CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin,
+        image_url:
+          previewUrl ?? CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin,
       });
       setResult(scan);
       toast.success("Analysis complete — biomarkers scored.");
@@ -194,7 +210,10 @@ function ScanPage() {
         <SectionCard title={`${category} analysis`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-display text-2xl font-bold">{wellnessScore(shown.biomarkers)}<span className="text-base text-muted-foreground"> / 100</span></p>
+              <p className="font-display text-2xl font-bold">
+                {wellnessScore(shown.biomarkers)}
+                <span className="text-base text-muted-foreground"> / 100</span>
+              </p>
               <Badge tone={wellnessScore(shown.biomarkers) >= 65 ? "success" : "warning"}>
                 {scoreVerdict(wellnessScore(shown.biomarkers))}
               </Badge>
@@ -215,23 +234,42 @@ function ScanPage() {
             ))}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
-            <GhostButton onClick={() => setCompareOpen((open) => !open)}>Compare Past Scans</GhostButton>
+            <GhostButton onClick={() => setCompareOpen((open) => !open)}>
+              Compare Past Scans
+            </GhostButton>
             <Link to="/routine" className="contents">
               <GhostButton>
                 Daily Treatment Routine
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </GhostButton>
             </Link>
-            <GhostButton onClick={() => setMakeupOpen((open) => !open)}>Makeup Base &amp; Prep</GhostButton>
+            <GhostButton onClick={() => setMakeupOpen((open) => !open)}>
+              Makeup Base &amp; Prep
+            </GhostButton>
           </div>
 
           {compareOpen && (
             <div className="mt-4 space-y-2">
               {pastScans.map((scan) => (
-                <div key={scan.id} className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-border bg-card/60 p-3">
-                  <img src={scan.image_url} alt="Past scan" width={40} height={40} loading="lazy" className="h-10 w-10 rounded-lg object-cover" />
+                <div
+                  key={scan.id}
+                  className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-border bg-card/60 p-3"
+                >
+                  <img
+                    src={scan.image_url}
+                    alt="Past scan"
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                    className="h-10 w-10 rounded-lg object-cover"
+                  />
                   <span className="flex-1 text-sm">
-                    {new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                    {new Date(scan.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
                   </span>
                   <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
                     {wellnessScore(scan.biomarkers)}
@@ -245,7 +283,8 @@ function ScanPage() {
             <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4">
               <p className="font-display font-bold text-accent">Makeup Base &amp; Prep</p>
               <p className="mt-1 text-sm text-foreground">
-                Base: <strong>Neutral Cool — Satin Finish</strong>, buildable medium coverage over a hydrated, primed barrier.
+                Base: <strong>Neutral Cool — Satin Finish</strong>, buildable medium coverage over a
+                hydrated, primed barrier.
               </p>
               <ul className="mt-2 list-inside list-disc text-sm text-muted-foreground">
                 <li>Hydrating barrier cream, 10-minute melt</li>

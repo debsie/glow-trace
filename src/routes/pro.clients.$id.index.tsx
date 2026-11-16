@@ -22,8 +22,13 @@ function ClientDetail() {
       <div className="space-y-4">
         <PageHeader title="Client not found" />
         <SectionCard>
-          <p className="text-muted-foreground">This client isn't in your roster. It may have been removed.</p>
-          <Link to="/pro/clients" className="mt-3 inline-flex min-h-[50px] items-center font-semibold text-primary hover:underline">
+          <p className="text-muted-foreground">
+            This client isn't in your roster. It may have been removed.
+          </p>
+          <Link
+            to="/pro/clients"
+            className="mt-3 inline-flex min-h-[50px] items-center font-semibold text-primary hover:underline"
+          >
             Back to roster
           </Link>
         </SectionCard>
@@ -66,9 +71,16 @@ function ClientDetail() {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="primary">{client.skin_type}</Badge>
         {look && <StatusBadge status={look.status} />}
-        {look && <Badge tone="outline"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />{look.occasion}</Badge>}
+        {look && (
+          <Badge tone="outline">
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+            {look.occasion}
+          </Badge>
+        )}
         {look?.lighting.map((preset) => (
-          <Badge key={preset} tone="accent">{preset}</Badge>
+          <Badge key={preset} tone="accent">
+            {preset}
+          </Badge>
         ))}
       </div>
 
@@ -81,13 +93,27 @@ function ClientDetail() {
       <div className="grid gap-3 lg:grid-cols-2">
         <SectionCard title="Past scans">
           {clientScans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scans on file yet — run one from the Scan tab.</p>
+            <p className="text-sm text-muted-foreground">
+              No scans on file yet — run one from the Scan tab.
+            </p>
           ) : (
             <ul className="space-y-2">
               {clientScans.map((scan) => (
-                <li key={scan.id} className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-border bg-card/60 p-3">
-                  <img src={scan.image_url} alt={`${CATEGORY_LABEL[scan.category]} scan`} width={44} height={44} loading="lazy" className="h-11 w-11 rounded-xl object-cover" />
-                  <span className="flex-1 text-sm font-semibold">{CATEGORY_LABEL[scan.category]}</span>
+                <li
+                  key={scan.id}
+                  className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-border bg-card/60 p-3"
+                >
+                  <img
+                    src={scan.image_url}
+                    alt={`${CATEGORY_LABEL[scan.category]} scan`}
+                    width={44}
+                    height={44}
+                    loading="lazy"
+                    className="h-11 w-11 rounded-xl object-cover"
+                  />
+                  <span className="flex-1 text-sm font-semibold">
+                    {CATEGORY_LABEL[scan.category]}
+                  </span>
                   <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
                     {wellnessScore(scan.biomarkers)}
                   </Badge>

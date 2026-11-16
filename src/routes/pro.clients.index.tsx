@@ -3,7 +3,14 @@ import { Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge, GhostButton, PageHeader, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
+import {
+  Badge,
+  GhostButton,
+  PageHeader,
+  PrimaryButton,
+  SectionCard,
+  StatusBadge,
+} from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import type { NewClientInput } from "@/lib/types";
 
@@ -13,7 +20,12 @@ export const Route = createFileRoute("/pro/clients/")({
 
 const QuickAddModal = ({ onClose }: { onClose: () => void }) => {
   const { addClient } = useAppState();
-  const [form, setForm] = useState<NewClientInput>({ client_name: "", contact_info: "", skin_type: "", notes: "" });
+  const [form, setForm] = useState<NewClientInput>({
+    client_name: "",
+    contact_info: "",
+    skin_type: "",
+    notes: "",
+  });
 
   const submit = () => {
     if (!form.client_name.trim()) {
@@ -108,7 +120,10 @@ function ClientsPage() {
       />
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}

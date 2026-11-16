@@ -29,19 +29,19 @@ export const KERNEL_VERSION = "mojocv-v1.0.0-ts-fallback";
 export type ScanCategory = "skin" | "hair" | "nails";
 
 export interface BiomarkerMetric {
-  key: string;            // e.g. "erythema"
-  label: string;          // e.g. "Erythema / Redness"
-  value: number;          // 0-100, rounded to 1 decimal
+  key: string; // e.g. "erythema"
+  label: string; // e.g. "Erythema / Redness"
+  value: number; // 0-100, rounded to 1 decimal
   higherMeans: "more" | "better"; // drives gauge copy
-  description: string;    // one plain-language sentence
+  description: string; // one plain-language sentence
 }
 
 export interface ImageQuality {
   width: number;
   height: number;
-  sharpness: number;      // 0-100 normalized gradient energy
-  usable: boolean;        // false when too dark/blurred/small
-  notice?: string;        // shown to the user when not usable
+  sharpness: number; // 0-100 normalized gradient energy
+  usable: boolean; // false when too dark/blurred/small
+  notice?: string; // shown to the user when not usable
 }
 
 export interface BiomarkerReport {
@@ -65,22 +65,26 @@ export interface BiomarkerReport {
 Constants are calibration values; document each inline with the assumed range.
 
 ### Skin
+
 - **erythema** — mean a\* over all pixels; `score = clamp(((meanA − 9) / 18) × 100)`. Pale skin ≈ a\* 9-13, inflamed/red ≈ 20-27.
 - **texture coarseness** — `score = clamp(gradientEnergy / 14 × 100)` (flat surface ≈ 0-4, coarse/blemished ≈ 10-14).
 - **hydration** — higher = better hydrated: `score = clamp(100 − (brightnessVariance × 140 + (0.25 − specularRatio) × 120))`, floored at 0. Flaky/dry surfaces have high local brightness variance and few specular highlights.
 - **discoloration** — `score = clamp(hueCircularVariance × 400)`.
 
 ### Hair
+
 - **porosity/texture** — same gradient-energy mapping as skin texture but with hair calibration `/ 18 × 100`.
 - **shine** — `score = clamp(specularRatio × 500)`.
 - **density variance** — `score = clamp(localMeanLumaStdDev × 9)` (std dev over 16×16 blocks, sampled stride 4).
 
 ### Nails
+
 - **yellowness** — mean b\*: `score = clamp(((meanB − 10) / 16) × 100)` (healthy pale nail ≈ b\* 10-14, yellowed ≈ 20-26).
 - **spots/blemishes** — fraction of pixels deviating > 28 Lab ΔE from the median Lab color: `score = clamp(fraction × 700)`.
 - **ridge texture** — gradient energy `/ 12 × 100`.
 
 ### Quality gate (before scoring)
+
 - `usable = width ≥ 96 && sharpness ≥ 8 && meanLuma between 30 and 235`.
 - When not usable, still return a report with `quality.notice` ("Photo too dark/blurred — retake or try better light") and empty metrics; the UI shows demo biomarkers with the notice instead of fake precision.
 

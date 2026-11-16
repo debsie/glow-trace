@@ -31,9 +31,16 @@ export const Badge = ({
 };
 
 export const TierBadge = ({ tier }: { tier: string }) => {
-  const tone = tier === "enterprise" ? "ai-gradient text-white" : tier === "pro" ? "bg-primary/15 text-primary border border-primary/30" : "border border-border text-muted-foreground";
+  const tone =
+    tier === "enterprise"
+      ? "ai-gradient text-white"
+      : tier === "pro"
+        ? "bg-primary/15 text-primary border border-primary/30"
+        : "border border-border text-muted-foreground";
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase label-tracking ${tone}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase label-tracking ${tone}`}
+    >
       {tier}
     </span>
   );
@@ -75,7 +82,11 @@ export const SectionCard = ({
   <section className={`glass p-5 ${className}`}>
     {(title || action) && (
       <div className="mb-4 flex items-center justify-between gap-3">
-        {title && <h2 className="label-tracking text-xs font-bold text-muted-foreground uppercase">{title}</h2>}
+        {title && (
+          <h2 className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+            {title}
+          </h2>
+        )}
         {action}
       </div>
     )}
@@ -83,7 +94,15 @@ export const SectionCard = ({
   </section>
 );
 
-export const PageHeader = ({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) => (
+export const PageHeader = ({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+}) => (
   <div className="flex flex-wrap items-end justify-between gap-3">
     <div>
       <h1 className="font-display text-3xl font-bold text-foreground">{title}</h1>

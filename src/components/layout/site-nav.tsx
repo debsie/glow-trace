@@ -20,7 +20,11 @@ const WorkspaceSwitcher = () => {
     { id: "pro", label: "MUA Pro Portal" },
   ];
   return (
-    <div className="flex rounded-full border border-border bg-secondary/60 p-1" role="tablist" aria-label="Workspace">
+    <div
+      className="flex rounded-full border border-border bg-secondary/60 p-1"
+      role="tablist"
+      aria-label="Workspace"
+    >
       {options.map((option) => (
         <button
           key={option.id}
@@ -29,7 +33,9 @@ const WorkspaceSwitcher = () => {
           aria-selected={workspace === option.id}
           onClick={() => setWorkspace(option.id)}
           className={`min-h-[44px] rounded-full px-4 text-sm font-semibold transition-colors ${
-            workspace === option.id ? "ai-gradient text-white" : "text-muted-foreground hover:text-foreground"
+            workspace === option.id
+              ? "ai-gradient text-white"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {option.label}
@@ -74,7 +80,9 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
             key={item.to}
             to={item.to}
             className={`flex min-h-[50px] items-center gap-3 rounded-xl px-4 text-base font-semibold transition-colors ${
-              isActive(item.to) ? "bg-accent/15 text-accent" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+              isActive(item.to)
+                ? "bg-accent/15 text-accent"
+                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             }`}
           >
             <item.icon className="h-5 w-5" aria-hidden="true" />
