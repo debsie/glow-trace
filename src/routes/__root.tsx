@@ -29,7 +29,7 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="ai-text font-display text-7xl font-bold">404</h1>
+        <h1 className="text-primary font-display text-7xl font-semibold">404</h1>
         <h2 className="mt-4 font-display text-xl font-semibold text-foreground">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
@@ -37,9 +37,9 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="ai-gradient inline-flex min-h-[50px] items-center justify-center rounded-full px-6 text-base font-bold text-white"
+            className="bg-primary inline-flex min-h-[50px] items-center justify-center rounded-lg px-6 text-base font-semibold text-primary-foreground"
           >
-            Back to dashboard
+            Back to home
           </Link>
         </div>
       </div>
@@ -68,13 +68,13 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
               router.invalidate();
               reset();
             }}
-            className="ai-gradient inline-flex min-h-[50px] items-center justify-center rounded-full px-6 text-base font-bold text-white"
+            className="bg-primary inline-flex min-h-[50px] items-center justify-center rounded-lg px-6 text-base font-semibold text-primary-foreground"
           >
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex min-h-[50px] items-center justify-center rounded-full border border-border bg-card px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
+            className="inline-flex min-h-[50px] items-center justify-center rounded-lg border border-border bg-card px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             Go home
           </a>
@@ -89,8 +89,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      // Mirrors the --background token in styles.css (a meta tag can't read CSS variables).
-      { name: "theme-color", content: "oklch(0.175 0.03 265)" },
+      // Mirror the --background tokens in styles.css (a meta tag can't read CSS variables).
+      {
+        name: "theme-color",
+        content: "oklch(0.972 0.004 10)",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        name: "theme-color",
+        content: "oklch(0.17 0.012 340)",
+        media: "(prefers-color-scheme: dark)",
+      },
+      { name: "color-scheme", content: "light dark" },
       { name: "application-name", content: SITE.name },
       { name: "apple-mobile-web-app-title", content: SITE.name },
       { name: "geo.region", content: "ZA" },
@@ -103,7 +113,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap",
       },
       {
         rel: "stylesheet",
@@ -143,7 +153,7 @@ function RootComponent() {
         <SiteShell>
           <Outlet />
         </SiteShell>
-        <Toaster position="top-center" theme="dark" />
+        <Toaster position="top-center" theme="system" />
       </AppStateProvider>
     </QueryClientProvider>
   );

@@ -17,7 +17,7 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 
 ## Layout
 
-- `src/routes/` — file-based routes; `src/routeTree.gen.ts` is generated, never edit by hand
+- `src/routes/` — file-based routes (`/` is the marketing landing page with its own header; the app dashboard is `/app`); `src/routeTree.gen.ts` is generated, never edit by hand
 - `src/components/` — UI; `src/components/ui/` is shadcn, regenerate rather than hand-edit
 - `src/lib/` — pure logic (`beauty.ts`, `mock-data.ts`, `types.ts`); keep it framework-free and tested in `src/test/`
 - `src/lib/plans.ts` — the three ZAR plans, their limits and every gate message; `src/lib/referrals.ts` — referral and partner rules; `src/lib/seo.ts` — page metadata and JSON-LD. Change prices, caps or rewards only here, and update `src/test/plans.test.ts` / `referrals.test.ts`
@@ -29,7 +29,12 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 
 - TypeScript strict, no `any`, named exports, no `console.log`.
 - Zod-validate payloads before they enter app state.
-- Dark-only theme; semantic oklch tokens only, never hardcoded colors.
+- Design system ("clinical atelier"): light Porcelain theme by default, dark Aubergine via the OS setting or `data-theme="dark"`. This replaces the older dark-only rule in `AGENTS.md`.
+- Semantic oklch tokens in `src/styles.css` only, never hardcoded colors. Flat surfaces: no gradients, glass, glow, shadows or sparkle icons. `primary` (garnet) is the only action colour, one primary button per view; fills use `text-primary-foreground`, never literal white.
+- Fonts: Bricolage Grotesque (headings, weight 600), Hanken Grotesk (text), IBM Plex Mono via the `readout` utility for every measured value (one decimal).
+- Radius: buttons `rounded-lg`, cards `rounded-xl` (`surface` utility), tabs and rows `rounded-2xl`, only badges, avatars and the workspace switcher `rounded-full`. Hover changes opacity or border only; nothing scales.
+- The product is "Glowtrace" — never "AI" in the name or button labels. Call results "wellness indicators", never a diagnosis. No emoji or exclamation marks in UI copy.
+- Build screens from `Badge`, `Gauge`, `SectionCard`, `PrimaryButton`/`GhostButton` in `src/components/ui/bits.tsx`.
 - Touch targets ≥50×50 px; `aria-live="polite"` for analysis progress/results; never rely on color alone.
 - Children's data (COPPA/GDPR-K): keep data local or parent-owned; no third-party analytics or uploads of photos.
 - Lovable sync: never force-push, rebase, or amend pushed commits. Keep the branch buildable.

@@ -22,7 +22,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/routine")({
   head: () =>
     pageHead({
-      title: "Daily Skincare Routine From Your Own Shelf — Glowtrace AI",
+      title: "Daily Skincare Routine From Your Own Shelf — Glowtrace",
       description:
         "Morning, evening, pre-makeup and barrier-reset routines built from your latest check-in and the products you already own, with DIY options when something's missing.",
       path: "/routine",
@@ -48,11 +48,11 @@ const MissingProductCard = ({
 }) => {
   const [tab, setTab] = useState<"buy" | "diy">("buy");
   return (
-    <div className="rounded-3xl border border-warning/40 bg-warning/5 p-5">
+    <div className="rounded-xl border border-warning/40 bg-warning/5 p-5">
       <div className="flex items-start gap-3">
         <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
         <div>
-          <p className="font-display font-bold text-warning">Missing Product</p>
+          <p className="font-display font-semibold text-warning">Missing Product</p>
           <p className="text-sm text-muted-foreground">{need}</p>
         </div>
       </div>
@@ -66,7 +66,7 @@ const MissingProductCard = ({
           role="tab"
           aria-selected={tab === "buy"}
           onClick={() => setTab("buy")}
-          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-bold transition-colors ${
+          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-semibold transition-colors ${
             tab === "buy"
               ? "border-primary bg-primary/15 text-primary"
               : "border-border bg-card text-muted-foreground"
@@ -79,7 +79,7 @@ const MissingProductCard = ({
           role="tab"
           aria-selected={tab === "diy"}
           onClick={() => setTab("diy")}
-          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-bold transition-colors ${
+          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-semibold transition-colors ${
             tab === "diy"
               ? "border-accent bg-accent/15 text-accent"
               : "border-border bg-card text-muted-foreground"
@@ -90,7 +90,7 @@ const MissingProductCard = ({
       </div>
       {tab === "buy" ? (
         <div className="mt-4">
-          <p className="font-display text-lg font-bold">{productName}</p>
+          <p className="font-display text-lg font-semibold">{productName}</p>
           <p className="text-sm text-muted-foreground">{brand}</p>
           <p className="mt-1 text-xs text-muted-foreground">{ingredients}</p>
           <PrimaryButton
@@ -102,7 +102,7 @@ const MissingProductCard = ({
         </div>
       ) : (
         <div className="mt-4">
-          <p className="font-display text-lg font-bold text-accent">{diyName}</p>
+          <p className="font-display text-lg font-semibold text-accent">{diyName}</p>
           <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
             {diyRecipe.split("\n").map((line) => (
               <li key={line}>{line.replace(/^\d+\.\s*/, "")}</li>
@@ -183,7 +183,7 @@ function RoutinePage() {
               onClick={() => pickMode(spec.id)}
               className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl border px-2 text-sm font-bold transition-colors ${
                 selected
-                  ? "ai-gradient border-transparent text-white"
+                  ? "bg-primary border-transparent text-primary-foreground"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -212,7 +212,7 @@ function RoutinePage() {
             type="button"
             aria-expanded={shelfOpen}
             onClick={() => setShelfOpen((open) => !open)}
-            className="inline-flex min-h-[50px] items-center rounded-full px-4 text-sm font-semibold text-primary hover:underline"
+            className="inline-flex min-h-[50px] items-center rounded-lg px-4 text-sm font-semibold text-primary hover:underline"
           >
             {shelfOpen ? "Done" : "Edit shelf"}
           </button>
@@ -275,7 +275,7 @@ function RoutinePage() {
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 shrink-0 text-success" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-display font-bold">{match.need.label}</p>
+                  <p className="font-display font-semibold">{match.need.label}</p>
                   <p className="text-sm text-muted-foreground">
                     {match.product.name} · {match.product.brand}
                   </p>

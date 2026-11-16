@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Camera, ImageIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,7 +27,7 @@ import scanNails from "@/assets/scan-nails.jpg";
 export const Route = createFileRoute("/scan")({
   head: () =>
     pageHead({
-      title: "Skin, Hair & Nail Check-In — Glowtrace AI",
+      title: "Skin, Hair & Nail Check-In — Glowtrace",
       description:
         "Take a photo and get a quick read on your skin, hair or nails, scored on your own device. 2 free check-ins a month; unlimited with Glow Pro for R59.",
       path: "/scan",
@@ -72,7 +72,7 @@ const UploadZone = ({
         const file = event.dataTransfer.files[0];
         if (file) onFile(file);
       }}
-      className={`relative overflow-hidden rounded-3xl border-2 border-dashed transition-colors ${
+      className={`relative overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
         dragOver ? "border-primary bg-primary/10" : "border-border bg-card/50"
       }`}
     >
@@ -80,14 +80,14 @@ const UploadZone = ({
         <img
           src={previewUrl}
           alt={`Selected ${category} photo preview`}
-          className="mx-auto max-h-72 w-full rounded-3xl object-cover"
+          className="mx-auto max-h-72 w-full rounded-xl object-cover"
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <span className="ai-gradient flex h-14 w-14 items-center justify-center rounded-2xl text-white">
+          <span className="bg-primary flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground">
             <Camera className="h-7 w-7" aria-hidden="true" />
           </span>
-          <p className="font-display text-lg font-bold">Drop a {category} photo here</p>
+          <p className="font-display text-lg font-semibold">Drop a {category} photo here</p>
           <p className="text-sm text-muted-foreground">
             Or use your camera roll — analysis runs on-device in this preview.
           </p>
@@ -157,7 +157,7 @@ function ScanPage() {
         return;
       }
       setResult(scan);
-      toast.success("Check-in complete — your results are ready.");
+      toast.success("Analysis complete. Indicators scored.");
     }, 1500);
   };
 
@@ -169,8 +169,8 @@ function ScanPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Check-In"
-        subtitle="Take or upload a photo and see how your skin, hair or nails are doing today."
+        title="Diagnostic Scan"
+        subtitle="Upload a photo and read your skin, hair or nail indicators."
       />
 
       <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Scan category">
@@ -185,9 +185,9 @@ function ScanPage() {
               setResult(null);
               setPreviewUrl(null);
             }}
-            className={`min-h-[50px] rounded-2xl border text-base font-bold transition-colors ${
+            className={`min-h-[50px] rounded-2xl border text-base font-semibold transition-colors ${
               category === tab.id
-                ? "ai-gradient border-transparent text-white"
+                ? "bg-primary border-transparent text-primary-foreground"
                 : "border-border bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -209,8 +209,8 @@ function ScanPage() {
       {blocked && <UpgradeCard gate={blocked} showInvite onDismiss={() => setBlocked(null)} />}
 
       <PrimaryButton onClick={runAnalysis} disabled={step !== null} className="w-full">
-        <Sparkles className="h-5 w-5" aria-hidden="true" />
-        {step !== null ? ANALYSIS_STEPS[step] : "Run AI Analysis"}
+        <Droplets className="h-5 w-5" aria-hidden="true" />
+        {step !== null ? ANALYSIS_STEPS[step] : "Run analysis"}
       </PrimaryButton>
       <p aria-live="polite" className="sr-only">
         {step !== null ? ANALYSIS_STEPS[step] : "Ready to analyze."}
@@ -230,7 +230,7 @@ function ScanPage() {
         <SectionCard title={`${category} analysis`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-display text-2xl font-bold">
+              <p className="font-display text-2xl font-semibold">
                 {wellnessScore(shown.biomarkers)}
                 <span className="text-base text-muted-foreground"> / 100</span>
               </p>
@@ -250,7 +250,12 @@ function ScanPage() {
           </div>
           <div className="mt-4 space-y-4">
             {gaugesFor(category, shown.biomarkers).map((gauge) => (
-              <Gauge key={gauge.key} label={gauge.label} value={gauge.value} />
+              <Gauge
+                key={gauge.key}
+                label={gauge.label}
+                value={gauge.value}
+                caption={gauge.caption}
+              />
             ))}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -301,7 +306,7 @@ function ScanPage() {
 
           {makeupOpen && (
             <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4">
-              <p className="font-display font-bold text-accent">Makeup Base &amp; Prep</p>
+              <p className="font-display font-semibold text-accent">Makeup Base &amp; Prep</p>
               <p className="mt-1 text-sm text-foreground">
                 Base: <strong>Neutral Cool — Satin Finish</strong>, buildable medium coverage over a
                 hydrated, primed barrier.

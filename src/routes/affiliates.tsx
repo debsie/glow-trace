@@ -93,7 +93,7 @@ const Stepper = ({
   <label className="block">
     <span className="mb-1 flex items-baseline justify-between gap-2 text-sm font-semibold text-muted-foreground">
       {label}
-      <span className="font-display text-lg font-bold text-foreground">{value}</span>
+      <span className="font-display text-lg font-semibold text-foreground">{value}</span>
     </span>
     <input
       type="range"
@@ -126,13 +126,13 @@ function AffiliatesPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         {PERKS.map((perk) => (
           <SectionCard key={perk.title}>
-            <h2 className="font-display text-lg font-bold text-foreground">{perk.title}</h2>
+            <h2 className="font-display text-lg font-semibold text-foreground">{perk.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{perk.body}</p>
           </SectionCard>
         ))}
       </div>
 
-      <SectionCard title="What could you earn?" className="glow-border">
+      <SectionCard title="What could you earn?" className="">
         <div className="grid gap-4 sm:grid-cols-2">
           <Stepper
             label={`${PLANS.pro.name} subscribers (${formatZar(PLANS.pro.monthlyZar)}/mo)`}
@@ -147,13 +147,13 @@ function AffiliatesPage() {
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3" aria-live="polite">
           <div>
-            <p className="ai-text font-display text-4xl font-extrabold">
+            <p className="text-primary font-display text-4xl font-semibold">
               {formatZar(earnings.monthlyZar)}
             </p>
             <p className="text-sm text-muted-foreground">a month</p>
           </div>
           <div>
-            <p className="font-display text-3xl font-bold text-foreground">
+            <p className="font-display text-3xl font-semibold text-foreground">
               {formatZar(earnings.windowZar)}
             </p>
             <p className="text-sm text-muted-foreground">
@@ -180,7 +180,7 @@ function AffiliatesPage() {
                 href={whatsappShareUrl(referralShareText(link))}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ai-gradient inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 text-base font-bold text-white"
+                className="bg-primary inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg px-6 text-base font-semibold text-primary-foreground"
               >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" /> Share on WhatsApp
               </a>
@@ -220,12 +220,12 @@ function AffiliatesPage() {
       </SectionCard>
 
       <section aria-labelledby="partner-faq" className="space-y-3">
-        <h2 id="partner-faq" className="font-display text-2xl font-bold">
+        <h2 id="partner-faq" className="font-display text-2xl font-semibold">
           Partner questions
         </h2>
         {AFFILIATE_FAQS.map((faq) => (
           <SectionCard key={faq.question}>
-            <h3 className="font-display text-lg font-bold text-foreground">{faq.question}</h3>
+            <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
           </SectionCard>
         ))}

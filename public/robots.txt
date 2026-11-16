@@ -1,4 +1,4 @@
-# Glowtrace AI — everyone is welcome to crawl the public pages.
+# Glowtrace — everyone is welcome to crawl the public pages.
 # Client workspaces under /pro are private and are also marked noindex.
 
 User-agent: *

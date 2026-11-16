@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <button
             type="button"
             onClick={() => this.setState({ hasError: false })}
-            className="mt-4 inline-flex min-h-[50px] items-center justify-center rounded-full bg-secondary px-6 text-base font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+            className="mt-4 inline-flex min-h-[50px] items-center justify-center rounded-lg bg-secondary px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary/80"
           >
             Try again
           </button>

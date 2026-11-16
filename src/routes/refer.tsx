@@ -84,7 +84,7 @@ function ReferPage() {
 
   const nativeShare = () => {
     if (typeof navigator.share === "function") {
-      navigator.share({ title: "Glowtrace AI", text, url: link }).catch(() => undefined);
+      navigator.share({ title: "Glowtrace", text, url: link }).catch(() => undefined);
     } else {
       copy(text, "Invite message");
     }
@@ -97,18 +97,18 @@ function ReferPage() {
         subtitle="Your friends get Glow Pro free for 30 days. You earn free months — up to a full year."
       />
 
-      <SectionCard className="glow-border">
+      <SectionCard className="">
         <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
           Your invite code
         </p>
-        <p className="ai-text mt-1 font-display text-4xl font-extrabold">{referralCode}</p>
+        <p className="text-primary mt-1 font-display text-4xl font-semibold">{referralCode}</p>
         <p className="mt-2 break-all text-sm text-muted-foreground">{link}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <a
             href={whatsappShareUrl(text)}
             target="_blank"
             rel="noopener noreferrer"
-            className="ai-gradient inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 text-base font-bold text-white transition-transform hover:scale-[1.02]"
+            className="bg-primary inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           >
             <MessageCircle className="h-5 w-5" aria-hidden="true" /> Share on WhatsApp
           </a>
@@ -124,10 +124,12 @@ function ReferPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         {STEPS.map((step, index) => (
           <SectionCard key={step.title}>
-            <span className="ai-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
+            <span className="bg-primary flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
               {index + 1}
             </span>
-            <h2 className="mt-3 font-display text-lg font-bold text-foreground">{step.title}</h2>
+            <h2 className="mt-3 font-display text-lg font-semibold text-foreground">
+              {step.title}
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
           </SectionCard>
         ))}
@@ -136,17 +138,21 @@ function ReferPage() {
       <SectionCard title="Your rewards so far">
         <div className="grid gap-3 sm:grid-cols-3" aria-live="polite">
           <div>
-            <p className="font-display text-3xl font-bold text-foreground">
+            <p className="font-display text-3xl font-semibold text-foreground">
               {referralStats.subscribed}
             </p>
             <p className="text-sm text-muted-foreground">Friends subscribed</p>
           </div>
           <div>
-            <p className="font-display text-3xl font-bold text-foreground">{rewards.freeMonths}</p>
+            <p className="font-display text-3xl font-semibold text-foreground">
+              {rewards.freeMonths}
+            </p>
             <p className="text-sm text-muted-foreground">Free months earned</p>
           </div>
           <div>
-            <p className="font-display text-3xl font-bold text-foreground">{rewards.bonusScans}</p>
+            <p className="font-display text-3xl font-semibold text-foreground">
+              {rewards.bonusScans}
+            </p>
             <p className="text-sm text-muted-foreground">Bonus check-ins this month</p>
           </div>
         </div>
@@ -217,12 +223,12 @@ function ReferPage() {
       </SectionCard>
 
       <section aria-labelledby="refer-faq" className="space-y-3">
-        <h2 id="refer-faq" className="font-display text-2xl font-bold">
+        <h2 id="refer-faq" className="font-display text-2xl font-semibold">
           How invites work
         </h2>
         {REFER_FAQS.map((faq) => (
           <SectionCard key={faq.question}>
-            <h3 className="font-display text-lg font-bold text-foreground">{faq.question}</h3>
+            <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
           </SectionCard>
         ))}
@@ -230,10 +236,10 @@ function ReferPage() {
 
       <Link
         to="/affiliates"
-        className="glass glow-violet flex min-h-[72px] items-center justify-between gap-3 p-5"
+        className="surface-strong flex min-h-[72px] items-center justify-between gap-3 p-5"
       >
         <span>
-          <span className="font-display block text-lg font-bold text-foreground">
+          <span className="font-display block text-lg font-semibold text-foreground">
             Have an audience or a client list?
           </span>
           <span className="block text-sm text-muted-foreground">

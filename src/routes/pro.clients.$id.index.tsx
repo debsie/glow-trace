@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge, PageHeader, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
@@ -51,7 +51,7 @@ function ClientDetail() {
             <Link
               to="/pro/clients/$id/lookbook"
               params={{ id: client.id }}
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-6 text-base font-semibold text-secondary-foreground transition-colors hover:bg-secondary"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
             >
               Open Lookbook
             </Link>
@@ -141,9 +141,9 @@ function ClientDetail() {
             <Link
               to="/pro/clients/$id/lookbook"
               params={{ id: client.id }}
-              className="glow-violet flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-accent/10 px-5 font-semibold text-accent"
+              className="flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-accent/10 px-5 font-semibold text-accent"
             >
-              <Sparkles className="h-5 w-5" aria-hidden="true" />
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
               Build the event lookbook <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>

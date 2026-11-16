@@ -1,4 +1,4 @@
-/** Core Glowtrace AI domain types. All schemas are TypeScript-first; mock-only state. */
+/** Core Glowtrace domain types. All schemas are TypeScript-first; mock-only state. */
 
 export type Role = "consumer" | "mua";
 /** free = Free, pro = Glow Pro, studio = MUA Studio. Prices and limits live in plans.ts. */

@@ -1,6 +1,6 @@
-# Glowtrace AI
+# Glowtrace
 
-> Glowtrace AI is a South African beauty app. You take a photo and it gives you a quick read on your skin, hair or nails, then builds a routine from the products you already own. Makeup artists use it to prep clients for weddings and events. Prices are in South African rand (ZAR).
+> Glowtrace is a South African beauty app. You take a photo and it gives you a quick read on your skin, hair or nails, then builds a routine from the products you already own. Makeup artists use it to prep clients for weddings and events. Prices are in South African rand (ZAR).
 
 Glowtrace is a cosmetic self-care guide, not a medical or diagnostic tool. Check-ins run on the user's own device and photos are not uploaded.
 

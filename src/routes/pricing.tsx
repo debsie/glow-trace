@@ -81,8 +81,8 @@ function PricingPage() {
     <div className="mx-auto max-w-5xl space-y-10">
       <header className="space-y-4 text-center">
         <Badge tone="primary">Launch pricing · South Africa</Badge>
-        <h1 className="font-display text-4xl font-extrabold text-foreground sm:text-5xl">
-          Know your skin. <span className="ai-text">Pay in rands.</span> Start free.
+        <h1 className="font-display text-4xl font-semibold text-foreground sm:text-5xl">
+          Know your skin. <span className="text-primary">Pay in rands.</span> Start free.
         </h1>
         <p className="mx-auto max-w-2xl text-base text-muted-foreground">
           Three plans, no dollar conversions and no small print. Check your skin, hair and nails
@@ -99,7 +99,7 @@ function PricingPage() {
       </header>
 
       <div
-        className="mx-auto flex w-fit rounded-full border border-border bg-secondary/60 p-1"
+        className="mx-auto flex w-fit rounded-full border border-border bg-secondary p-1"
         role="group"
         aria-label="Billing period"
       >
@@ -109,9 +109,9 @@ function PricingPage() {
             type="button"
             aria-pressed={billing === option}
             onClick={() => setBilling(option)}
-            className={`min-h-[50px] rounded-full px-6 text-sm font-bold transition-colors ${
+            className={`min-h-[50px] rounded-lg px-6 text-sm font-semibold transition-colors ${
               billing === option
-                ? "ai-gradient text-white"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -132,10 +132,10 @@ function PricingPage() {
             <section
               key={id}
               aria-labelledby={`plan-${id}`}
-              className={`glass flex flex-col p-6 ${featured ? "glow-border" : ""}`}
+              className={`flex flex-col p-6 ${featured ? "surface-strong" : "surface"}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <h2 id={`plan-${id}`} className="font-display text-2xl font-bold">
+                <h2 id={`plan-${id}`} className="font-display text-2xl font-semibold">
                   {plan.name}
                 </h2>
                 {featured && <Badge tone="primary">Most popular</Badge>}
@@ -144,7 +144,7 @@ function PricingPage() {
               <p className="mt-1 text-sm text-muted-foreground">{plan.audience}</p>
 
               <p className="mt-5">
-                <span className="font-display text-5xl font-extrabold text-foreground">
+                <span className="font-display text-5xl font-semibold text-foreground">
                   {formatZar(price)}
                 </span>
                 <span className="text-sm text-muted-foreground">
@@ -205,10 +205,10 @@ function PricingPage() {
                     description: "Payments aren't switched on yet, so nothing was charged.",
                   });
                 }}
-                className={`mt-6 inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full px-6 text-base font-bold transition-transform hover:scale-[1.02] disabled:cursor-default disabled:opacity-60 disabled:hover:scale-100 ${
-                  featured || id === "studio"
-                    ? "ai-gradient text-white"
-                    : "border border-border bg-secondary/60 text-secondary-foreground"
+                className={`mt-6 inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-lg px-6 text-base font-semibold transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 ${
+                  featured
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-secondary text-foreground"
                 }`}
               >
                 {current
@@ -228,13 +228,13 @@ function PricingPage() {
       </p>
 
       <section aria-labelledby="why" className="space-y-4">
-        <h2 id="why" className="font-display text-2xl font-bold">
+        <h2 id="why" className="font-display text-2xl font-semibold">
           Why the plans look like this
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {REASONS.map((reason) => (
             <SectionCard key={reason.title}>
-              <h3 className="font-display text-lg font-bold text-foreground">{reason.title}</h3>
+              <h3 className="font-display text-lg font-semibold text-foreground">{reason.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{reason.body}</p>
             </SectionCard>
           ))}
@@ -243,10 +243,10 @@ function PricingPage() {
 
       <section
         aria-labelledby="earn"
-        className="glass glow-violet flex flex-wrap items-center justify-between gap-4 p-6"
+        className="surface-strong flex flex-wrap items-center justify-between gap-4 p-6"
       >
         <div className="max-w-xl">
-          <h2 id="earn" className="font-display text-2xl font-bold">
+          <h2 id="earn" className="font-display text-2xl font-semibold">
             Rather not pay at all?
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -257,13 +257,13 @@ function PricingPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             to="/refer"
-            className="ai-gradient inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 text-base font-bold text-white"
+            className="bg-primary inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg px-6 text-base font-semibold text-primary-foreground"
           >
             <Gift className="h-4 w-4" aria-hidden="true" /> Invite friends
           </Link>
           <Link
             to="/affiliates"
-            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-6 text-base font-semibold text-secondary-foreground"
+            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-6 text-base font-semibold text-foreground"
           >
             Become a partner <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
@@ -271,13 +271,13 @@ function PricingPage() {
       </section>
 
       <section aria-labelledby="faq" className="space-y-4">
-        <h2 id="faq" className="font-display text-2xl font-bold">
+        <h2 id="faq" className="font-display text-2xl font-semibold">
           Questions people ask
         </h2>
         <div className="space-y-3">
           {PRICING_FAQS.map((faq) => (
             <SectionCard key={faq.question}>
-              <h3 className="font-display text-lg font-bold text-foreground">{faq.question}</h3>
+              <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
             </SectionCard>
           ))}

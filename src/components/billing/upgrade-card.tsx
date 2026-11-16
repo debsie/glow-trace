@@ -20,13 +20,13 @@ export const UpgradeCard = ({
 }) => {
   const plan = gate.upgradeTo ? PLANS[gate.upgradeTo] : null;
   return (
-    <div className="glass glow-border p-5" role="status" aria-live="polite">
+    <div className="surface-strong p-5" role="status" aria-live="polite">
       <div className="flex items-start gap-3">
-        <span className="ai-gradient flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white">
+        <span className="bg-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-primary-foreground">
           <Lock className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="font-display text-lg font-bold text-foreground">{gate.title}</p>
+          <p className="font-display text-lg font-semibold text-foreground">{gate.title}</p>
           <p className="mt-1 text-sm text-muted-foreground">{gate.message}</p>
         </div>
       </div>
@@ -34,7 +34,7 @@ export const UpgradeCard = ({
         {plan && (
           <Link
             to="/pricing"
-            className="ai-gradient inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 text-base font-bold text-white transition-transform hover:scale-[1.02]"
+            className="bg-primary inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           >
             Get {plan.name} · {formatZar(plan.monthlyZar)}/month
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -43,7 +43,7 @@ export const UpgradeCard = ({
         {showInvite && (
           <Link
             to="/refer"
-            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-6 text-base font-semibold text-secondary-foreground transition-colors hover:bg-secondary"
+            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             <Gift className="h-4 w-4" aria-hidden="true" />
             Invite a friend for bonus check-ins
@@ -53,7 +53,7 @@ export const UpgradeCard = ({
           <button
             type="button"
             onClick={onDismiss}
-            className="inline-flex min-h-[50px] items-center justify-center rounded-full px-5 text-base font-semibold text-muted-foreground hover:text-foreground"
+            className="inline-flex min-h-[50px] items-center justify-center rounded-lg px-5 text-base font-semibold text-muted-foreground hover:text-foreground"
           >
             Not now
           </button>

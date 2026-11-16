@@ -13,10 +13,10 @@ export const SITE_URL: string =
   typeof rawSiteUrl === "string" ? rawSiteUrl.trim().replace(/\/+$/, "") : "";
 
 export const SITE = {
-  name: "Glowtrace AI",
-  tagline: "Skin, hair and nail check-ins from your phone",
+  name: "Glowtrace",
+  tagline: "Skin, hair and nail diagnostics from a photo",
   description:
-    "Glowtrace AI is a South African beauty app that checks your skin, hair and nails from a photo, builds a routine around the products you already own, and gives makeup artists a simple way to prep clients. Free to start, Glow Pro from R59 a month.",
+    "Glowtrace is a South African beauty app that checks your skin, hair and nails from a photo, builds a routine around the products you already own, and gives makeup artists a simple way to prep clients. Free to start, Glow Pro from R59 a month.",
   locale: "en_ZA",
   language: "en-ZA",
   country: "ZA",
@@ -150,9 +150,9 @@ const pct = (rate: number): string => `${Math.round(rate * 100)}%`;
 
 export const PRICING_FAQS: readonly Faq[] = [
   {
-    question: "What is Glowtrace AI?",
+    question: "What is Glowtrace?",
     answer:
-      "Glowtrace AI is a beauty app made for South Africa. You take a photo, it gives you a quick read on your skin, hair or nails, and it builds a morning and evening routine from the products already on your shelf. Makeup artists can also use it to prep clients for weddings and events.",
+      "Glowtrace is a beauty app made for South Africa. You take a photo, it gives you a quick read on your skin, hair or nails, and it builds a morning and evening routine from the products already on your shelf. Makeup artists can also use it to prep clients for weddings and events.",
   },
   {
     question: "How much does Glowtrace cost in South Africa?",

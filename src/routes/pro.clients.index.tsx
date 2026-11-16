@@ -57,10 +57,10 @@ const QuickAddModal = ({ onClose }: { onClose: () => void }) => {
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-md space-y-3 rounded-b-none p-5 sm:rounded-3xl"
+        className="surface w-full max-w-md space-y-3 rounded-b-none p-5 sm:rounded-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 className="font-display text-xl font-bold">Quick add client</h2>
+        <h2 className="font-display text-xl font-semibold">Quick add client</h2>
         <input
           className={field}
           placeholder="Client name"
@@ -175,15 +175,15 @@ function ClientsPage() {
             const scanCount = scans.filter((scan) => scan.client_id === client.id).length;
             const look = looks.find((item) => item.client_id === client.id);
             return (
-              <div key={client.id} className="glass p-5">
+              <div key={client.id} className="surface p-5">
                 <Link
                   to="/pro/clients/$id"
                   params={{ id: client.id }}
-                  className="block rounded-xl transition-transform hover:scale-[1.01]"
+                  className="block rounded-xl transition-opacity hover:opacity-90"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-display truncate text-lg font-bold">
+                      <p className="font-display truncate text-lg font-semibold">
                         {client.client_name}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
@@ -206,7 +206,7 @@ function ClientsPage() {
                     setBlocked(null);
                     toast.success(`${client.client_name} archived — that spot is open again.`);
                   }}
-                  className="mt-3 inline-flex min-h-[50px] items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                  className="mt-3 inline-flex min-h-[50px] items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-muted-foreground hover:text-foreground"
                 >
                   <Archive className="h-4 w-4" aria-hidden="true" /> Archive
                 </button>

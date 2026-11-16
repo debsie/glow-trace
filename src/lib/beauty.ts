@@ -7,9 +7,15 @@ import type {
   ScanCategory,
 } from "./types";
 
-/** Pure Glowtrace AI logic: gauge specs, shelf matching, lookbook status. */
+/** Pure Glowtrace logic: gauge specs, shelf matching, lookbook status. */
 
-export type Gauge = { key: keyof Biomarkers; label: string; value: number };
+export type Gauge = {
+  key: keyof Biomarkers;
+  label: string;
+  value: number;
+  /** Starts with the direction ("Higher means more" / "Higher is better"), then one plain sentence. */
+  caption: string;
+};
 
 const GAUGE_LABELS: Record<keyof Biomarkers, string> = {
   redness: "Erythema / Redness",
@@ -17,6 +23,14 @@ const GAUGE_LABELS: Record<keyof Biomarkers, string> = {
   dryness: "Hydration",
   porosity: "Hydration / Porosity",
   discoloration: "Discoloration",
+};
+
+const GAUGE_CAPTIONS: Record<keyof Biomarkers, string> = {
+  redness: "Higher means more. How red the tone reads.",
+  texture: "Higher means more. How uneven the surface looks.",
+  dryness: "Higher is better. Smooth, lightly glowing surfaces score higher.",
+  porosity: "Higher means more. How open and rough the surface looks.",
+  discoloration: "Higher means more. How patchy the colour is.",
 };
 
 const invertKeys: ReadonlySet<keyof Biomarkers> = new Set(["dryness"]);
@@ -31,6 +45,7 @@ export const gaugesFor = (category: ScanCategory, b: Biomarkers): Gauge[] => {
   return keys.map((key) => ({
     key,
     label: GAUGE_LABELS[key],
+    caption: GAUGE_CAPTIONS[key],
     value: invertKeys.has(key) ? 100 - b[key] : b[key],
   }));
 };
