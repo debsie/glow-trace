@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Check, Pencil, Send } from "lucide-react";
+import { Check, Lock, Pencil, Send } from "lucide-react";
 
 import { LOOK_STATUS_META } from "@/lib/beauty";
-import type { LookStatus } from "@/lib/types";
+import { PLANS } from "@/lib/plans";
+import type { LookStatus, SubscriptionTier } from "@/lib/types";
 
 /* Small shared presentation primitives, all token-based. */
 
@@ -30,9 +31,9 @@ export const Badge = ({
   );
 };
 
-export const TierBadge = ({ tier }: { tier: string }) => {
+export const TierBadge = ({ tier }: { tier: SubscriptionTier }) => {
   const tone =
-    tier === "enterprise"
+    tier === "studio"
       ? "ai-gradient text-white"
       : tier === "pro"
         ? "bg-primary/15 text-primary border border-primary/30"
@@ -41,10 +42,18 @@ export const TierBadge = ({ tier }: { tier: string }) => {
     <span
       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase label-tracking ${tone}`}
     >
-      {tier}
+      {PLANS[tier].name}
     </span>
   );
 };
+
+/** Small "PRO" lock marker for features above the current plan. Text + icon, never colour alone. */
+export const ProBadge = ({ label = "PRO" }: { label?: string }) => (
+  <span className="label-tracking inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/15 px-2 py-0.5 text-[0.65rem] font-bold text-primary uppercase">
+    <Lock className="h-3 w-3" aria-hidden="true" />
+    {label}
+  </span>
+);
 
 export const Gauge = ({ label, value }: { label: string; value: number }) => (
   <div>

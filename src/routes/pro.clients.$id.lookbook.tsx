@@ -6,26 +6,17 @@ import { toast } from "sonner";
 import { Badge, GhostButton, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { OCCASIONS, LIGHTING_PRESETS } from "@/lib/mock-data";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/pro/clients/$id/lookbook")({
-  head: () => ({
-    meta: [
-      { title: "Glowtrace AI — Client Lookbook" },
-      {
-        name: "description",
-        content:
-          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
-      },
-      { property: "og:title", content: "Glowtrace AI — Client Lookbook" },
-      {
-        property: "og:description",
-        content:
-          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Client Lookbook — Glowtrace MUA Studio",
+      description:
+        "Event lookbook with skin prep, makeup base, hair and nails, ready for sign-off.",
+      path: "/pro/clients",
+      noindex: true,
+    }),
   component: LookbookPage,
 });
 

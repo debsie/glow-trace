@@ -1,9 +1,10 @@
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Home, ScanLine, Sparkles, Users } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Gift, Home, ScanLine, Sparkles, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { TierBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { PLANS, scansLeft } from "@/lib/plans";
 import type { Workspace } from "@/lib/types";
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
@@ -11,13 +12,14 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/scan", label: "Scan", icon: ScanLine },
   { to: "/routine", label: "Routine", icon: Sparkles },
   { to: "/pro/clients", label: "Clients", icon: Users },
+  { to: "/refer", label: "Earn", icon: Gift },
 ];
 
 const WorkspaceSwitcher = () => {
   const { workspace, setWorkspace } = useAppState();
   const options: { id: Workspace; label: string }[] = [
     { id: "personal", label: "Personal App" },
-    { id: "pro", label: "MUA Pro Portal" },
+    { id: "pro", label: "MUA Studio" },
   ];
   return (
     <div
@@ -52,13 +54,17 @@ const ProfilePill = () => {
     .map((part) => part[0])
     .join("");
   return (
-    <div className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5">
+    <Link
+      to="/pricing"
+      aria-label={`${profile.display_name}, ${PLANS[profile.subscription_tier].name} plan — view plans`}
+      className="flex min-h-[50px] items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5"
+    >
       <span className="ai-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
         {initials}
       </span>
       <span className="hidden text-sm font-semibold sm:block">{profile.display_name}</span>
       <TierBadge tier={profile.subscription_tier} />
-    </div>
+    </Link>
   );
 };
 
@@ -93,7 +99,7 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
     );
   }
   return (
-    <nav aria-label="Primary" className="grid grid-cols-4">
+    <nav aria-label="Primary" className="grid grid-cols-5">
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.to}
@@ -108,6 +114,21 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
         </Link>
       ))}
     </nav>
+  );
+};
+
+const PlanSummary = () => {
+  const { tier, usage, rewards } = useAppState();
+  const left = scansLeft(tier, usage.scans, rewards.bonusScans);
+  return (
+    <Link
+      to="/pricing"
+      className="mt-6 block min-h-[50px] rounded-xl px-4 py-2 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+    >
+      <span className="block font-semibold text-foreground">{PLANS[tier].name} plan</span>
+      {left === null ? "Unlimited check-ins" : `${left} free check-ins left this month`}
+      <span className="block text-primary">See plans and pricing</span>
+    </Link>
   );
 };
 
@@ -128,9 +149,7 @@ export const SiteShell = ({ children }: { children: React.ReactNode }) => (
           <WorkspaceSwitcher />
         </div>
         <NavLinkList layout="side" />
-        <p className="mt-6 px-4 text-xs text-muted-foreground">
-          Enterprise tier · unlimited AI scans
-        </p>
+        <PlanSummary />
       </aside>
 
       <main className="min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">{children}</main>

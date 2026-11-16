@@ -10,8 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AffiliatesRouteImport } from './routes/affiliates'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ReferRouteImport } from './routes/refer'
 import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProClientsRouteImport } from './routes/pro.clients'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
 import { Route as ProClientsIdRouteImport } from './routes/pro.clients.$id'
@@ -23,6 +27,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AffiliatesRoute = AffiliatesRouteImport.update({
+  id: '/affiliates',
+  path: '/affiliates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferRoute = ReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoutineRoute = RoutineRouteImport.update({
   id: '/routine',
   path: '/routine',
@@ -31,6 +50,11 @@ const RoutineRoute = RoutineRouteImport.update({
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
   path: '/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProClientsRoute = ProClientsRouteImport.update({
@@ -61,8 +85,12 @@ const ProClientsIdLookbookRoute = ProClientsIdLookbookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/affiliates': typeof AffiliatesRoute
+  '/pricing': typeof PricingRoute
+  '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -71,8 +99,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/affiliates': typeof AffiliatesRoute
+  '/pricing': typeof PricingRoute
+  '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/pro/clients': typeof ProClientsIndexRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
   '/pro/clients/$id': typeof ProClientsIdIndexRoute
@@ -80,8 +112,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/affiliates': typeof AffiliatesRoute
+  '/pricing': typeof PricingRoute
+  '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -92,8 +128,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/affiliates'
+    | '/pricing'
+    | '/refer'
     | '/routine'
     | '/scan'
+    | '/sitemap.xml'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -102,16 +142,24 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/affiliates'
+    | '/pricing'
+    | '/refer'
     | '/routine'
     | '/scan'
+    | '/sitemap.xml'
     | '/pro/clients'
     | '/pro/clients/$id/lookbook'
     | '/pro/clients/$id'
   id:
     | '__root__'
     | '/'
+    | '/affiliates'
+    | '/pricing'
+    | '/refer'
     | '/routine'
     | '/scan'
+    | '/sitemap.xml'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -121,8 +169,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AffiliatesRoute: typeof AffiliatesRoute
+  PricingRoute: typeof PricingRoute
+  ReferRoute: typeof ReferRoute
   RoutineRoute: typeof RoutineRoute
   ScanRoute: typeof ScanRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProClientsRoute: typeof ProClientsRouteWithChildren
 }
 
@@ -133,6 +185,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliates': {
+      id: '/affiliates'
+      path: '/affiliates'
+      fullPath: '/affiliates'
+      preLoaderRoute: typeof AffiliatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refer': {
+      id: '/refer'
+      path: '/refer'
+      fullPath: '/refer'
+      preLoaderRoute: typeof ReferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/routine': {
@@ -147,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/scan'
       preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pro/clients': {
@@ -217,8 +297,12 @@ const ProClientsRouteWithChildren = ProClientsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AffiliatesRoute: AffiliatesRoute,
+  PricingRoute: PricingRoute,
+  ReferRoute: ReferRoute,
   RoutineRoute: RoutineRoute,
   ScanRoute: ScanRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProClientsRoute: ProClientsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

@@ -1,41 +1,38 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ScanLine, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Gift, ScanLine, Sparkles, Users } from "lucide-react";
 
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { wellnessScore } from "@/lib/beauty";
+import { formatZar, PLANS, scansLeft } from "@/lib/plans";
+import { pageHead, SITE, softwareApplicationSchema } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Glowtrace AI — Beauty Dashboard" },
-      {
-        name: "description",
-        content:
-          "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
-      },
-      { property: "og:title", content: "Glowtrace AI — Beauty Dashboard" },
-      {
-        property: "og:description",
-        content:
-          "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Glowtrace AI — Skin, Hair & Nail Check-Ins for South Africa, From R0",
+      description: SITE.description,
+      path: "/",
+      schema: [softwareApplicationSchema()],
+    }),
   component: Dashboard,
 });
 
 const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nails: "Nails" };
 
 function Dashboard() {
-  const { profile, scans, clients, looks } = useAppState();
+  const { profile, scans, activeClients, looks, tier, usage, rewards } = useAppState();
+  const left = scansLeft(tier, usage.scans, rewards.bonusScans);
   const recent = [...scans].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3);
   const pendingSignoff = looks.filter((look) => look.status === "sent").length;
 
   const actions = [
-    { to: "/scan", label: "New Scan", description: "Analyze skin, hair or nails", icon: ScanLine },
+    {
+      to: "/scan",
+      label: "New Check-In",
+      description: left === null ? "Skin, hair or nails" : `${left} free left this month`,
+      icon: ScanLine,
+    },
     {
       to: "/routine",
       label: "Daily Routine",
@@ -44,8 +41,11 @@ function Dashboard() {
     },
     {
       to: "/pro/clients",
-      label: "MUA Portal",
-      description: `${clients.length} clients in your roster`,
+      label: "MUA Studio",
+      description:
+        tier === "studio"
+          ? `${activeClients.length} of ${PLANS.studio.limits.activeClients} active clients`
+          : `For makeup artists · ${formatZar(PLANS.studio.monthlyZar)}/month`,
       icon: Users,
     },
   ];
@@ -54,7 +54,7 @@ function Dashboard() {
     <div className="space-y-6">
       <PageHeader
         title={`Welcome back, ${profile.display_name.split(" ")[0]}`}
-        subtitle="Your AI beauty command center — one place for diagnostics, routines and client work."
+        subtitle="See how your skin, hair and nails are doing, and what to do about it today."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -81,7 +81,39 @@ function Dashboard() {
         ))}
       </div>
 
-      <SectionCard title="Recent scans">
+      {tier === "free" && (
+        <section
+          aria-labelledby="home-pitch"
+          className="glass glow-border flex flex-wrap items-center justify-between gap-4 p-6"
+        >
+          <div className="max-w-xl">
+            <h2 id="home-pitch" className="font-display text-2xl font-bold text-foreground">
+              Your skin, hair and nails, <span className="ai-text">checked from a photo</span>
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You're on the free plan: {PLANS.free.limits.scansPerMonth} check-ins a month, morning
+              and evening routines, and DIY remedies. Go unlimited for{" "}
+              {formatZar(PLANS.pro.monthlyZar)} a month — or invite friends and earn it free.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/pricing"
+              className="ai-gradient inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 text-base font-bold text-white"
+            >
+              See plans in rands
+            </Link>
+            <Link
+              to="/refer"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-6 text-base font-semibold text-secondary-foreground"
+            >
+              <Gift className="h-4 w-4" aria-hidden="true" /> Earn free months
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <SectionCard title="Recent check-ins">
         <ul className="space-y-3">
           {recent.map((scan) => (
             <li
@@ -122,18 +154,18 @@ function Dashboard() {
           to="/scan"
           className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-primary hover:underline"
         >
-          Run a new analysis <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          Start a new check-in <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </SectionCard>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <SectionCard>
           <p className="font-display text-3xl font-bold text-foreground">{scans.length}</p>
-          <p className="text-sm text-muted-foreground">Total AI scans</p>
+          <p className="text-sm text-muted-foreground">Total check-ins</p>
         </SectionCard>
         <SectionCard>
-          <p className="font-display text-3xl font-bold text-foreground">{clients.length}</p>
-          <p className="text-sm text-muted-foreground">MUA clients</p>
+          <p className="font-display text-3xl font-bold text-foreground">{activeClients.length}</p>
+          <p className="text-sm text-muted-foreground">Active clients</p>
         </SectionCard>
         <SectionCard>
           <p className="font-display text-3xl font-bold text-foreground">{pendingSignoff}</p>

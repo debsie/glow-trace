@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Search, Users } from "lucide-react";
+import { Archive, ArchiveRestore, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +11,10 @@ import {
   SectionCard,
   StatusBadge,
 } from "@/components/ui/bits";
+import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { useAppState } from "@/context/app-state";
+import type { BlockedGate } from "@/lib/plans";
+import { clientGate, PLANS } from "@/lib/plans";
 import type { NewClientInput } from "@/lib/types";
 
 export const Route = createFileRoute("/pro/clients/")({
@@ -32,7 +35,12 @@ const QuickAddModal = ({ onClose }: { onClose: () => void }) => {
       toast.error("Give your client a name first.");
       return;
     }
-    addClient(form);
+    const added = addClient(form);
+    if ("allowed" in added) {
+      // The roster filled up while the form was open; the page shows why.
+      onClose();
+      return;
+    }
     toast.success(`${form.client_name.trim()} added to your roster.`);
     onClose();
   };
@@ -94,30 +102,47 @@ const QuickAddModal = ({ onClose }: { onClose: () => void }) => {
 };
 
 function ClientsPage() {
-  const { clients, scans, looks } = useAppState();
+  const { clients, activeClients, scans, looks, tier, archiveClient, restoreClient } =
+    useAppState();
   const [query, setQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [blocked, setBlocked] = useState<BlockedGate | null>(null);
+
+  const cap = PLANS[tier].limits.activeClients;
+  const archived = clients.filter((client) => client.archived);
+
+  const openAdd = () => {
+    const gate = clientGate(tier, activeClients.length);
+    if (!gate.allowed) {
+      setBlocked(gate);
+      return;
+    }
+    setBlocked(null);
+    setAddOpen(true);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return clients;
-    return clients.filter(
+    if (!q) return activeClients;
+    return activeClients.filter(
       (client) =>
         client.client_name.toLowerCase().includes(q) || client.skin_type.toLowerCase().includes(q),
     );
-  }, [clients, query]);
+  }, [activeClients, query]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Client Roster"
-        subtitle={`${clients.length} clients · scans, prep and look sign-off in one place`}
+        subtitle={`${activeClients.length} of ${cap} active clients · check-ins, prep and look sign-off in one place`}
         action={
-          <PrimaryButton onClick={() => setAddOpen(true)}>
+          <PrimaryButton onClick={openAdd}>
             <Plus className="h-5 w-5" aria-hidden="true" /> Quick add
           </PrimaryButton>
         }
       />
+
+      {blocked && <UpgradeCard gate={blocked} onDismiss={() => setBlocked(null)} />}
 
       <div className="relative">
         <Search
@@ -137,7 +162,11 @@ function ClientsPage() {
         <SectionCard>
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <Users className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-            <p className="text-muted-foreground">No clients match “{query}”.</p>
+            <p className="text-muted-foreground">
+              {query.trim()
+                ? `No clients match “${query}”.`
+                : "No active clients yet — tap Quick add to start your roster."}
+            </p>
           </div>
         </SectionCard>
       ) : (
@@ -146,29 +175,77 @@ function ClientsPage() {
             const scanCount = scans.filter((scan) => scan.client_id === client.id).length;
             const look = looks.find((item) => item.client_id === client.id);
             return (
-              <Link
-                key={client.id}
-                to="/pro/clients/$id"
-                params={{ id: client.id }}
-                className="glass block p-5 transition-transform hover:scale-[1.015]"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-display truncate text-lg font-bold">{client.client_name}</p>
-                    <p className="truncate text-sm text-muted-foreground">{client.contact_info}</p>
+              <div key={client.id} className="glass p-5">
+                <Link
+                  to="/pro/clients/$id"
+                  params={{ id: client.id }}
+                  className="block rounded-xl transition-transform hover:scale-[1.01]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-display truncate text-lg font-bold">
+                        {client.client_name}
+                      </p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {client.contact_info}
+                      </p>
+                    </div>
+                    <Badge tone="primary">{client.skin_type}</Badge>
                   </div>
-                  <Badge tone="primary">{client.skin_type}</Badge>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Badge tone="outline">
-                    {scanCount} scan{scanCount === 1 ? "" : "s"}
-                  </Badge>
-                  {look && <StatusBadge status={look.status} />}
-                </div>
-              </Link>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge tone="outline">
+                      {scanCount} scan{scanCount === 1 ? "" : "s"}
+                    </Badge>
+                    {look && <StatusBadge status={look.status} />}
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    archiveClient(client.id);
+                    setBlocked(null);
+                    toast.success(`${client.client_name} archived — that spot is open again.`);
+                  }}
+                  className="mt-3 inline-flex min-h-[50px] items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  <Archive className="h-4 w-4" aria-hidden="true" /> Archive
+                </button>
+              </div>
             );
           })}
         </div>
+      )}
+
+      {archived.length > 0 && (
+        <SectionCard title={`Archived · ${archived.length}`}>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Archived clients keep their notes and lookbooks, and don't count towards your {cap}{" "}
+            active spots.
+          </p>
+          <ul className="space-y-2">
+            {archived.map((client) => (
+              <li
+                key={client.id}
+                className="flex min-h-[56px] items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 px-4"
+              >
+                <span className="min-w-0 truncate text-sm font-semibold">{client.client_name}</span>
+                <GhostButton
+                  onClick={() => {
+                    const gate = restoreClient(client.id);
+                    if (gate.allowed) {
+                      setBlocked(null);
+                      toast.success(`${client.client_name} is active again.`);
+                    } else {
+                      setBlocked(gate);
+                    }
+                  }}
+                >
+                  <ArchiveRestore className="h-4 w-4" aria-hidden="true" /> Restore
+                </GhostButton>
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
       )}
 
       {addOpen && <QuickAddModal onClose={() => setAddOpen(false)} />}

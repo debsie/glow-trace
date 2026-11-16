@@ -15,6 +15,15 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppStateProvider } from "@/context/app-state";
 import { SiteShell } from "@/components/layout/site-nav";
+import { organizationSchema, pageHead, SITE, websiteSchema } from "@/lib/seo";
+
+// Site-wide defaults; each route's own head() overrides the title, description and canonical.
+const rootHead = pageHead({
+  title: `${SITE.name} — ${SITE.tagline}`,
+  description: SITE.description,
+  path: "/",
+  schema: [organizationSchema(), websiteSchema()],
+});
 
 function NotFoundComponent() {
   return (
@@ -80,21 +89,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Glowtrace AI" },
-      {
-        name: "description",
-        content:
-          "Glowtrace AI — AI-powered skin, hair and nail analysis for consumers and professional makeup artists.",
-      },
-      { property: "og:title", content: "Glowtrace AI" },
-      {
-        property: "og:description",
-        content:
-          "AI-powered skin, hair and nail analysis for consumers and professional makeup artists.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      // Mirrors the --background token in styles.css (a meta tag can't read CSS variables).
+      { name: "theme-color", content: "oklch(0.175 0.03 265)" },
+      { name: "application-name", content: SITE.name },
+      { name: "apple-mobile-web-app-title", content: SITE.name },
+      { name: "geo.region", content: "ZA" },
+      { name: "geo.placename", content: "South Africa" },
+      ...rootHead.meta,
     ],
+    scripts: rootHead.scripts,
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -107,6 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      ...rootHead.links,
     ],
   }),
   shellComponent: RootShell,
@@ -117,7 +121,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={SITE.language}>
       <head>
         <HeadContent />
       </head>

@@ -1,7 +1,8 @@
 /** Core Glowtrace AI domain types. All schemas are TypeScript-first; mock-only state. */
 
 export type Role = "consumer" | "mua";
-export type SubscriptionTier = "free" | "pro" | "enterprise";
+/** free = Free, pro = Glow Pro, studio = MUA Studio. Prices and limits live in plans.ts. */
+export type SubscriptionTier = "free" | "pro" | "studio";
 export type Workspace = "personal" | "pro";
 
 export type Profile = {
@@ -19,6 +20,8 @@ export type Client = {
   contact_info: string;
   skin_type: string;
   notes: string;
+  /** Archived clients stay on file but no longer count towards the active-client cap. */
+  archived?: boolean;
 };
 
 export type ScanCategory = "skin" | "hair" | "nails";

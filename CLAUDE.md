@@ -13,13 +13,16 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 - `bun run build` — production build
 - `bun run test` — Vitest (run before every commit)
 - `npx tsc --noEmit` — typecheck
-- `bun run lint` / `bun run format` — ESLint + Prettier (the repo has pre-existing formatting errors; don't mass-reformat unrelated files)
+- `bun run lint` / `bun run format` — ESLint + Prettier (keep both clean)
 
 ## Layout
 
 - `src/routes/` — file-based routes; `src/routeTree.gen.ts` is generated, never edit by hand
 - `src/components/` — UI; `src/components/ui/` is shadcn, regenerate rather than hand-edit
 - `src/lib/` — pure logic (`beauty.ts`, `mock-data.ts`, `types.ts`); keep it framework-free and tested in `src/test/`
+- `src/lib/plans.ts` — the three ZAR plans, their limits and every gate message; `src/lib/referrals.ts` — referral and partner rules; `src/lib/seo.ts` — page metadata and JSON-LD. Change prices, caps or rewards only here, and update `src/test/plans.test.ts` / `referrals.test.ts`
+- Plan, monthly usage and invite state are device-local (`src/lib/storage.ts`, Zod-validated) until accounts and payments exist
+- Set `VITE_SITE_URL` to the live origin to switch on canonical URLs and absolute social-image links
 - `docs/cv-kernel-spec.md` — spec for the on-device CV analysis kernel
 
 ## Rules
