@@ -226,3 +226,138 @@
     animation: none;
   }
 }
+
+/* ---------- Motion ---------- */
+
+/* Scroll reveal: hidden until the Reveal component marks it visible. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Interactive cards rise a hair and pick up the primary hairline. */
+@utility lift {
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.25s ease;
+  &:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--color-primary) 55%, var(--color-border));
+  }
+}
+
+/* Route change: the page settles in. */
+@utility page-enter {
+  animation: page-enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Instrument scan line sweeping a photo. */
+@utility scanline {
+  animation: scanline 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+@keyframes scanline {
+  from {
+    top: 4%;
+  }
+  to {
+    top: 96%;
+  }
+}
+
+/* Live-status dot. */
+@utility pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+/* Endless indicator ticker; the track holds two copies of its content. */
+@utility marquee {
+  animation: marquee 38s linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* The logo's trace line draws itself. */
+@utility trace-draw {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  animation: trace-draw 1.4s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes trace-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Disclosure rows (FAQ): chevron turns, answer fades in. */
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] > summary .chevron {
+  transform: rotate(180deg);
+}
+
+details[open] > .details-body {
+  animation: page-enter 0.3s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .lift,
+  .lift:hover {
+    transform: none;
+    transition: none;
+  }
+
+  .page-enter,
+  .scanline,
+  .pulse-dot,
+  .marquee,
+  .trace-draw,
+  details[open] > .details-body {
+    animation: none;
+  }
+
+  .trace-draw {
+    stroke-dashoffset: 0;
+  }
+}

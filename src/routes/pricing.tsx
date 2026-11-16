@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Badge, SectionCard } from "@/components/ui/bits";
+import { FaqList } from "@/components/common/faq-list";
+import { Reveal } from "@/components/motion/reveal";
 import { useAppState } from "@/context/app-state";
 import { formatZar, maxYearlySavingPct, PLAN_ORDER, PLANS, yearlySavingZar } from "@/lib/plans";
 import { REFERRAL_PROGRAM } from "@/lib/referrals";
@@ -46,15 +48,15 @@ type Billing = "monthly" | "yearly";
 const REASONS = [
   {
     title: "R59 is a small yes",
-    body: "Glow Pro costs less than a takeaway lunch. It's a decision you can make on your own, on the spot, without checking the budget first.",
+    body: "Less than a takeaway lunch. No need to check the budget first.",
   },
   {
     title: "R149 pays for itself on one booking",
-    body: "MUA Studio costs less than most artists charge for a single trial. Five active clients is a full month of bridal weekends, and archiving a finished booking opens the spot again.",
+    body: "Less than most artists charge for a trial. Archive a finished booking and the spot opens again.",
   },
   {
     title: "Limits you can see coming",
-    body: "Every plan says exactly where it stops. When you get there you'll see a short, friendly note — never an error, and never a surprise charge.",
+    body: "Every plan says where it stops. You get a friendly note, never an error or a surprise charge.",
   },
 ];
 
@@ -79,15 +81,13 @@ function PricingPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-10">
-      <header className="space-y-4 text-center">
+      <header className="page-enter space-y-4 text-center">
         <Badge tone="primary">Launch pricing · South Africa</Badge>
         <h1 className="font-display text-4xl font-semibold text-foreground sm:text-5xl">
           Know your skin. <span className="text-primary">Pay in rands.</span> Start free.
         </h1>
         <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          Three plans, no dollar conversions and no small print. Check your skin, hair and nails
-          from a photo, get a routine built from what's already in your bathroom, and upgrade only
-          if you want more.
+          Three plans. No dollar conversions, no small print. Upgrade only if you want more.
         </p>
         {referredBy && (
           <p className="text-sm font-semibold text-success" role="status">
@@ -132,7 +132,7 @@ function PricingPage() {
             <section
               key={id}
               aria-labelledby={`plan-${id}`}
-              className={`flex flex-col p-6 ${featured ? "surface-strong" : "surface"}`}
+              className={`lift flex flex-col p-6 ${featured ? "surface-strong" : "surface"}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <h2 id={`plan-${id}`} className="font-display text-2xl font-semibold">
@@ -144,7 +144,10 @@ function PricingPage() {
               <p className="mt-1 text-sm text-muted-foreground">{plan.audience}</p>
 
               <p className="mt-5">
-                <span className="font-display text-5xl font-semibold text-foreground">
+                <span
+                  key={billing}
+                  className="page-enter inline-block font-display text-5xl font-semibold text-foreground"
+                >
                   {formatZar(price)}
                 </span>
                 <span className="text-sm text-muted-foreground">
@@ -232,11 +235,11 @@ function PricingPage() {
           Why the plans look like this
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
-          {REASONS.map((reason) => (
-            <SectionCard key={reason.title}>
+          {REASONS.map((reason, index) => (
+            <Reveal key={reason.title} delay={index * 90} className="surface p-5">
               <h3 className="font-display text-lg font-semibold text-foreground">{reason.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{reason.body}</p>
-            </SectionCard>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -275,12 +278,7 @@ function PricingPage() {
           Questions people ask
         </h2>
         <div className="space-y-3">
-          {PRICING_FAQS.map((faq) => (
-            <SectionCard key={faq.question}>
-              <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
-            </SectionCard>
-          ))}
+          <FaqList faqs={PRICING_FAQS} />
         </div>
       </section>
     </div>

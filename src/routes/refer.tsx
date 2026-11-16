@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge, GhostButton, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
+import { FaqList } from "@/components/common/faq-list";
+import { Reveal } from "@/components/motion/reveal";
 import { useAppState } from "@/context/app-state";
 import { useOrigin } from "@/hooks/use-origin";
 import { PLANS } from "@/lib/plans";
@@ -101,7 +103,7 @@ function ReferPage() {
         <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
           Your invite code
         </p>
-        <p className="text-primary mt-1 font-display text-4xl font-semibold">{referralCode}</p>
+        <p className="readout mt-1 text-4xl text-primary">{referralCode}</p>
         <p className="mt-2 break-all text-sm text-muted-foreground">{link}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <a
@@ -123,15 +125,15 @@ function ReferPage() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         {STEPS.map((step, index) => (
-          <SectionCard key={step.title}>
-            <span className="bg-primary flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
-              {index + 1}
+          <Reveal key={step.title} delay={index * 90} className="surface lift p-5">
+            <span className="readout flex h-10 w-10 items-center justify-center rounded-full border border-primary text-sm text-primary">
+              0{index + 1}
             </span>
             <h2 className="mt-3 font-display text-lg font-semibold text-foreground">
               {step.title}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
-          </SectionCard>
+          </Reveal>
         ))}
       </div>
 
@@ -226,12 +228,7 @@ function ReferPage() {
         <h2 id="refer-faq" className="font-display text-2xl font-semibold">
           How invites work
         </h2>
-        {REFER_FAQS.map((faq) => (
-          <SectionCard key={faq.question}>
-            <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
-          </SectionCard>
-        ))}
+        <FaqList faqs={REFER_FAQS} />
       </section>
 
       <Link
