@@ -1,5 +1,6 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "glow-trace",
+  "license": "UNLICENSED",
   "private": true,
   "sideEffects": false,
   "type": "module",
