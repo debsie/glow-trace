@@ -13,12 +13,14 @@ export const Route = createFileRoute("/routine")({
       { title: "Glowtrace AI — Daily Treatment Routine" },
       {
         name: "description",
-        content: "Match today's AI recommendations to the products on your shelf, with DIY alternatives.",
+        content:
+          "Match today's AI recommendations to the products on your shelf, with DIY alternatives.",
       },
       { property: "og:title", content: "Glowtrace AI — Daily Treatment Routine" },
       {
         property: "og:description",
-        content: "Match today's AI recommendations to the products on your shelf, with DIY alternatives.",
+        content:
+          "Match today's AI recommendations to the products on your shelf, with DIY alternatives.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -53,14 +55,20 @@ const MissingProductCard = ({
           <p className="text-sm text-muted-foreground">{need}</p>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2" role="tablist" aria-label={`Resolve missing product for ${need}`}>
+      <div
+        className="mt-4 grid grid-cols-2 gap-2"
+        role="tablist"
+        aria-label={`Resolve missing product for ${need}`}
+      >
         <button
           type="button"
           role="tab"
           aria-selected={tab === "buy"}
           onClick={() => setTab("buy")}
           className={`min-h-[50px] rounded-2xl border px-3 text-sm font-bold transition-colors ${
-            tab === "buy" ? "border-primary bg-primary/15 text-primary" : "border-border bg-card text-muted-foreground"
+            tab === "buy"
+              ? "border-primary bg-primary/15 text-primary"
+              : "border-border bg-card text-muted-foreground"
           }`}
         >
           <ShoppingBag className="mr-1 inline h-4 w-4" aria-hidden="true" /> Buy Recommended
@@ -71,7 +79,9 @@ const MissingProductCard = ({
           aria-selected={tab === "diy"}
           onClick={() => setTab("diy")}
           className={`min-h-[50px] rounded-2xl border px-3 text-sm font-bold transition-colors ${
-            tab === "diy" ? "border-accent bg-accent/15 text-accent" : "border-border bg-card text-muted-foreground"
+            tab === "diy"
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border bg-card text-muted-foreground"
           }`}
         >
           <FlaskConical className="mr-1 inline h-4 w-4" aria-hidden="true" /> DIY Alternative
@@ -82,7 +92,10 @@ const MissingProductCard = ({
           <p className="font-display text-lg font-bold">{productName}</p>
           <p className="text-sm text-muted-foreground">{brand}</p>
           <p className="mt-1 text-xs text-muted-foreground">{ingredients}</p>
-          <PrimaryButton className="mt-3" onClick={() => toast.success(`${productName} added to your cart.`)}>
+          <PrimaryButton
+            className="mt-3"
+            onClick={() => toast.success(`${productName} added to your cart.`)}
+          >
             Add to cart
           </PrimaryButton>
         </div>
@@ -94,7 +107,9 @@ const MissingProductCard = ({
               <li key={line}>{line.replace(/^\d+\.\s*/, "")}</li>
             ))}
           </ol>
-          <p className="mt-3 text-xs text-muted-foreground">Patch-test first; stop if irritation occurs.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Patch-test first; stop if irritation occurs.
+          </p>
         </div>
       )}
     </div>
@@ -107,9 +122,14 @@ function RoutinePage() {
   if (!latest) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Daily Treatment Routine" subtitle="Run a scan first and your routine builds itself." />
+        <PageHeader
+          title="Daily Treatment Routine"
+          subtitle="Run a scan first and your routine builds itself."
+        />
         <SectionCard>
-          <p className="text-muted-foreground">No scans yet — head to the Scan tab to analyze skin, hair or nails.</p>
+          <p className="text-muted-foreground">
+            No scans yet — head to the Scan tab to analyze skin, hair or nails.
+          </p>
         </SectionCard>
       </div>
     );
@@ -165,14 +185,22 @@ function RoutinePage() {
               brand={match.product.brand}
               ingredients={match.product.ingredients}
               diyName={match.diy?.name ?? "DIY remedy"}
-              diyRecipe={match.diy?.recipe_instructions ?? "Combine gentle kitchen ingredients and patch-test first."}
+              diyRecipe={
+                match.diy?.recipe_instructions ??
+                "Combine gentle kitchen ingredients and patch-test first."
+              }
             />
           ),
         )}
         {matches.length === 0 && (
           <SectionCard>
-            <p className="text-muted-foreground">Your biomarkers look balanced — a gentle cleanse, hydrate and protect day.</p>
-            <GhostButton className="mt-3" onClick={() => toast("Maintenance mode: SPF and hydration only.")}>
+            <p className="text-muted-foreground">
+              Your biomarkers look balanced — a gentle cleanse, hydrate and protect day.
+            </p>
+            <GhostButton
+              className="mt-3"
+              onClick={() => toast("Maintenance mode: SPF and hydration only.")}
+            >
               View maintenance plan
             </GhostButton>
           </SectionCard>

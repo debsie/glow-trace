@@ -11,12 +11,14 @@ export const Route = createFileRoute("/")({
       { title: "Glowtrace AI — Beauty Dashboard" },
       {
         name: "description",
-        content: "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
+        content:
+          "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
       },
       { property: "og:title", content: "Glowtrace AI — Beauty Dashboard" },
       {
         property: "og:description",
-        content: "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
+        content:
+          "Your AI beauty command center: recent diagnostic scans, daily routines and client work.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -29,15 +31,23 @@ const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nai
 
 function Dashboard() {
   const { profile, scans, clients, looks } = useAppState();
-  const recent = [...scans]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 3);
+  const recent = [...scans].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3);
   const pendingSignoff = looks.filter((look) => look.status === "sent").length;
 
   const actions = [
     { to: "/scan", label: "New Scan", description: "Analyze skin, hair or nails", icon: ScanLine },
-    { to: "/routine", label: "Daily Routine", description: "Match products on your shelf", icon: Sparkles },
-    { to: "/pro/clients", label: "MUA Portal", description: `${clients.length} clients in your roster`, icon: Users },
+    {
+      to: "/routine",
+      label: "Daily Routine",
+      description: "Match products on your shelf",
+      icon: Sparkles,
+    },
+    {
+      to: "/pro/clients",
+      label: "MUA Portal",
+      description: `${clients.length} clients in your roster`,
+      icon: Users,
+    },
   ];
 
   return (
@@ -59,9 +69,14 @@ function Dashboard() {
             </span>
             <span className="min-w-0">
               <span className="font-display block text-lg font-bold">{action.label}</span>
-              <span className="block truncate text-sm text-muted-foreground">{action.description}</span>
+              <span className="block truncate text-sm text-muted-foreground">
+                {action.description}
+              </span>
             </span>
-            <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            <ArrowRight
+              className="ml-auto h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
           </Link>
         ))}
       </div>
@@ -69,7 +84,10 @@ function Dashboard() {
       <SectionCard title="Recent scans">
         <ul className="space-y-3">
           {recent.map((scan) => (
-            <li key={scan.id} className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-border bg-card/60 p-3">
+            <li
+              key={scan.id}
+              className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-border bg-card/60 p-3"
+            >
               <img
                 src={scan.image_url}
                 alt={`${CATEGORY_LABEL[scan.category]} scan`}
@@ -81,10 +99,17 @@ function Dashboard() {
               <div className="min-w-0 flex-1">
                 <p className="font-display font-bold">
                   {CATEGORY_LABEL[scan.category]} scan
-                  {scan.client_id && <span className="ml-2 text-xs font-medium text-muted-foreground">client scan</span>}
+                  {scan.client_id && (
+                    <span className="ml-2 text-xs font-medium text-muted-foreground">
+                      client scan
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {new Date(scan.created_at).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </p>
               </div>
               <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>

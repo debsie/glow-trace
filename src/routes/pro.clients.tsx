@@ -7,12 +7,14 @@ export const Route = createFileRoute("/pro/clients")({
       { title: "Glowtrace AI — MUA Client Roster" },
       {
         name: "description",
-        content: "Your professional client roster: scans, skin prep, hair pairings and look approvals.",
+        content:
+          "Your professional client roster: scans, skin prep, hair pairings and look approvals.",
       },
       { property: "og:title", content: "Glowtrace AI — MUA Client Roster" },
       {
         property: "og:description",
-        content: "Your professional client roster: scans, skin prep, hair pairings and look approvals.",
+        content:
+          "Your professional client roster: scans, skin prep, hair pairings and look approvals.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

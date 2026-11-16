@@ -16,7 +16,11 @@ import scanNails from "@/assets/scan-nails.jpg";
 
 export const OCCASIONS = ["Wedding", "Red Carpet", "Editorial", "HD Film"] as const;
 
-export const LIGHTING_PRESETS: LightingPreset[] = ["Daylight 5000K", "Studio Flash", "Warm Candlelight"];
+export const LIGHTING_PRESETS: LightingPreset[] = [
+  "Daylight 5000K",
+  "Studio Flash",
+  "Warm Candlelight",
+];
 
 export const MOCK_PROFILE: Profile = {
   id: "u_ava",
@@ -33,7 +37,8 @@ export const MOCK_CLIENTS: Client[] = [
     client_name: "Sophia Vance",
     contact_info: "sophia.vance@mail.com · +1 415 220 8841",
     skin_type: "Combination · Sensitive",
-    notes: "Met Gala fitting on the 12th. Prefers minimal fragrance. Sensitive to alcohol-based toners.",
+    notes:
+      "Met Gala fitting on the 12th. Prefers minimal fragrance. Sensitive to alcohol-based toners.",
   },
   {
     id: "c_maya",
@@ -49,7 +54,8 @@ export const MOCK_CLIENTS: Client[] = [
     client_name: "Imani Okafor",
     contact_info: "imani.o@mail.com · +1 646 555 9033",
     skin_type: "Dry · Dehydrated",
-    notes: "Bridal client for June. Needs barrier-friendly prep, no retinoids within 5 days of the event.",
+    notes:
+      "Bridal client for June. Needs barrier-friendly prep, no retinoids within 5 days of the event.",
   },
   {
     id: "c_lena",
@@ -70,18 +76,110 @@ export const MOCK_CLIENTS: Client[] = [
 ];
 
 export const MOCK_CATALOG: Product[] = [
-  { id: "p_centella", name: "Centella Calm Serum", brand: "Dew Lab", category: "skincare", ingredients: "Centella Asiatica 8%, Panthenol, Madecassoside", is_diy: false },
-  { id: "p_hydrab5", name: "Hydra-B5 Barrier Cream", brand: "Dew Lab", category: "skincare", ingredients: "Hyaluronic Acid, Vitamin B5, Ceramide NP", is_diy: false },
-  { id: "p_bha", name: "2% BHA Polish Toner", brand: "Clearline", category: "skincare", ingredients: "Salicylic Acid 2%, Willow Bark, Green Tea", is_diy: false },
-  { id: "p_vitc", name: "Vitamin C Glow Concentrate", brand: "Lumea", category: "skincare", ingredients: "THD Ascorbate 12%, Ferulic Acid, Squalane", is_diy: false },
-  { id: "p_bond", name: "Bond Repair Treatment", brand: "Strand Theory", category: "haircare", ingredients: "Bis-aminopropyl diglycol dimaleate, Hydrolyzed keratin", is_diy: false },
-  { id: "p_nailoil", name: "Hydrating Nail & Cuticle Oil", brand: "Lacquer Lab", category: "nailcare", ingredients: "Jojoba oil, Vitamin E, Squalane", is_diy: false },
-  { id: "p_basecoat", name: "Flex Gel Base Coat", brand: "Lacquer Lab", category: "nailcare", ingredients: "HEMA-free gel polymer, Biotin", is_diy: false },
-  { id: "p_satinbase", name: "Satin Finish Foundation N4", brand: "Vellum Pro", category: "makeup", ingredients: "Water, Glycerin, Dimethicone, Iron oxides (neutral cool)", is_diy: false },
-  { id: "p_diy_avocado", name: "Avocado Hydration Mask", brand: "Home Kitchen", category: "skincare", ingredients: "Avocado, honey, colloidal oats", is_diy: true, recipe_instructions: "1. Mash half a ripe avocado with 1 tbsp honey and 2 tbsp colloidal oats.\n2. Apply a thick layer to clean skin.\n3. Rest for 15 minutes, rinse with lukewarm water.\n4. Follow with barrier cream. Use up to 2× per week." },
-  { id: "p_diy_rice", name: "Fermented Rice Water Rinse", brand: "Home Kitchen", category: "haircare", ingredients: "Rice water, fermented 24–48h", is_diy: true, recipe_instructions: "1. Rinse ½ cup rice, soak in 2 cups water for 24–48h until slightly sour.\n2. After shampooing, pour over mid-lengths and ends.\n3. Leave 5 minutes, then condition.\n4. Use weekly for protein rebuilding." },
-  { id: "p_diy_aloe", name: "Aloe & Oat Calm Mask", brand: "Home Kitchen", category: "skincare", ingredients: "Aloe vera gel, colloidal oats, cucumber", is_diy: true, recipe_instructions: "1. Blend 3 tbsp aloe gel with 1 tbsp colloidal oats and chilled cucumber pulp.\n2. Apply to flushed areas for 10 minutes.\n3. Rinse cool and pat dry. Safe for daily use during flare-ups." },
-  { id: "p_diy_turmeric", name: "Turmeric & Yogurt Brightening Mask", brand: "Home Kitchen", category: "skincare", ingredients: "Greek yogurt, turmeric, lemon-free", is_diy: true, recipe_instructions: "1. Mix 2 tbsp Greek yogurt with ¼ tsp turmeric.\n2. Apply thin layer for 10 minutes (no longer — turmeric stains).\n3. Rinse and moisturize. Use 1–2× per week." },
+  {
+    id: "p_centella",
+    name: "Centella Calm Serum",
+    brand: "Dew Lab",
+    category: "skincare",
+    ingredients: "Centella Asiatica 8%, Panthenol, Madecassoside",
+    is_diy: false,
+  },
+  {
+    id: "p_hydrab5",
+    name: "Hydra-B5 Barrier Cream",
+    brand: "Dew Lab",
+    category: "skincare",
+    ingredients: "Hyaluronic Acid, Vitamin B5, Ceramide NP",
+    is_diy: false,
+  },
+  {
+    id: "p_bha",
+    name: "2% BHA Polish Toner",
+    brand: "Clearline",
+    category: "skincare",
+    ingredients: "Salicylic Acid 2%, Willow Bark, Green Tea",
+    is_diy: false,
+  },
+  {
+    id: "p_vitc",
+    name: "Vitamin C Glow Concentrate",
+    brand: "Lumea",
+    category: "skincare",
+    ingredients: "THD Ascorbate 12%, Ferulic Acid, Squalane",
+    is_diy: false,
+  },
+  {
+    id: "p_bond",
+    name: "Bond Repair Treatment",
+    brand: "Strand Theory",
+    category: "haircare",
+    ingredients: "Bis-aminopropyl diglycol dimaleate, Hydrolyzed keratin",
+    is_diy: false,
+  },
+  {
+    id: "p_nailoil",
+    name: "Hydrating Nail & Cuticle Oil",
+    brand: "Lacquer Lab",
+    category: "nailcare",
+    ingredients: "Jojoba oil, Vitamin E, Squalane",
+    is_diy: false,
+  },
+  {
+    id: "p_basecoat",
+    name: "Flex Gel Base Coat",
+    brand: "Lacquer Lab",
+    category: "nailcare",
+    ingredients: "HEMA-free gel polymer, Biotin",
+    is_diy: false,
+  },
+  {
+    id: "p_satinbase",
+    name: "Satin Finish Foundation N4",
+    brand: "Vellum Pro",
+    category: "makeup",
+    ingredients: "Water, Glycerin, Dimethicone, Iron oxides (neutral cool)",
+    is_diy: false,
+  },
+  {
+    id: "p_diy_avocado",
+    name: "Avocado Hydration Mask",
+    brand: "Home Kitchen",
+    category: "skincare",
+    ingredients: "Avocado, honey, colloidal oats",
+    is_diy: true,
+    recipe_instructions:
+      "1. Mash half a ripe avocado with 1 tbsp honey and 2 tbsp colloidal oats.\n2. Apply a thick layer to clean skin.\n3. Rest for 15 minutes, rinse with lukewarm water.\n4. Follow with barrier cream. Use up to 2× per week.",
+  },
+  {
+    id: "p_diy_rice",
+    name: "Fermented Rice Water Rinse",
+    brand: "Home Kitchen",
+    category: "haircare",
+    ingredients: "Rice water, fermented 24–48h",
+    is_diy: true,
+    recipe_instructions:
+      "1. Rinse ½ cup rice, soak in 2 cups water for 24–48h until slightly sour.\n2. After shampooing, pour over mid-lengths and ends.\n3. Leave 5 minutes, then condition.\n4. Use weekly for protein rebuilding.",
+  },
+  {
+    id: "p_diy_aloe",
+    name: "Aloe & Oat Calm Mask",
+    brand: "Home Kitchen",
+    category: "skincare",
+    ingredients: "Aloe vera gel, colloidal oats, cucumber",
+    is_diy: true,
+    recipe_instructions:
+      "1. Blend 3 tbsp aloe gel with 1 tbsp colloidal oats and chilled cucumber pulp.\n2. Apply to flushed areas for 10 minutes.\n3. Rinse cool and pat dry. Safe for daily use during flare-ups.",
+  },
+  {
+    id: "p_diy_turmeric",
+    name: "Turmeric & Yogurt Brightening Mask",
+    brand: "Home Kitchen",
+    category: "skincare",
+    ingredients: "Greek yogurt, turmeric, lemon-free",
+    is_diy: true,
+    recipe_instructions:
+      "1. Mix 2 tbsp Greek yogurt with ¼ tsp turmeric.\n2. Apply thin layer for 10 minutes (no longer — turmeric stains).\n3. Rinse and moisturize. Use 1–2× per week.",
+  },
 ];
 
 export const MOCK_INVENTORY: InventoryItem[] = [
@@ -143,7 +241,8 @@ export const MOCK_LOOKS: EventLook[] = [
       "Hydrating primer, silicone-free on T-zone",
     ],
     makeup_base: "Neutral Cool — Satin Finish, buildable medium coverage",
-    hair_wig_style: "Silk-top lace wig, deep wave 22\" · heat protectant pass at 180°C, matte styling cream finish",
+    hair_wig_style:
+      'Silk-top lace wig, deep wave 22" · heat protectant pass at 180°C, matte styling cream finish',
     nail_design: "Chrome Velvet Almond Finish — rose quartz chrome over soft-gel almond tips",
     status: "drafting",
     approved: false,

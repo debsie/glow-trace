@@ -13,12 +13,14 @@ export const Route = createFileRoute("/pro/clients/$id/lookbook")({
       { title: "Glowtrace AI — Client Lookbook" },
       {
         name: "description",
-        content: "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
+        content:
+          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
       },
       { property: "og:title", content: "Glowtrace AI — Client Lookbook" },
       {
         property: "og:description",
-        content: "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
+        content:
+          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -29,8 +31,16 @@ export const Route = createFileRoute("/pro/clients/$id/lookbook")({
 
 function LookbookPage() {
   const { id } = Route.useParams();
-  const { clients, scans, looks, updateLook, sendLookForClient, approveLookForClient, toggleLighting, saveLookToHistory } =
-    useAppState();
+  const {
+    clients,
+    scans,
+    looks,
+    updateLook,
+    sendLookForClient,
+    approveLookForClient,
+    toggleLighting,
+    saveLookToHistory,
+  } = useAppState();
   const client = clients.find((item) => item.id === id);
   const look = looks.find((item) => item.client_id === id);
   const [previewMode, setPreviewMode] = useState(false);
@@ -62,7 +72,10 @@ function LookbookPage() {
         <h1 className="font-display text-3xl font-bold">Client not found</h1>
         <SectionCard>
           <p className="text-muted-foreground">This client isn't in your roster.</p>
-          <Link to="/pro/clients" className="mt-3 inline-flex min-h-[50px] items-center font-semibold text-primary hover:underline">
+          <Link
+            to="/pro/clients"
+            className="mt-3 inline-flex min-h-[50px] items-center font-semibold text-primary hover:underline"
+          >
             Back to roster
           </Link>
         </SectionCard>
@@ -74,13 +87,20 @@ function LookbookPage() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <Link to="/pro/clients/$id" params={{ id: client.id }} aria-label="Back to client dashboard" className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card">
+          <Link
+            to="/pro/clients/$id"
+            params={{ id: client.id }}
+            aria-label="Back to client dashboard"
+            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card"
+          >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
           <h1 className="font-display text-2xl font-bold">{client.client_name} — Lookbook</h1>
         </div>
         <SectionCard>
-          <p aria-live="polite" className="text-muted-foreground">Preparing the lookbook from the latest scan…</p>
+          <p aria-live="polite" className="text-muted-foreground">
+            Preparing the lookbook from the latest scan…
+          </p>
         </SectionCard>
       </div>
     );
@@ -143,11 +163,12 @@ function LookbookPage() {
             <StatusBadge status={look.status} />
           </div>
         </div>
-        <GhostButton
-          onClick={() => setPreviewMode((mode) => !mode)}
-          aria-pressed={previewMode}
-        >
-          {previewMode ? <Pencil className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+        <GhostButton onClick={() => setPreviewMode((mode) => !mode)} aria-pressed={previewMode}>
+          {previewMode ? (
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          )}
           {previewMode ? "Back to Edit Mode" : "Preview Client Share Link"}
         </GhostButton>
       </div>
@@ -155,7 +176,8 @@ function LookbookPage() {
       {previewMode && (
         <div className="glass glow-violet p-4" role="status">
           <p className="text-sm font-semibold text-accent">
-            Read-only client view — this is exactly what {client.client_name.split(" ")[0]} sees on the share link.
+            Read-only client view — this is exactly what {client.client_name.split(" ")[0]} sees on
+            the share link.
           </p>
         </div>
       )}
@@ -164,7 +186,10 @@ function LookbookPage() {
       <SectionCard title={`Event · ${occasionTag}`}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="occasion" className="mb-1 block text-sm font-semibold text-muted-foreground">
+            <label
+              htmlFor="occasion"
+              className="mb-1 block text-sm font-semibold text-muted-foreground"
+            >
               Occasion
             </label>
             <select
@@ -194,7 +219,9 @@ function LookbookPage() {
                     disabled={locked}
                     onClick={() => toggleLighting(client.id, preset)}
                     className={`min-h-[50px] rounded-full border px-4 text-sm font-semibold transition-colors disabled:opacity-60 ${
-                      active ? "ai-gradient border-transparent text-white" : "border-border bg-card text-muted-foreground"
+                      active
+                        ? "ai-gradient border-transparent text-white"
+                        : "border-border bg-card text-muted-foreground"
                     }`}
                   >
                     {preset}
@@ -229,7 +256,10 @@ function LookbookPage() {
             </div>
           ) : (
             <>
-              <label htmlFor="client-note" className="mb-1 block text-sm font-semibold text-muted-foreground">
+              <label
+                htmlFor="client-note"
+                className="mb-1 block text-sm font-semibold text-muted-foreground"
+              >
                 Add requests or adjustments for your MUA…
               </label>
               <textarea

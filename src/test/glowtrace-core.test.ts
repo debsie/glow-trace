@@ -28,7 +28,9 @@ describe("Diagnostic gauges", () => {
 
   it("scores wellness as 100 minus the average biomarker load", () => {
     const b = MOCK_BIOMARKERS.skin;
-    expect(wellnessScore(b)).toBe(Math.round(100 - (b.redness + b.dryness + b.texture + b.porosity + b.discoloration) / 5));
+    expect(wellnessScore(b)).toBe(
+      Math.round(100 - (b.redness + b.dryness + b.texture + b.porosity + b.discoloration) / 5),
+    );
   });
 });
 
@@ -43,7 +45,11 @@ describe("Shelf matcher", () => {
   });
 
   it("matches in-stock products and surfaces DIY alternatives for missing ones", () => {
-    const matches = matchShelf(activeNeeds(MOCK_BIOMARKERS.skin, "skin"), MOCK_INVENTORY, MOCK_CATALOG);
+    const matches = matchShelf(
+      activeNeeds(MOCK_BIOMARKERS.skin, "skin"),
+      MOCK_INVENTORY,
+      MOCK_CATALOG,
+    );
     const calm = matches.find((match) => match.need.id === "calm");
     expect(calm?.inStock).toBe(true);
     expect(calm?.product.name).toBe("Centella Calm Serum");

@@ -1,4 +1,11 @@
-import type { Biomarkers, EventLook, InventoryItem, LookStatus, Product, ScanCategory } from "./types";
+import type {
+  Biomarkers,
+  EventLook,
+  InventoryItem,
+  LookStatus,
+  Product,
+  ScanCategory,
+} from "./types";
 
 /** Pure Glowtrace AI logic: gauge specs, shelf matching, lookbook status. */
 
@@ -33,7 +40,13 @@ export const wellnessScore = (b: Biomarkers): number =>
   Math.round(100 - (b.redness + b.dryness + b.texture + b.porosity + b.discoloration) / 5);
 
 export const scoreVerdict = (score: number): string =>
-  score >= 80 ? "Excellent" : score >= 65 ? "Balanced" : score >= 50 ? "Needs care" : "Priority care";
+  score >= 80
+    ? "Excellent"
+    : score >= 65
+      ? "Balanced"
+      : score >= 50
+        ? "Needs care"
+        : "Priority care";
 
 /* ---------- Shelf matcher ---------- */
 
@@ -46,12 +59,48 @@ export type CareNeed = {
 };
 
 export const CARE_NEEDS: CareNeed[] = [
-  { id: "calm", label: "Calm & soothe redness", biomarker: "redness", threshold: 35, recommendedProductId: "p_centella" },
-  { id: "hydrate", label: "Deep hydration & barrier repair", biomarker: "dryness", threshold: 35, recommendedProductId: "p_hydrab5" },
-  { id: "smooth", label: "Smooth & refine texture", biomarker: "texture", threshold: 35, recommendedProductId: "p_bha" },
-  { id: "strength", label: "Rebuild hair strength", biomarker: "porosity", threshold: 40, recommendedProductId: "p_bond" },
-  { id: "brighten", label: "Brighten discoloration", biomarker: "discoloration", threshold: 35, recommendedProductId: "p_vitc" },
-  { id: "nails", label: "Nourish nails & cuticles", biomarker: "dryness", threshold: 35, recommendedProductId: "p_nailoil" },
+  {
+    id: "calm",
+    label: "Calm & soothe redness",
+    biomarker: "redness",
+    threshold: 35,
+    recommendedProductId: "p_centella",
+  },
+  {
+    id: "hydrate",
+    label: "Deep hydration & barrier repair",
+    biomarker: "dryness",
+    threshold: 35,
+    recommendedProductId: "p_hydrab5",
+  },
+  {
+    id: "smooth",
+    label: "Smooth & refine texture",
+    biomarker: "texture",
+    threshold: 35,
+    recommendedProductId: "p_bha",
+  },
+  {
+    id: "strength",
+    label: "Rebuild hair strength",
+    biomarker: "porosity",
+    threshold: 40,
+    recommendedProductId: "p_bond",
+  },
+  {
+    id: "brighten",
+    label: "Brighten discoloration",
+    biomarker: "discoloration",
+    threshold: 35,
+    recommendedProductId: "p_vitc",
+  },
+  {
+    id: "nails",
+    label: "Nourish nails & cuticles",
+    biomarker: "dryness",
+    threshold: 35,
+    recommendedProductId: "p_nailoil",
+  },
 ];
 
 export const activeNeeds = (b: Biomarkers, category: ScanCategory): CareNeed[] =>
@@ -111,7 +160,10 @@ export const matchShelf = (
 
 /* ---------- Lookbook ---------- */
 
-export const LOOK_STATUS_META: Record<LookStatus, { label: string; tone: "muted" | "accent" | "success"; icon: "edit" | "send" | "check" }> = {
+export const LOOK_STATUS_META: Record<
+  LookStatus,
+  { label: string; tone: "muted" | "accent" | "success"; icon: "edit" | "send" | "check" }
+> = {
   drafting: { label: "Drafting", tone: "muted", icon: "edit" },
   sent: { label: "Sent for Client Approval", tone: "accent", icon: "send" },
   approved: { label: "Approved by Client", tone: "success", icon: "check" },
@@ -134,6 +186,8 @@ export const lookForClient = (looks: EventLook[], clientId: string): EventLook |
   looks.find((look) => look.client_id === clientId);
 
 export const latestScanFor = (scans: { created_at: string }[], category?: ScanCategory) => {
-  const pool = category ? scans.filter((s) => ("category" in s ? s.category === category : false)) : scans;
+  const pool = category
+    ? scans.filter((s) => ("category" in s ? s.category === category : false))
+    : scans;
   return [...pool].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
 };
