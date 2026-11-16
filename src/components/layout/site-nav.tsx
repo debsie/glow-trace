@@ -1,16 +1,18 @@
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Home, ScanLine, Sparkles, Users } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Droplets, Gift, Home, ScanLine, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { TierBadge } from "@/components/ui/bits";
+import { LogoMark, TierBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { PLANS, scansLeft } from "@/lib/plans";
 import type { Workspace } from "@/lib/types";
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/", label: "Home", icon: Home },
+  { to: "/app", label: "Home", icon: Home },
   { to: "/scan", label: "Scan", icon: ScanLine },
-  { to: "/routine", label: "Routine", icon: Sparkles },
+  { to: "/routine", label: "Routine", icon: Droplets },
   { to: "/pro/clients", label: "Clients", icon: Users },
+  { to: "/refer", label: "Earn", icon: Gift },
 ];
 
 const WorkspaceSwitcher = () => {
@@ -21,7 +23,7 @@ const WorkspaceSwitcher = () => {
   ];
   return (
     <div
-      className="flex rounded-full border border-border bg-secondary/60 p-1"
+      className="flex rounded-full border border-border bg-secondary p-1"
       role="tablist"
       aria-label="Workspace"
     >
@@ -34,7 +36,7 @@ const WorkspaceSwitcher = () => {
           onClick={() => setWorkspace(option.id)}
           className={`min-h-[44px] rounded-full px-4 text-sm font-semibold transition-colors ${
             workspace === option.id
-              ? "ai-gradient text-white"
+              ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -52,26 +54,30 @@ const ProfilePill = () => {
     .map((part) => part[0])
     .join("");
   return (
-    <div className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5">
-      <span className="ai-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
+    <Link
+      to="/pricing"
+      aria-label={`${profile.display_name}, ${PLANS[profile.subscription_tier].name} plan — view plans`}
+      className="flex min-h-[50px] items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5"
+    >
+      <span className="bg-primary flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
         {initials}
       </span>
       <span className="hidden text-sm font-semibold sm:block">{profile.display_name}</span>
       <TierBadge tier={profile.subscription_tier} />
-    </div>
+    </Link>
   );
 };
 
 const Logo = () => (
-  <Link to="/" className="flex min-h-[44px] items-center gap-2">
-    <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-    <span className="ai-text font-display text-xl font-extrabold">Glowtrace AI</span>
+  <Link to="/app" className="flex min-h-[50px] items-center gap-2">
+    <LogoMark />
+    <span className="font-display text-xl font-semibold text-foreground">Glowtrace</span>
   </Link>
 );
 
 const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
+  const isActive = (to: string) => pathname.startsWith(to);
   if (layout === "side") {
     return (
       <nav aria-label="Primary" className="flex flex-col gap-1">
@@ -79,10 +85,11 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
           <Link
             key={item.to}
             to={item.to}
+            aria-current={isActive(item.to) ? "page" : undefined}
             className={`flex min-h-[50px] items-center gap-3 rounded-xl px-4 text-base font-semibold transition-colors ${
               isActive(item.to)
                 ? "bg-accent/15 text-accent"
-                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
             <item.icon className="h-5 w-5" aria-hidden="true" />
@@ -93,7 +100,7 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
     );
   }
   return (
-    <nav aria-label="Primary" className="grid grid-cols-4">
+    <nav aria-label="Primary" className="grid grid-cols-5">
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.to}
@@ -111,10 +118,32 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
   );
 };
 
+const PlanSummary = () => {
+  const { tier, usage, rewards } = useAppState();
+  const left = scansLeft(tier, usage.scans, rewards.bonusScans);
+  return (
+    <Link
+      to="/pricing"
+      className="mt-6 block min-h-[50px] rounded-xl px-4 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+    >
+      <span className="block font-semibold text-foreground">{PLANS[tier].name} plan</span>
+      {left === null ? "Unlimited check-ins" : `${left} free check-ins left this month`}
+      <span className="block text-primary">See plans and pricing</span>
+    </Link>
+  );
+};
+
 /** App shell: sticky top bar, side rail on desktop, bottom nav on mobile. */
-export const SiteShell = ({ children }: { children: React.ReactNode }) => (
+export const SiteShell = ({ children }: { children: React.ReactNode }) => {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // The landing page brings its own header and footer.
+  if (pathname === "/") return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
+};
+
+const AppShell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-dvh">
-    <header className="glass sticky top-0 z-40 flex items-center justify-between gap-3 rounded-none border-x-0 border-t-0 px-4 py-3">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
       <Logo />
       <div className="hidden sm:block">
         <WorkspaceSwitcher />
@@ -128,15 +157,13 @@ export const SiteShell = ({ children }: { children: React.ReactNode }) => (
           <WorkspaceSwitcher />
         </div>
         <NavLinkList layout="side" />
-        <p className="mt-6 px-4 text-xs text-muted-foreground">
-          Enterprise tier · unlimited AI scans
-        </p>
+        <PlanSummary />
       </aside>
 
       <main className="min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">{children}</main>
     </div>
 
-    <div className="glass fixed inset-x-0 bottom-0 z-40 rounded-none border-x-0 border-b-0 lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
       <NavLinkList layout="bottom" />
     </div>
   </div>

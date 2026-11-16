@@ -6,26 +6,17 @@ import { toast } from "sonner";
 import { Badge, GhostButton, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { OCCASIONS, LIGHTING_PRESETS } from "@/lib/mock-data";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/pro/clients/$id/lookbook")({
-  head: () => ({
-    meta: [
-      { title: "Glowtrace AI — Client Lookbook" },
-      {
-        name: "description",
-        content:
-          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
-      },
-      { property: "og:title", content: "Glowtrace AI — Client Lookbook" },
-      {
-        property: "og:description",
-        content:
-          "Event lookbook: skin prep, makeup base, hair styling and nail art with client approval sign-off.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Client Lookbook — Glowtrace MUA Studio",
+      description:
+        "Event lookbook with skin prep, makeup base, hair and nails, ready for sign-off.",
+      path: "/pro/clients",
+      noindex: true,
+    }),
   component: LookbookPage,
 });
 
@@ -69,7 +60,7 @@ function LookbookPage() {
   if (!client) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-3xl font-bold">Client not found</h1>
+        <h1 className="font-display text-3xl font-semibold">Client not found</h1>
         <SectionCard>
           <p className="text-muted-foreground">This client isn't in your roster.</p>
           <Link
@@ -91,11 +82,11 @@ function LookbookPage() {
             to="/pro/clients/$id"
             params={{ id: client.id }}
             aria-label="Back to client dashboard"
-            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card"
+            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-border bg-card"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
-          <h1 className="font-display text-2xl font-bold">{client.client_name} — Lookbook</h1>
+          <h1 className="font-display text-2xl font-semibold">{client.client_name} — Lookbook</h1>
         </div>
         <SectionCard>
           <p aria-live="polite" className="text-muted-foreground">
@@ -154,12 +145,12 @@ function LookbookPage() {
             to="/pro/clients/$id"
             params={{ id: client.id }}
             aria-label="Back to client dashboard"
-            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card"
+            className="inline-flex h-[50px] w-[50px] items-center justify-center rounded-lg border border-border bg-card"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
           <div>
-            <h1 className="font-display text-2xl font-bold">{client.client_name}</h1>
+            <h1 className="font-display text-2xl font-semibold">{client.client_name}</h1>
             <StatusBadge status={look.status} />
           </div>
         </div>
@@ -174,7 +165,7 @@ function LookbookPage() {
       </div>
 
       {previewMode && (
-        <div className="glass glow-violet p-4" role="status">
+        <div className="surface-strong p-4" role="status">
           <p className="text-sm font-semibold text-accent">
             Read-only client view — this is exactly what {client.client_name.split(" ")[0]} sees on
             the share link.
@@ -218,9 +209,9 @@ function LookbookPage() {
                     aria-pressed={active}
                     disabled={locked}
                     onClick={() => toggleLighting(client.id, preset)}
-                    className={`min-h-[50px] rounded-full border px-4 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                    className={`min-h-[50px] rounded-lg border px-4 text-sm font-semibold transition-colors disabled:opacity-60 ${
                       active
-                        ? "ai-gradient border-transparent text-white"
+                        ? "bg-primary border-transparent text-primary-foreground"
                         : "border-border bg-card text-muted-foreground"
                     }`}
                   >
@@ -244,7 +235,7 @@ function LookbookPage() {
 
       {/* Client approval view */}
       {previewMode && (
-        <SectionCard title="Client sign-off" className="glow-violet">
+        <SectionCard title="Client sign-off" className="">
           {look.approved ? (
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-success/20 text-success">
@@ -288,7 +279,7 @@ function LookbookPage() {
       )}
 
       {/* Bottom action bar */}
-      <div className="glass sticky bottom-20 z-30 flex flex-wrap items-center justify-center gap-2 p-3 lg:bottom-6">
+      <div className="surface sticky bottom-20 z-30 flex flex-wrap items-center justify-center gap-2 p-3 lg:bottom-6">
         <GhostButton onClick={() => toast.success("PDF brief exported to your files.")}>
           <Download className="h-4 w-4" aria-hidden="true" /> Export PDF Brief
         </GhostButton>

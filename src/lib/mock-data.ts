@@ -27,7 +27,7 @@ export const MOCK_PROFILE: Profile = {
   email: "ava.reyes@glowtrace.ai",
   display_name: "Ava Reyes",
   role: "mua",
-  subscription_tier: "enterprise",
+  subscription_tier: "free",
 };
 
 export const MOCK_CLIENTS: Client[] = [

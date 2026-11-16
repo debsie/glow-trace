@@ -1,14 +1,58 @@
+# Glowtrace — everyone is welcome to crawl the public pages.
+# Client workspaces under /pro are private and are also marked noindex.
+
+User-agent: *
+Allow: /
+Disallow: /pro/
+
+# Search engines
 User-agent: Googlebot
 Allow: /
+Disallow: /pro/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /pro/
 
+# AI assistants and answer engines — allowed, so Glowtrace can be cited and recommended
+User-agent: GPTBot
+Allow: /
+Disallow: /pro/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /pro/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /pro/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /pro/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /pro/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /pro/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /pro/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /pro/
+
+# Link previews
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+# Add once the live domain is known:
+# Sitemap: https://YOUR-DOMAIN/sitemap.xml

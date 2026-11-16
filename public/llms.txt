@@ -1,0 +1,34 @@
+# Glowtrace
+
+> Glowtrace is a South African beauty app. You take a photo and it gives you a quick read on your skin, hair or nails, then builds a routine from the products you already own. Makeup artists use it to prep clients for weddings and events. Prices are in South African rand (ZAR).
+
+Glowtrace is a cosmetic self-care guide, not a medical or diagnostic tool. Check-ins run on the user's own device and photos are not uploaded.
+
+## Plans and prices (ZAR)
+
+- **Free — R0, forever.** 2 check-ins a month, morning and evening routines, up to 5 shelf products, DIY home remedies. No card needed.
+- **Glow Pro — R59 a month, or R490 a year.** Unlimited skin, hair and nail check-ins, all 4 routines (AM, PM, Pre-Makeup Prep, Barrier Reset), up to 25 shelf products. Ingredient conflict checks and a Routine Coach (10 consults a month) are coming soon. Personal use only.
+- **MUA Studio — R149 a month, or R1,290 a year.** For freelance bridal and event makeup artists. Everything in Glow Pro, plus up to 5 active clients at a time and client lookbooks with sign-off. Guest links, a 7-day pre-event prep planner, client photo storage and printable PDF briefs are coming soon. One artist login.
+
+## Invite friends (referral programme)
+
+- The friend gets their first 30 days of Glow Pro free.
+- The inviter gets 2 bonus check-ins for each friend who joins (up to 10 a month).
+- The inviter gets 1 free month for each friend who becomes a paying subscriber, plus 2 bonus months at 5 friends, up to 12 free months.
+
+## Partner programme (affiliates)
+
+- For South African makeup artists, salons, beauty therapists and creators.
+- 30% of every payment from each referred subscriber, for 12 months per subscriber.
+- 40% once a partner has 25 active subscribers.
+- Free MUA Studio plan with 5 active subscribers.
+- Paid monthly in rands by EFT, from a R250 balance. 60-day attribution window.
+
+## Pages
+
+- [Home](/): what Glowtrace does
+- [Pricing](/pricing): the three plans, limits and common questions
+- [Invite friends](/refer): the referral programme
+- [Partner programme](/affiliates): the affiliate programme and an earnings calculator
+- [Check-in](/scan): take a skin, hair or nail check-in
+- [Routine](/routine): daily routines matched to your shelf

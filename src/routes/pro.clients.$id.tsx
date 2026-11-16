@@ -1,24 +1,14 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-/** Layout for a single client; content renders in pro.clients.$id.index.tsx and the lookbook route. */
+/** Layout for a single client; content renders in pro.clients.$id.index.tsx and the lookbook route. */ import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/pro/clients/$id")({
-  head: () => ({
-    meta: [
-      { title: "Glowtrace AI — Client Dashboard" },
-      {
-        name: "description",
-        content:
-          "Client scans, assigned skin prep, hair and wig pairings, nail art concepts and look status.",
-      },
-      { property: "og:title", content: "Glowtrace AI — Client Dashboard" },
-      {
-        property: "og:description",
-        content:
-          "Client scans, assigned skin prep, hair and wig pairings, nail art concepts and look status.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Client — Glowtrace MUA Studio",
+      description: "Client check-ins, skin prep, hair and nail notes and look status.",
+      path: "/pro/clients",
+      noindex: true,
+    }),
   component: Outlet,
 });

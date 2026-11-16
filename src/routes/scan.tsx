@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Camera, ImageIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,9 +11,13 @@ import {
   PrimaryButton,
   SectionCard,
 } from "@/components/ui/bits";
+import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scoreVerdict, wellnessScore } from "@/lib/beauty";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
+import type { BlockedGate } from "@/lib/plans";
+import { scanAllowance, scanGate, scansLeft } from "@/lib/plans";
+import { pageHead } from "@/lib/seo";
 import type { DiagnosticScan, ScanCategory } from "@/lib/types";
 
 import scanSkin from "@/assets/scan-skin.jpg";
@@ -21,24 +25,13 @@ import scanHair from "@/assets/scan-hair.jpg";
 import scanNails from "@/assets/scan-nails.jpg";
 
 export const Route = createFileRoute("/scan")({
-  head: () => ({
-    meta: [
-      { title: "Glowtrace AI — Diagnostic Scan" },
-      {
-        name: "description",
-        content:
-          "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
-      },
-      { property: "og:title", content: "Glowtrace AI — Diagnostic Scan" },
-      {
-        property: "og:description",
-        content:
-          "Upload a photo and run an AI analysis of skin, hair or nails with biomarker gauges.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Skin, Hair & Nail Check-In — Glowtrace",
+      description:
+        "Take a photo and get a quick read on your skin, hair or nails, scored on your own device. 2 free check-ins a month; unlimited with Glow Pro for R59.",
+      path: "/scan",
+    }),
   component: ScanPage,
 });
 
@@ -79,7 +72,7 @@ const UploadZone = ({
         const file = event.dataTransfer.files[0];
         if (file) onFile(file);
       }}
-      className={`relative overflow-hidden rounded-3xl border-2 border-dashed transition-colors ${
+      className={`relative overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
         dragOver ? "border-primary bg-primary/10" : "border-border bg-card/50"
       }`}
     >
@@ -87,14 +80,14 @@ const UploadZone = ({
         <img
           src={previewUrl}
           alt={`Selected ${category} photo preview`}
-          className="mx-auto max-h-72 w-full rounded-3xl object-cover"
+          className="mx-auto max-h-72 w-full rounded-xl object-cover"
         />
       ) : (
         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <span className="ai-gradient flex h-14 w-14 items-center justify-center rounded-2xl text-white">
+          <span className="bg-primary flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground">
             <Camera className="h-7 w-7" aria-hidden="true" />
           </span>
-          <p className="font-display text-lg font-bold">Drop a {category} photo here</p>
+          <p className="font-display text-lg font-semibold">Drop a {category} photo here</p>
           <p className="text-sm text-muted-foreground">
             Or use your camera roll — analysis runs on-device in this preview.
           </p>
@@ -125,16 +118,27 @@ const UploadZone = ({
 /* ---------- Scan page ---------- */
 
 function ScanPage() {
-  const { scans, addScan } = useAppState();
+  const { scans, addScan, tier, usage, rewards } = useAppState();
   const [category, setCategory] = useState<ScanCategory>("skin");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<number | null>(null);
   const [result, setResult] = useState<DiagnosticScan | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
   const [makeupOpen, setMakeupOpen] = useState(false);
+  const [blocked, setBlocked] = useState<BlockedGate | null>(null);
+
+  const allowance = scanAllowance(tier, rewards.bonusScans);
+  const left = scansLeft(tier, usage.scans, rewards.bonusScans);
 
   const runAnalysis = () => {
     if (step !== null) return;
+    // Check the plan limit before any work starts, so nobody waits for a result they can't see.
+    const gate = scanGate(tier, usage.scans, rewards.bonusScans);
+    if (!gate.allowed) {
+      setBlocked(gate);
+      return;
+    }
+    setBlocked(null);
     setStep(0);
     const timers = ANALYSIS_STEPS.map((_, index) =>
       window.setTimeout(() => setStep(index), 450 * (index + 1)),
@@ -148,8 +152,12 @@ function ScanPage() {
         image_url:
           previewUrl ?? CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin,
       });
+      if ("allowed" in scan) {
+        if (!scan.allowed) setBlocked(scan);
+        return;
+      }
       setResult(scan);
-      toast.success("Analysis complete — biomarkers scored.");
+      toast.success("Analysis complete. Indicators scored.");
     }, 1500);
   };
 
@@ -162,7 +170,7 @@ function ScanPage() {
     <div className="space-y-6">
       <PageHeader
         title="Diagnostic Scan"
-        subtitle="Capture, upload and analyze — AI scores five biomarkers per category."
+        subtitle="Upload a photo and read your skin, hair or nail indicators."
       />
 
       <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Scan category">
@@ -177,9 +185,9 @@ function ScanPage() {
               setResult(null);
               setPreviewUrl(null);
             }}
-            className={`min-h-[50px] rounded-2xl border text-base font-bold transition-colors ${
+            className={`min-h-[50px] rounded-2xl border text-base font-semibold transition-colors ${
               category === tab.id
-                ? "ai-gradient border-transparent text-white"
+                ? "bg-primary border-transparent text-primary-foreground"
                 : "border-border bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -198,19 +206,31 @@ function ScanPage() {
         }}
       />
 
+      {blocked && <UpgradeCard gate={blocked} showInvite onDismiss={() => setBlocked(null)} />}
+
       <PrimaryButton onClick={runAnalysis} disabled={step !== null} className="w-full">
-        <Sparkles className="h-5 w-5" aria-hidden="true" />
-        {step !== null ? ANALYSIS_STEPS[step] : "Run AI Analysis"}
+        <Droplets className="h-5 w-5" aria-hidden="true" />
+        {step !== null ? ANALYSIS_STEPS[step] : "Run analysis"}
       </PrimaryButton>
       <p aria-live="polite" className="sr-only">
         {step !== null ? ANALYSIS_STEPS[step] : "Ready to analyze."}
+      </p>
+      <p className="text-center text-sm text-muted-foreground">
+        {allowance === null
+          ? "Unlimited check-ins on your plan."
+          : `${left} of ${allowance} free check-ins left this month.`}{" "}
+        {allowance !== null && (
+          <Link to="/pricing" className="font-semibold text-primary hover:underline">
+            Go unlimited
+          </Link>
+        )}
       </p>
 
       {shown && (
         <SectionCard title={`${category} analysis`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-display text-2xl font-bold">
+              <p className="font-display text-2xl font-semibold">
                 {wellnessScore(shown.biomarkers)}
                 <span className="text-base text-muted-foreground"> / 100</span>
               </p>
@@ -230,7 +250,12 @@ function ScanPage() {
           </div>
           <div className="mt-4 space-y-4">
             {gaugesFor(category, shown.biomarkers).map((gauge) => (
-              <Gauge key={gauge.key} label={gauge.label} value={gauge.value} />
+              <Gauge
+                key={gauge.key}
+                label={gauge.label}
+                value={gauge.value}
+                caption={gauge.caption}
+              />
             ))}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -281,7 +306,7 @@ function ScanPage() {
 
           {makeupOpen && (
             <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4">
-              <p className="font-display font-bold text-accent">Makeup Base &amp; Prep</p>
+              <p className="font-display font-semibold text-accent">Makeup Base &amp; Prep</p>
               <p className="mt-1 text-sm text-foreground">
                 Base: <strong>Neutral Cool — Satin Finish</strong>, buildable medium coverage over a
                 hydrated, primed barrier.
