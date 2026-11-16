@@ -32,3 +32,17 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 - Lovable sync: never force-push, rebase, or amend pushed commits. Keep the branch buildable.
 - Proprietary code: do not add dependencies with copyleft licenses (GPL/AGPL) without asking.
 - Extend tests in `src/test/` whenever logic rules change.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `debsie/glow-trace`; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root, created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
