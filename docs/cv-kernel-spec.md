@@ -117,3 +117,31 @@ Use synthetic pixel fixtures — build `ImageData` directly from `Uint8ClampedAr
 
 - Typecheck clean; all existing + new tests pass.
 - In the browser: upload a photo (any image) on `/scan` → real gauges appear from the kernel, report is stored, and an unusable/dark image shows the notice + demo fallback.
+
+## Calibration v1.1 (implemented, `mojocv-v1.1.0-ts-fallback`)
+
+The v1 constants above assumed tight close-up crops. Real photos include edges, background and
+framing, and with them several indicators sat pinned at 0 or 100 on the bundled sample photos.
+The shipped kernel changes these, measured against `src/assets/scan-{skin,hair,nails}.jpg`
+downscaled to 256 px:
+
+| Indicator                       | v1                       | v1.1                                                                                 |
+| ------------------------------- | ------------------------ | ------------------------------------------------------------------------------------ |
+| Specular ratio                  | pixels > 0.92 × max luma | pixels > 0.92 × 99th-percentile luma (one hot pixel no longer hides every highlight) |
+| Skin texture                    | gradient / 14            | gradient / 20                                                                        |
+| Hair porosity                   | gradient / 18            | gradient / 40                                                                        |
+| Hair shine                      | specular ratio × 500     | highlight lift (p99 − p50 luma, 0-1) × 140                                           |
+| Hair density                    | block std dev × 9        | block std dev × 2                                                                    |
+| Nail spots                      | outlier fraction × 700   | outlier fraction × 150                                                               |
+| Nail ridges                     | gradient / 12            | gradient / 16                                                                        |
+| Brightness variance (hydration) | not defined              | mean std dev of 0-1 luma inside 8 × 8 blocks                                         |
+
+Sample-photo readings after v1.1: skin erythema 32.9, texture 52.4, hydration 68.1,
+discoloration 5.9; hair porosity 57.9, shine 70.4, density 42.7; nails yellowness 0.0,
+spots 55.3, ridges 48.9.
+
+**Limits.** Three reference photos are not a calibration dataset. The kernel has no
+segmentation, so background pixels affect texture, density and spot scores, and lighting
+shifts colour readings. Before marketing any indicator as accurate, calibrate against a
+labelled set of photos across skin tones, lighting and devices, and re-check that results
+are consistent across skin tones.
