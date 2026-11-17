@@ -44,6 +44,15 @@ export const loadAccount = (now: Date): AccountState => {
   }
 };
 
+export const clearAccount = (): void => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Nothing to clear when storage is blocked.
+  }
+};
+
 export const saveAccount = (account: AccountState): void => {
   if (typeof window === "undefined") return;
   try {

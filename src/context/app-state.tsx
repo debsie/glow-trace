@@ -34,7 +34,28 @@ import { clientGate, currentUsage, scanGate, shelfGate } from "@/lib/plans";
 import type { RedeemResult, ReferralRewards, ReferralStats } from "@/lib/referrals";
 import { makeReferralCode, redeemCode, referralRewards } from "@/lib/referrals";
 import type { AccountState } from "@/lib/storage";
-import { defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
+import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
+import type { SamplePhotos } from "@/lib/vault";
+import { buildExport, fromVault, parseVault, toVault } from "@/lib/vault";
+import {
+  blobToDataUrl,
+  clearAll,
+  getPhotos,
+  prunePhotos,
+  putPhoto,
+  readVaultRaw,
+  storageAvailable,
+  writeVaultRaw,
+} from "@/lib/vault-store";
+
+import scanSkin from "@/assets/scan-skin.jpg";
+import scanHair from "@/assets/scan-hair.jpg";
+import scanNails from "@/assets/scan-nails.jpg";
+
+const SAMPLE_PHOTOS: SamplePhotos = { skin: scanSkin, hair: scanHair, nails: scanNails };
+
+/** "loading" until the device store is read; "unavailable" in private modes that block it. */
+export type StorageStatus = "loading" | "saved" | "unavailable";
 
 type AppState = {
   profile: Profile;
@@ -70,9 +91,16 @@ type AppState = {
     biomarkers: Biomarkers;
     image_url: string;
     client_id?: string;
-    report?: ScanReport;
-    demo?: boolean;
+    report?: ScanReport | undefined;
+    demo?: boolean | undefined;
+    /** Compact copy of the photo to keep in the on-device history. */
+    photo?: Blob | undefined;
   }) => DiagnosticScan | Gate;
+  storageStatus: StorageStatus;
+  /** Everything stored on this device, as a portable JSON-ready object. */
+  exportData: () => Promise<unknown>;
+  /** Erase every scan, photo, client, lookbook and setting on this device. */
+  deleteAllData: () => Promise<void>;
   /** Puts a product on / takes it off the shelf; returns the gate when the shelf is full. */
   toggleShelfProduct: (productId: string) => Gate;
   updateLook: (
@@ -106,10 +134,43 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [account, setAccount] = useState<AccountState>(() => defaultAccount(new Date()));
   const [hydrated, setHydrated] = useState(false);
 
+  const [storageStatus, setStorageStatus] = useState<StorageStatus>("loading");
+
   // Load the saved plan and usage after mount so server and first client render match.
   useEffect(() => {
     setAccount(loadAccount(new Date()));
     setHydrated(true);
+  }, []);
+
+  // Load the on-device vault. First visit: the sample data stays and is saved as the start.
+  useEffect(() => {
+    if (!storageAvailable()) {
+      setStorageStatus("unavailable");
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const vault = parseVault(await readVaultRaw());
+        if (vault && !cancelled) {
+          const stored = vault.scans.filter((scan) => scan.sample_photo === null).map((s) => s.id);
+          const blobs = await getPhotos(stored);
+          const urls = new Map([...blobs].map(([id, blob]) => [id, URL.createObjectURL(blob)]));
+          if (cancelled) return;
+          const data = fromVault(vault, SAMPLE_PHOTOS, urls);
+          setScans(data.scans);
+          setClients(data.clients);
+          setLooks(data.looks);
+          setInventory(data.inventory);
+        }
+        if (!cancelled) setStorageStatus("saved");
+      } catch {
+        if (!cancelled) setStorageStatus("unavailable");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -216,17 +277,24 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       biomarkers: Biomarkers;
       image_url: string;
       client_id?: string;
-      report?: ScanReport;
-      demo?: boolean;
+      report?: ScanReport | undefined;
+      demo?: boolean | undefined;
+      photo?: Blob | undefined;
     }): DiagnosticScan | Gate => {
       const gate = scanGate(tier, usage.scans, rewards.bonusScans);
       if (!gate.allowed) return gate;
+      const id = nextId("s");
+      let imageUrl = input.image_url;
+      if (input.photo) {
+        imageUrl = URL.createObjectURL(input.photo);
+        if (storageAvailable()) void putPhoto(id, input.photo).catch(() => undefined);
+      }
       const scan: DiagnosticScan = {
-        id: nextId("s"),
+        id,
         user_id: MOCK_PROFILE.id,
         category: input.category,
         biomarkers: input.biomarkers,
-        image_url: input.image_url,
+        image_url: imageUrl,
         created_at: new Date().toISOString(),
         ...(input.client_id ? { client_id: input.client_id } : {}),
         ...(input.report ? { report: input.report } : {}),
@@ -315,6 +383,43 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  // Save every change to the on-device vault (debounced), and drop photos nothing points at.
+  useEffect(() => {
+    if (storageStatus !== "saved") return;
+    const timer = window.setTimeout(() => {
+      const vault = toVault({ scans, clients, looks, inventory }, SAMPLE_PHOTOS, new Date());
+      void writeVaultRaw(vault)
+        .then(() => prunePhotos(new Set(scans.map((scan) => scan.id))))
+        .catch(() => setStorageStatus("unavailable"));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [scans, clients, looks, inventory, storageStatus]);
+
+  const exportData = useCallback(async (): Promise<unknown> => {
+    const vault = toVault({ scans, clients, looks, inventory }, SAMPLE_PHOTOS, new Date());
+    const photos: Record<string, string> = {};
+    if (storageAvailable()) {
+      const ids = vault.scans.filter((scan) => scan.sample_photo === null).map((scan) => scan.id);
+      for (const [id, blob] of await getPhotos(ids)) photos[id] = await blobToDataUrl(blob);
+    }
+    return { ...buildExport(vault, photos), account };
+  }, [scans, clients, looks, inventory, account]);
+
+  const deleteAllData = useCallback(async (): Promise<void> => {
+    if (storageAvailable()) await clearAll();
+    clearAccount();
+    scans.forEach((scan) => {
+      if (scan.image_url.startsWith("blob:")) URL.revokeObjectURL(scan.image_url);
+    });
+    setScans([]);
+    setClients([]);
+    setLooks([]);
+    setInventory([]);
+    setAccount(defaultAccount(new Date()));
+    // Re-creates an empty vault, so the sample data does not come back on the next visit.
+    setStorageStatus(storageAvailable() ? "saved" : "unavailable");
+  }, [scans]);
+
   const value = useMemo<AppState>(
     () => ({
       profile: { ...MOCK_PROFILE, subscription_tier: tier },
@@ -334,6 +439,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       archiveClient,
       restoreClient,
       toggleShelfProduct,
+      storageStatus,
+      exportData,
+      deleteAllData,
       clients,
       scans,
       catalog: MOCK_CATALOG,
@@ -364,6 +472,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       archiveClient,
       restoreClient,
       toggleShelfProduct,
+      storageStatus,
+      exportData,
+      deleteAllData,
       workspace,
       clients,
       scans,

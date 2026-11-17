@@ -289,6 +289,28 @@ const loadWithImgElement = (url: string): Promise<HTMLImageElement> =>
     img.src = url;
   });
 
+/** Longest side of the photo kept for history and comparison. */
+export const PHOTO_DIM = 640;
+
+/** A compact JPEG copy of the photo for the on-device history. */
+export const makeThumbnail = async (source: Blob | string, maxDim = PHOTO_DIM): Promise<Blob> => {
+  const pixels = await loadImageData(source, maxDim);
+  const canvas = Object.assign(document.createElement("canvas"), {
+    width: pixels.width,
+    height: pixels.height,
+  });
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is not available");
+  context.putImageData(pixels, 0, 0);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Could not encode photo"))),
+      "image/jpeg",
+      0.85,
+    ),
+  );
+};
+
 /**
  * Decode a photo (a File/Blob, or a same-origin URL) and downscale it to at most `maxDim`
  * pixels on the longest side. Nothing leaves the device.

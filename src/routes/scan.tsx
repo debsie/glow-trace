@@ -14,7 +14,7 @@ import {
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
-import { loadImageData } from "@/lib/cv/image";
+import { loadImageData, makeThumbnail } from "@/lib/cv/image";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
@@ -157,11 +157,14 @@ function ScanPage() {
     const started = performance.now();
     let report: BiomarkerReport | null = null;
     let failure: string | null = null;
+    let photo: Blob | undefined;
     try {
       const pixels = await loadImageData(imageUrl);
       setStep(1);
       // Validate before the report enters app state, as with any other payload.
       report = parseBiomarkerReport(analyzeBiomarkers(category, pixels));
+      // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
+      if (previewUrl) photo = await makeThumbnail(previewUrl).catch(() => undefined);
     } catch {
       failure = "We couldn't read that photo — try a JPEG or PNG";
     }
@@ -177,6 +180,7 @@ function ScanPage() {
       image_url: imageUrl,
       ...(report ? { report } : {}),
       ...(scored ? {} : { demo: true }),
+      ...(photo ? { photo } : {}),
     });
     if ("allowed" in scan) {
       if (!scan.allowed) setBlocked(scan);

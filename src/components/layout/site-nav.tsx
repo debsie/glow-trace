@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Droplets, Gift, Home, ScanLine, Users } from "lucide-react";
+import { Droplets, Gift, Home, ScanLine, ShieldCheck, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { LogoMark, TierBadge } from "@/components/ui/bits";
@@ -160,6 +160,12 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
           <NavLinkList layout="side" />
           <PlanSummary />
+          <Link
+            to="/privacy"
+            className="mt-1 flex min-h-[50px] items-center gap-2 rounded-xl px-4 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Your data and privacy
+          </Link>
         </aside>
 
         <main key={pathname} className="page-enter min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">

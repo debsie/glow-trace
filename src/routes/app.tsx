@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Droplets, Gift, ScanLine, Users } from "lucide-react";
+import { ArrowRight, Droplets, Gift, ScanLine, ShieldCheck, Users } from "lucide-react";
 
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
@@ -157,6 +157,18 @@ function Dashboard() {
           Run a new analysis <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </SectionCard>
+
+      <Link
+        to="/privacy"
+        className="surface lift flex min-h-[64px] items-center gap-3 px-5 text-sm text-muted-foreground"
+      >
+        <ShieldCheck className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+        <span>
+          <span className="font-semibold text-foreground">Saved on this device only.</span> Download
+          or delete your data any time.
+        </span>
+        <ArrowRight className="ml-auto h-5 w-5 shrink-0" aria-hidden="true" />
+      </Link>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <SectionCard>
