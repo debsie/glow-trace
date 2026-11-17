@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AffiliatesRouteImport } from './routes/affiliates'
+import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -33,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
 const AffiliatesRoute = AffiliatesRouteImport.update({
   id: '/affiliates',
   path: '/affiliates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -104,6 +110,7 @@ const ProClientsIdLookbookRoute = ProClientsIdLookbookRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/affiliates': typeof AffiliatesRoute
+  '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/affiliates': typeof AffiliatesRoute
+  '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/affiliates': typeof AffiliatesRoute
+  '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/affiliates'
+    | '/agent'
     | '/app'
     | '/pricing'
     | '/privacy'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/affiliates'
+    | '/agent'
     | '/app'
     | '/pricing'
     | '/privacy'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/affiliates'
+    | '/agent'
     | '/app'
     | '/pricing'
     | '/privacy'
@@ -206,6 +218,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AffiliatesRoute: typeof AffiliatesRoute
+  AgentRoute: typeof AgentRoute
   AppRoute: typeof AppRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       path: '/affiliates'
       fullPath: '/affiliates'
       preLoaderRoute: typeof AffiliatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -358,6 +378,7 @@ const ProClientsRouteWithChildren = ProClientsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AffiliatesRoute: AffiliatesRoute,
+  AgentRoute: AgentRoute,
   AppRoute: AppRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
