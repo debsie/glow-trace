@@ -4,6 +4,7 @@ import { ArrowRight, Droplets, Gift, ScanLine, ShieldCheck, Users } from "lucide
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { scanScore } from "@/lib/beauty";
+import { shortDate } from "@/lib/progress";
 import { formatZar, PLANS, scansLeft } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
 
@@ -137,12 +138,7 @@ function Dashboard() {
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(scan.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </p>
+                <p className="text-xs text-muted-foreground">{shortDate(scan.created_at)}</p>
               </div>
               <Badge tone={scanScore(scan) >= 65 ? "success" : "warning"}>
                 Score {scanScore(scan)}

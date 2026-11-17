@@ -14,6 +14,7 @@ import { Route as AffiliatesRouteImport } from './routes/affiliates'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as ReferRouteImport } from './routes/refer'
 import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
@@ -47,6 +48,11 @@ const PricingRoute = PricingRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReferRoute = ReferRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/privacy'
+    | '/progress'
     | '/refer'
     | '/routine'
     | '/scan'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/privacy'
+    | '/progress'
     | '/refer'
     | '/routine'
     | '/scan'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/privacy'
+    | '/progress'
     | '/refer'
     | '/routine'
     | '/scan'
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProgressRoute: typeof ProgressRoute
   ReferRoute: typeof ReferRoute
   RoutineRoute: typeof RoutineRoute
   ScanRoute: typeof ScanRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refer': {
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ProgressRoute: ProgressRoute,
   ReferRoute: ReferRoute,
   RoutineRoute: RoutineRoute,
   ScanRoute: ScanRoute,
