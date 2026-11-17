@@ -1,5 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Droplets, Gift, Home, LineChart, ScanLine, ShieldCheck, Users } from "lucide-react";
+import {
+  Droplets,
+  Gift,
+  Home,
+  LineChart,
+  MessagesSquare,
+  ScanLine,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { LogoMark, TierBadge } from "@/components/ui/bits";
@@ -7,13 +16,15 @@ import { useAppState } from "@/context/app-state";
 import { PLANS, scansLeft } from "@/lib/plans";
 import type { Workspace } from "@/lib/types";
 
-const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
+/** `sideOnly` items stay out of the phone bar so it never holds more than six. */
+const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; sideOnly?: boolean }[] = [
   { to: "/app", label: "Home", icon: Home },
   { to: "/scan", label: "Scan", icon: ScanLine },
+  { to: "/agent", label: "Agent", icon: MessagesSquare },
   { to: "/routine", label: "Routine", icon: Droplets },
   { to: "/progress", label: "Progress", icon: LineChart },
   { to: "/pro/clients", label: "Clients", icon: Users },
-  { to: "/refer", label: "Earn", icon: Gift },
+  { to: "/refer", label: "Earn", icon: Gift, sideOnly: true },
 ];
 
 const WorkspaceSwitcher = () => {
@@ -102,7 +113,7 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
   }
   return (
     <nav aria-label="Primary" className="grid grid-cols-6">
-      {NAV_ITEMS.map((item) => (
+      {NAV_ITEMS.filter((item) => !item.sideOnly).map((item) => (
         <Link
           key={item.to}
           to={item.to}

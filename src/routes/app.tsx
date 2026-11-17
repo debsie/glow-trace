@@ -1,8 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Droplets, Gift, ScanLine, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Droplets,
+  Gift,
+  MessagesSquare,
+  ScanLine,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { briefing } from "@/lib/agent/agent";
 import { scanScore } from "@/lib/beauty";
 import { shortDate } from "@/lib/progress";
 import { formatZar, PLANS, scansLeft } from "@/lib/plans";
@@ -22,7 +31,10 @@ export const Route = createFileRoute("/app")({
 const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nails: "Nails" };
 
 function Dashboard() {
-  const { profile, scans, activeClients, looks, tier, usage, rewards } = useAppState();
+  const { profile, scans, activeClients, looks, tier, usage, rewards, catalog, inventory } =
+    useAppState();
+  const brief = briefing(scans, catalog, inventory);
+  const topPick = brief.suggestions.find((suggestion) => !suggestion.onShelf);
   const left = scansLeft(tier, usage.scans, rewards.bonusScans);
   const recent = [...scans].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3);
   const pendingSignoff = looks.filter((look) => look.status === "sent").length;
@@ -113,6 +125,24 @@ function Dashboard() {
           </div>
         </section>
       )}
+
+      <Link to="/agent" className="surface-strong lift block p-5">
+        <span className="flex items-center gap-2 text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">
+          <MessagesSquare className="h-4 w-4 text-accent" aria-hidden="true" /> Your care agent
+        </span>
+        <span className="mt-2 block font-display text-xl leading-snug font-semibold text-foreground">
+          {brief.headline}
+        </span>
+        {topPick && (
+          <span className="mt-2 block text-sm text-muted-foreground">
+            Suggested: <span className="font-semibold text-foreground">{topPick.product.name}</span>{" "}
+            · {topPick.match}% match
+          </span>
+        )}
+        <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+          Open your agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </span>
+      </Link>
 
       <SectionCard title="Recent scans">
         <ul className="space-y-3">

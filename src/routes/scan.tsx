@@ -311,6 +311,12 @@ function ScanPage() {
             </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
+            <Link to="/agent" className="contents">
+              <GhostButton>
+                Ask Your Agent
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </GhostButton>
+            </Link>
             <Link to="/progress" className="contents">
               <GhostButton>Compare Past Scans</GhostButton>
             </Link>
