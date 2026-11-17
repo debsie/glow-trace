@@ -5,7 +5,9 @@ import type {
   LookStatus,
   Product,
   ScanCategory,
+  ScanReport,
 } from "./types";
+import { reportScore } from "./cv/kernel";
 
 /** Pure Glowtrace logic: gauge specs, shelf matching, lookbook status. */
 
@@ -49,6 +51,10 @@ export const gaugesFor = (category: ScanCategory, b: Biomarkers): Gauge[] => {
     value: invertKeys.has(key) ? 100 - b[key] : b[key],
   }));
 };
+
+/** A scan's overall score: from the on-device report when there is one. Higher is healthier. */
+export const scanScore = (scan: { biomarkers: Biomarkers; report?: ScanReport }): number =>
+  (scan.report ? reportScore(scan.report) : null) ?? wellnessScore(scan.biomarkers);
 
 /** Higher is healthier. */
 export const wellnessScore = (b: Biomarkers): number =>

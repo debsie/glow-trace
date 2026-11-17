@@ -34,6 +34,26 @@ export type Biomarkers = {
   discoloration: number;
 };
 
+/** Kept structural here so types.ts has no imports; matches BiomarkerReport in lib/cv. */
+export type ScanReport = {
+  kernelVersion: string;
+  category: ScanCategory;
+  quality: {
+    width: number;
+    height: number;
+    sharpness: number;
+    usable: boolean;
+    notice?: string | undefined;
+  };
+  metrics: {
+    key: string;
+    label: string;
+    value: number;
+    higherMeans: "more" | "better";
+    description: string;
+  }[];
+};
+
 export type DiagnosticScan = {
   id: string;
   user_id: string;
@@ -42,6 +62,10 @@ export type DiagnosticScan = {
   biomarkers: Biomarkers;
   image_url: string;
   created_at: string;
+  /** The on-device analysis report. Absent on older sample scans. */
+  report?: ScanReport;
+  /** True when the photo couldn't be scored and sample values were shown instead. */
+  demo?: boolean;
 };
 
 export type ProductCategory = "skincare" | "haircare" | "nailcare" | "makeup";

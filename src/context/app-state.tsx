@@ -9,6 +9,7 @@ import type {
   Product,
   Profile,
   ScanCategory,
+  ScanReport,
   SubscriptionTier,
   Workspace,
 } from "@/lib/types";
@@ -69,6 +70,8 @@ type AppState = {
     biomarkers: Biomarkers;
     image_url: string;
     client_id?: string;
+    report?: ScanReport;
+    demo?: boolean;
   }) => DiagnosticScan | Gate;
   /** Puts a product on / takes it off the shelf; returns the gate when the shelf is full. */
   toggleShelfProduct: (productId: string) => Gate;
@@ -213,6 +216,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       biomarkers: Biomarkers;
       image_url: string;
       client_id?: string;
+      report?: ScanReport;
+      demo?: boolean;
     }): DiagnosticScan | Gate => {
       const gate = scanGate(tier, usage.scans, rewards.bonusScans);
       if (!gate.allowed) return gate;
@@ -224,6 +229,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         image_url: input.image_url,
         created_at: new Date().toISOString(),
         ...(input.client_id ? { client_id: input.client_id } : {}),
+        ...(input.report ? { report: input.report } : {}),
+        ...(input.demo ? { demo: true } : {}),
       };
       setScans((current) => [scan, ...current]);
       setAccount((current) => {

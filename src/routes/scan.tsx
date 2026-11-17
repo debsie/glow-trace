@@ -13,7 +13,11 @@ import {
 } from "@/components/ui/bits";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { useAppState } from "@/context/app-state";
-import { gaugesFor, scoreVerdict, wellnessScore } from "@/lib/beauty";
+import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
+import { loadImageData } from "@/lib/cv/image";
+import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
+import { parseBiomarkerReport } from "@/lib/cv/schemas";
+import type { BiomarkerReport } from "@/lib/cv/types";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
 import type { BlockedGate } from "@/lib/plans";
 import { scanAllowance, scanGate, scansLeft } from "@/lib/plans";
@@ -41,7 +45,11 @@ const CATEGORY_TABS: { id: ScanCategory; label: string; fallbackImage: string }[
   { id: "nails", label: "Nails", fallbackImage: scanNails },
 ];
 
-const ANALYSIS_STEPS = ["Uploading image…", "Detecting biomarkers…", "Scoring results…"];
+const ANALYSIS_STEPS = ["Reading photo…", "Scoring indicators…", "Analysis complete"];
+
+/** Keep the staged progress readable even when the kernel finishes in a few milliseconds. */
+const MIN_ANALYSIS_MS = 900;
+const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 /* ---------- Upload zone: drag-and-drop with file-picker fallback ---------- */
 
@@ -89,7 +97,7 @@ const UploadZone = ({
           </span>
           <p className="font-display text-lg font-semibold">Drop a {category} photo here</p>
           <p className="text-sm text-muted-foreground">
-            Or use your camera roll — analysis runs on-device in this preview.
+            Or use your camera roll. Your photo is analysed on this device and never uploaded.
           </p>
         </div>
       )}
@@ -139,26 +147,44 @@ function ScanPage() {
       return;
     }
     setBlocked(null);
+    void analyse();
+  };
+
+  const analyse = async () => {
     setStep(0);
-    const timers = ANALYSIS_STEPS.map((_, index) =>
-      window.setTimeout(() => setStep(index), 450 * (index + 1)),
-    );
-    window.setTimeout(() => {
-      timers.forEach((timer) => window.clearTimeout(timer));
-      setStep(null);
-      const scan = addScan({
-        category,
-        biomarkers: MOCK_BIOMARKERS[category],
-        image_url:
-          previewUrl ?? CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin,
-      });
-      if ("allowed" in scan) {
-        if (!scan.allowed) setBlocked(scan);
-        return;
-      }
-      setResult(scan);
-      toast.success("Analysis complete. Indicators scored.");
-    }, 1500);
+    const imageUrl =
+      previewUrl ?? CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin;
+    const started = performance.now();
+    let report: BiomarkerReport | null = null;
+    let failure: string | null = null;
+    try {
+      const pixels = await loadImageData(imageUrl);
+      setStep(1);
+      // Validate before the report enters app state, as with any other payload.
+      report = parseBiomarkerReport(analyzeBiomarkers(category, pixels));
+    } catch {
+      failure = "We couldn't read that photo — try a JPEG or PNG";
+    }
+    await wait(Math.max(0, MIN_ANALYSIS_MS - (performance.now() - started)));
+    setStep(2);
+    await wait(250);
+    setStep(null);
+
+    const scored = report !== null && report.quality.usable && report.metrics.length > 0;
+    const scan = addScan({
+      category,
+      biomarkers: scored && report ? reportToBiomarkers(report) : MOCK_BIOMARKERS[category],
+      image_url: imageUrl,
+      ...(report ? { report } : {}),
+      ...(scored ? {} : { demo: true }),
+    });
+    if ("allowed" in scan) {
+      if (!scan.allowed) setBlocked(scan);
+      return;
+    }
+    setResult(scan);
+    if (scored) toast.success("Analysis complete. Indicators scored.");
+    else toast(report?.quality.notice ?? failure ?? "Photo couldn't be scored");
   };
 
   const shown = result ?? null;
@@ -228,35 +254,61 @@ function ScanPage() {
 
       {shown && (
         <SectionCard title={`${category} analysis`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-display text-2xl font-semibold">
-                {wellnessScore(shown.biomarkers)}
-                <span className="text-base text-muted-foreground"> / 100</span>
+          <div aria-live="polite">
+            {shown.demo && (
+              <p
+                className="mb-4 rounded-2xl border border-warning px-4 py-3 text-sm text-foreground"
+                role="status"
+              >
+                <span className="font-semibold text-warning">Not scored. </span>
+                {shown.report?.quality.notice ?? "We couldn't read that photo"}. The values below
+                are sample values, not your results.
               </p>
-              <Badge tone={wellnessScore(shown.biomarkers) >= 65 ? "success" : "warning"}>
-                {scoreVerdict(wellnessScore(shown.biomarkers))}
-              </Badge>
-            </div>
-            <img
-              src={shown.image_url}
-              alt={`Analyzed ${category} photo`}
-              width={72}
-              height={72}
-              loading="lazy"
-              className="h-18 w-18 rounded-2xl object-cover"
-              style={{ height: 72, width: 72 }}
-            />
-          </div>
-          <div className="mt-4 space-y-4">
-            {gaugesFor(category, shown.biomarkers).map((gauge) => (
-              <Gauge
-                key={gauge.key}
-                label={gauge.label}
-                value={gauge.value}
-                caption={gauge.caption}
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-display text-2xl font-semibold">
+                  {scanScore(shown)}
+                  <span className="text-base text-muted-foreground"> / 100</span>
+                </p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <Badge tone={scanScore(shown) >= 65 ? "success" : "warning"}>
+                    {scoreVerdict(scanScore(shown))}
+                  </Badge>
+                  {shown.report && !shown.demo && (
+                    <Badge tone="accent">MojoCV v1 · on-device</Badge>
+                  )}
+                </div>
+              </div>
+              <img
+                src={shown.image_url}
+                alt={`Analyzed ${category} photo`}
+                width={72}
+                height={72}
+                loading="lazy"
+                className="h-18 w-18 rounded-2xl object-cover"
+                style={{ height: 72, width: 72 }}
               />
-            ))}
+            </div>
+            <div className="mt-4 space-y-4">
+              {shown.report && !shown.demo
+                ? shown.report.metrics.map((metric) => (
+                    <Gauge
+                      key={metric.key}
+                      label={metric.label}
+                      value={metric.value}
+                      caption={`${metric.higherMeans === "better" ? "Higher is better." : "Higher means more."} ${metric.description}`}
+                    />
+                  ))
+                : gaugesFor(category, shown.biomarkers).map((gauge) => (
+                    <Gauge
+                      key={gauge.key}
+                      label={gauge.label}
+                      value={gauge.value}
+                      caption={gauge.caption}
+                    />
+                  ))}
+            </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <GhostButton onClick={() => setCompareOpen((open) => !open)}>
@@ -296,8 +348,8 @@ function ScanPage() {
                       minute: "2-digit",
                     })}
                   </span>
-                  <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
-                    {wellnessScore(scan.biomarkers)}
+                  <Badge tone={scanScore(scan) >= 65 ? "success" : "warning"}>
+                    {scanScore(scan)}
                   </Badge>
                 </div>
               ))}

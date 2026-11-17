@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { Badge, PageHeader, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
-import { wellnessScore } from "@/lib/beauty";
+import { scanScore } from "@/lib/beauty";
 
 export const Route = createFileRoute("/pro/clients/$id/")({
   component: ClientDetail,
@@ -114,8 +114,8 @@ function ClientDetail() {
                   <span className="flex-1 text-sm font-semibold">
                     {CATEGORY_LABEL[scan.category]}
                   </span>
-                  <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
-                    {wellnessScore(scan.biomarkers)}
+                  <Badge tone={scanScore(scan) >= 65 ? "success" : "warning"}>
+                    {scanScore(scan)}
                   </Badge>
                 </li>
               ))}

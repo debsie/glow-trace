@@ -3,7 +3,7 @@ import { ArrowRight, Droplets, Gift, ScanLine, Users } from "lucide-react";
 
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
-import { wellnessScore } from "@/lib/beauty";
+import { scanScore } from "@/lib/beauty";
 import { formatZar, PLANS, scansLeft } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
 
@@ -144,8 +144,8 @@ function Dashboard() {
                   })}
                 </p>
               </div>
-              <Badge tone={wellnessScore(scan.biomarkers) >= 65 ? "success" : "warning"}>
-                Score {wellnessScore(scan.biomarkers)}
+              <Badge tone={scanScore(scan) >= 65 ? "success" : "warning"}>
+                Score {scanScore(scan)}
               </Badge>
             </li>
           ))}
