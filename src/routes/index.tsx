@@ -419,6 +419,9 @@ function LandingPage() {
             <Link to="/affiliates" className={NAV_LINK}>
               Partner programme
             </Link>
+            <Link to="/privacy" className={NAV_LINK}>
+              Your data
+            </Link>
           </nav>
         </div>
         <p className={`${SECTION} pb-10 text-xs text-muted-foreground`}>

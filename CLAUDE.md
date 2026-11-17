@@ -22,6 +22,8 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 - `src/lib/` — pure logic (`beauty.ts`, `mock-data.ts`, `types.ts`); keep it framework-free and tested in `src/test/`
 - `src/lib/plans.ts` — the three ZAR plans, their limits and every gate message; `src/lib/referrals.ts` — referral and partner rules; `src/lib/seo.ts` — page metadata and JSON-LD. Change prices, caps or rewards only here, and update `src/test/plans.test.ts` / `referrals.test.ts`
 - Plan, monthly usage and invite state are device-local (`src/lib/storage.ts`, Zod-validated) until accounts and payments exist
+- Scans, photos, shelf, clients and lookbooks persist in IndexedDB: `src/lib/vault.ts` (Zod schema, pure save/load transforms, tested) and `src/lib/vault-store.ts` (browser plumbing). Never store `blob:` URLs; photos live in their own store keyed by scan id. `/privacy` offers download and delete-all
+- `src/lib/cv/` is the on-device analysis kernel (MojoCV). Bump `KERNEL_VERSION` and document the change in `docs/cv-kernel-spec.md` whenever a formula or constant changes
 - Set `VITE_SITE_URL` to the live origin to switch on canonical URLs and absolute social-image links
 - `docs/cv-kernel-spec.md` — spec for the on-device CV analysis kernel
 

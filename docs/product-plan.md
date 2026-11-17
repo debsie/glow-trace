@@ -1,6 +1,6 @@
 # Glowtrace product plan: powerful, and private by design
 
-Status: proposal. Nothing in phases 1 to 6 is built yet.
+Status: Phase 1 is built (analysis engine, `src/lib/cv/`). Phase 2 is partly built: on-device saving, download and delete are done; offline install and progress trends are not. Phases 3 to 6 are proposals.
 
 ## The principle
 
@@ -12,14 +12,14 @@ breached, subpoenaed or mishandled.
 
 ## Where we are today
 
-| Area                  | State                                                                    |
-| --------------------- | ------------------------------------------------------------------------ |
-| Scan scores           | Sample numbers. The same result for every photo.                         |
-| Accounts              | None. One demo profile.                                                  |
-| Data storage          | Plan and usage in the browser's local storage. Scans are lost on reload. |
-| Payments              | None. Anyone can switch plan on their own device.                        |
-| Referral and partners | Codes and links only. No tracking, rewards or payouts.                   |
-| Legal pages           | None published. Drafts are in `docs/legal/`.                             |
+| Area                  | State                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scan scores           | Computed from the photo on the device (MojoCV v1.1). Calibrated on three sample photos only.                                                |
+| Accounts              | None. One demo profile.                                                                                                                     |
+| Data storage          | Scans, photos, shelf, clients and lookbooks in the browser's IndexedDB; plan and usage in local storage. Download and delete on `/privacy`. |
+| Payments              | None. Anyone can switch plan on their own device.                                                                                           |
+| Referral and partners | Codes and links only. No tracking, rewards or payouts.                                                                                      |
+| Legal pages           | None published. Drafts are in `docs/legal/`.                                                                                                |
 
 ## Phase 1: make the core claim true (the analysis engine)
 

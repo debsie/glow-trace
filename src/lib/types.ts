@@ -21,7 +21,7 @@ export type Client = {
   skin_type: string;
   notes: string;
   /** Archived clients stay on file but no longer count towards the active-client cap. */
-  archived?: boolean;
+  archived?: boolean | undefined;
 };
 
 export type ScanCategory = "skin" | "hair" | "nails";
@@ -57,15 +57,15 @@ export type ScanReport = {
 export type DiagnosticScan = {
   id: string;
   user_id: string;
-  client_id?: string;
+  client_id?: string | undefined;
   category: ScanCategory;
   biomarkers: Biomarkers;
   image_url: string;
   created_at: string;
   /** The on-device analysis report. Absent on older sample scans. */
-  report?: ScanReport;
+  report?: ScanReport | undefined;
   /** True when the photo couldn't be scored and sample values were shown instead. */
-  demo?: boolean;
+  demo?: boolean | undefined;
 };
 
 export type ProductCategory = "skincare" | "haircare" | "nailcare" | "makeup";
@@ -102,8 +102,8 @@ export type EventLook = {
   nail_design: string;
   status: LookStatus;
   approved: boolean;
-  client_notes?: string;
-  saved_to_history?: boolean;
+  client_notes?: string | undefined;
+  saved_to_history?: boolean | undefined;
 };
 
 export type NewClientInput = Pick<Client, "client_name" | "contact_info" | "skin_type" | "notes">;
