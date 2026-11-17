@@ -131,7 +131,6 @@ function ScanPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<number | null>(null);
   const [result, setResult] = useState<DiagnosticScan | null>(null);
-  const [compareOpen, setCompareOpen] = useState(false);
   const [makeupOpen, setMakeupOpen] = useState(false);
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
 
@@ -192,9 +191,6 @@ function ScanPage() {
   };
 
   const shown = result ?? null;
-  const pastScans = scans
-    .filter((scan) => scan.category === category)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return (
     <div className="space-y-6">
@@ -315,9 +311,9 @@ function ScanPage() {
             </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
-            <GhostButton onClick={() => setCompareOpen((open) => !open)}>
-              Compare Past Scans
-            </GhostButton>
+            <Link to="/progress" className="contents">
+              <GhostButton>Compare Past Scans</GhostButton>
+            </Link>
             <Link to="/routine" className="contents">
               <GhostButton>
                 Daily Treatment Routine
@@ -328,37 +324,6 @@ function ScanPage() {
               Makeup Base &amp; Prep
             </GhostButton>
           </div>
-
-          {compareOpen && (
-            <div className="mt-4 space-y-2">
-              {pastScans.map((scan) => (
-                <div
-                  key={scan.id}
-                  className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-border bg-card/60 p-3"
-                >
-                  <img
-                    src={scan.image_url}
-                    alt="Past scan"
-                    width={40}
-                    height={40}
-                    loading="lazy"
-                    className="h-10 w-10 rounded-lg object-cover"
-                  />
-                  <span className="flex-1 text-sm">
-                    {new Date(scan.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <Badge tone={scanScore(scan) >= 65 ? "success" : "warning"}>
-                    {scanScore(scan)}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
 
           {makeupOpen && (
             <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4">

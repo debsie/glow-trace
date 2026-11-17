@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Droplets, Gift, Home, ScanLine, ShieldCheck, Users } from "lucide-react";
+import { Droplets, Gift, Home, LineChart, ScanLine, ShieldCheck, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { LogoMark, TierBadge } from "@/components/ui/bits";
@@ -11,6 +11,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/app", label: "Home", icon: Home },
   { to: "/scan", label: "Scan", icon: ScanLine },
   { to: "/routine", label: "Routine", icon: Droplets },
+  { to: "/progress", label: "Progress", icon: LineChart },
   { to: "/pro/clients", label: "Clients", icon: Users },
   { to: "/refer", label: "Earn", icon: Gift },
 ];
@@ -100,7 +101,7 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
     );
   }
   return (
-    <nav aria-label="Primary" className="grid grid-cols-5">
+    <nav aria-label="Primary" className="grid grid-cols-6">
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.to}

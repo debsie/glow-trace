@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { activeNeeds, matchShelf } from "@/lib/beauty";
+import { longDate } from "@/lib/progress";
 import type { BlockedGate, RoutineMode } from "@/lib/plans";
 import { PLANS, routineModeGate } from "@/lib/plans";
 import { ROUTINE_MODES, routineModeSpec } from "@/lib/routines";
@@ -168,7 +169,7 @@ function RoutinePage() {
     <div className="space-y-6">
       <PageHeader
         title="Daily Treatment Routine"
-        subtitle={`Built from your latest ${latest.category} scan · ${new Date(latest.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`}
+        subtitle={`Built from your latest ${latest.category} scan · ${longDate(latest.created_at)}`}
       />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Routine">

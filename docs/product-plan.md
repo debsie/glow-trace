@@ -1,6 +1,6 @@
 # Glowtrace product plan: powerful, and private by design
 
-Status: Phase 1 is built (analysis engine, `src/lib/cv/`). Phase 2 is partly built: on-device saving, download and delete are done; offline install and progress trends are not. Phases 3 to 6 are proposals.
+Status: Phase 1 is built (analysis engine, `src/lib/cv/`). Phase 2 is built: on-device saving, download and delete, an installable app that works offline, and progress charts with before/after comparison. Phases 3 to 6 are proposals.
 
 ## The principle
 
