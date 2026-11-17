@@ -126,6 +126,9 @@ function LandingPage() {
             <Link to="/pricing" className={`${NAV_LINK} hidden sm:inline-flex`}>
               Pricing
             </Link>
+            <Link to="/login" className={`${NAV_LINK} hidden sm:inline-flex`}>
+              Sign in
+            </Link>
             <Link to="/app" className={`${BUTTON_PRIMARY} ml-2`}>
               Open the app
             </Link>

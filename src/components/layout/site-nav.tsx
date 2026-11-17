@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { AccessGate } from "@/components/auth/access-gate";
+import { useAuth } from "@/context/auth";
+import { gateFor } from "@/lib/access";
 import { LogoMark, TierBadge } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { PLANS, scansLeft } from "@/lib/plans";
@@ -149,7 +152,16 @@ const PlanSummary = () => {
 export const SiteShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   // The landing page brings its own header and footer.
-  if (pathname === "/") return <>{children}</>;
+  const { access } = useAuth();
+  if (pathname === "/" || pathname === "/login") return <>{children}</>;
+  // Not let in yet: show sign-in or the waitlist on its own, with no app chrome or profile.
+  if (gateFor(pathname, access) !== "show") {
+    return (
+      <div className="min-h-dvh px-4 py-10">
+        <AccessGate>{children}</AccessGate>
+      </div>
+    );
+  }
   return <AppShell>{children}</AppShell>;
 };
 

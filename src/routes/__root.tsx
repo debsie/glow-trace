@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppStateProvider } from "@/context/app-state";
+import { AuthProvider } from "@/context/auth";
 import { SiteShell } from "@/components/layout/site-nav";
 import { organizationSchema, pageHead, SITE, websiteSchema } from "@/lib/seo";
 
@@ -162,13 +163,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppStateProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <SiteShell>
-          <Outlet />
-        </SiteShell>
-        <Toaster position="top-center" theme="system" />
-      </AppStateProvider>
+      <AuthProvider>
+        <AppStateProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <SiteShell>
+            <Outlet />
+          </SiteShell>
+          <Toaster position="top-center" theme="system" />
+        </AppStateProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -34,6 +34,7 @@ import { clientGate, currentUsage, scanGate, shelfGate } from "@/lib/plans";
 import type { RedeemResult, ReferralRewards, ReferralStats } from "@/lib/referrals";
 import { makeReferralCode, redeemCode, referralRewards } from "@/lib/referrals";
 import type { AccountState } from "@/lib/storage";
+import { useAuth } from "@/context/auth";
 import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
 import type { SamplePhotos } from "@/lib/vault";
 import { buildExport, fromVault, parseVault, toVault } from "@/lib/vault";
@@ -134,6 +135,21 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [account, setAccount] = useState<AccountState>(() => defaultAccount(new Date()));
   const [hydrated, setHydrated] = useState(false);
 
+  // Signed-in beta members see their own name and id; demo mode keeps the sample profile.
+  const { access } = useAuth();
+  const me = useMemo(
+    () =>
+      access.kind === "member"
+        ? {
+            ...MOCK_PROFILE,
+            id: access.userId,
+            email: access.email,
+            display_name: access.displayName,
+          }
+        : MOCK_PROFILE,
+    [access],
+  );
+
   const [storageStatus, setStorageStatus] = useState<StorageStatus>("loading");
 
   // Load the saved plan and usage after mount so server and first client render match.
@@ -182,8 +198,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const activeClients = useMemo(() => clients.filter((client) => !client.archived), [clients]);
   const shelfCount = inventory.filter((item) => item.in_stock).length;
   const referralCode = useMemo(
-    () => makeReferralCode(MOCK_PROFILE.display_name, MOCK_PROFILE.id),
-    [],
+    () => makeReferralCode(me.display_name, me.id),
+    [me.display_name, me.id],
   );
   // Real invite counts arrive with accounts; until then nobody has joined through this device.
   const referralStats = useMemo<ReferralStats>(() => ({ joinedThisMonth: 0, subscribed: 0 }), []);
@@ -214,7 +230,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       if (!gate.allowed) return gate;
       const client: Client = {
         id: nextId("c"),
-        mua_id: MOCK_PROFILE.id,
+        mua_id: me.id,
         client_name: input.client_name.trim() || "Unnamed client",
         contact_info: input.contact_info.trim(),
         skin_type: input.skin_type.trim() || "Undiagnosed",
@@ -223,7 +239,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setClients((current) => [client, ...current]);
       return client;
     },
-    [tier, activeClients.length],
+    [tier, activeClients.length, me.id],
   );
 
   const archiveClient = useCallback((clientId: string) => {
@@ -260,7 +276,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
               ...current,
               {
                 id: nextId("inv"),
-                user_id: MOCK_PROFILE.id,
+                user_id: me.id,
                 product_id: productId,
                 in_stock: true,
               },
@@ -268,7 +284,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       );
       return { allowed: true };
     },
-    [inventory, tier, shelfCount],
+    [inventory, tier, shelfCount, me.id],
   );
 
   const addScan = useCallback(
@@ -291,7 +307,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       }
       const scan: DiagnosticScan = {
         id,
-        user_id: MOCK_PROFILE.id,
+        user_id: me.id,
         category: input.category,
         biomarkers: input.biomarkers,
         image_url: imageUrl,
@@ -307,7 +323,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       });
       return scan;
     },
-    [tier, usage.scans, rewards.bonusScans],
+    [tier, usage.scans, rewards.bonusScans, me.id],
   );
 
   const updateLook = useCallback(
@@ -422,7 +438,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo<AppState>(
     () => ({
-      profile: { ...MOCK_PROFILE, subscription_tier: tier },
+      profile: { ...me, subscription_tier: tier },
       workspace,
       tier,
       setTier,
@@ -457,6 +473,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       saveLookToHistory,
     }),
     [
+      me,
       tier,
       setTier,
       usage,

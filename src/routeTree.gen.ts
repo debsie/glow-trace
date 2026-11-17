@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AffiliatesRouteImport } from './routes/affiliates'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -44,6 +45,11 @@ const AgentRoute = AgentRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/login'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/login'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/login'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   AffiliatesRoute: typeof AffiliatesRoute
   AgentRoute: typeof AgentRoute
   AppRoute: typeof AppRoute
+  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProgressRoute: typeof ProgressRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -380,6 +400,7 @@ const rootRouteChildren: RootRouteChildren = {
   AffiliatesRoute: AffiliatesRoute,
   AgentRoute: AgentRoute,
   AppRoute: AppRoute,
+  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProgressRoute: ProgressRoute,
