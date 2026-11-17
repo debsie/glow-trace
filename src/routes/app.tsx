@@ -62,7 +62,7 @@ function Dashboard() {
           <Link
             key={action.to}
             to={action.to}
-            className="surface group flex min-h-[96px] items-center gap-4 p-5 transition-opacity hover:opacity-90"
+            className="surface lift group flex min-h-[96px] items-center gap-4 p-5"
           >
             <span className="bg-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-primary-foreground">
               <action.icon className="h-6 w-6" aria-hidden="true" />

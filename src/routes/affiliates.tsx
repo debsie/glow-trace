@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge, GhostButton, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
+import { FaqList } from "@/components/common/faq-list";
+import { Reveal } from "@/components/motion/reveal";
 import { useAppState } from "@/context/app-state";
 import { useOrigin } from "@/hooks/use-origin";
 import { formatZar, PLANS } from "@/lib/plans";
@@ -124,11 +126,11 @@ function AffiliatesPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {PERKS.map((perk) => (
-          <SectionCard key={perk.title}>
+        {PERKS.map((perk, index) => (
+          <Reveal key={perk.title} delay={index * 80} className="surface lift p-5">
             <h2 className="font-display text-lg font-semibold text-foreground">{perk.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{perk.body}</p>
-          </SectionCard>
+          </Reveal>
         ))}
       </div>
 
@@ -223,12 +225,7 @@ function AffiliatesPage() {
         <h2 id="partner-faq" className="font-display text-2xl font-semibold">
           Partner questions
         </h2>
-        {AFFILIATE_FAQS.map((faq) => (
-          <SectionCard key={faq.question}>
-            <h3 className="font-display text-lg font-semibold text-foreground">{faq.question}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
-          </SectionCard>
-        ))}
+        <FaqList faqs={AFFILIATE_FAQS} />
       </section>
 
       <p className="text-center text-sm text-muted-foreground">

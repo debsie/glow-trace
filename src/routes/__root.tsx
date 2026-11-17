@@ -134,6 +134,9 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang={SITE.language}>
       <head>
         <HeadContent />
+        <noscript>
+          <style>{".reveal{opacity:1;transform:none}"}</style>
+        </noscript>
       </head>
       <body>
         {children}

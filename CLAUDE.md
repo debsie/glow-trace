@@ -32,8 +32,9 @@ TanStack Start + React 19 + Vite, Tailwind v4 (oklch tokens in `src/styles.css`)
 - Design system ("clinical atelier"): light Porcelain theme by default, dark Aubergine via the OS setting or `data-theme="dark"`. This replaces the older dark-only rule in `AGENTS.md`.
 - Semantic oklch tokens in `src/styles.css` only, never hardcoded colors. Flat surfaces: no gradients, glass, glow, shadows or sparkle icons. `primary` (garnet) is the only action colour, one primary button per view; fills use `text-primary-foreground`, never literal white.
 - Fonts: Bricolage Grotesque (headings, weight 600), Hanken Grotesk (text), IBM Plex Mono via the `readout` utility for every measured value (one decimal).
-- Radius: buttons `rounded-lg`, cards `rounded-xl` (`surface` utility), tabs and rows `rounded-2xl`, only badges, avatars and the workspace switcher `rounded-full`. Hover changes opacity or border only; nothing scales.
+- Radius: buttons `rounded-lg`, cards `rounded-xl` (`surface` utility), tabs and rows `rounded-2xl`, only badges, avatars and the workspace switcher `rounded-full`. Motion is welcome but quiet: scroll reveals (`Reveal`), the `lift` hover on interactive cards, `page-enter` on route change, animated gauges. Nothing bounces or scales up, and everything must switch off under `prefers-reduced-motion`.
 - The product is "Glowtrace" — never "AI" in the name or button labels. Call results "wellness indicators", never a diagnosis. No emoji or exclamation marks in UI copy.
+- WebGL decoration lives in `src/components/three/` (`ThreeCanvas` + `scenes.ts`): flat line and point work in theme tokens only, loaded on demand, paused off-screen, still under reduced motion. Keep it decorative (`aria-hidden`) and never required to read the page.
 - Build screens from `Badge`, `Gauge`, `SectionCard`, `PrimaryButton`/`GhostButton` in `src/components/ui/bits.tsx`.
 - Touch targets ≥50×50 px; `aria-live="polite"` for analysis progress/results; never rely on color alone.
 - Children's data (COPPA/GDPR-K): keep data local or parent-owned; no third-party analytics or uploads of photos.

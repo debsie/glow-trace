@@ -141,30 +141,35 @@ export const SiteShell = ({ children }: { children: React.ReactNode }) => {
   return <AppShell>{children}</AppShell>;
 };
 
-const AppShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-dvh">
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-      <Logo />
-      <div className="hidden sm:block">
-        <WorkspaceSwitcher />
-      </div>
-      <ProfilePill />
-    </header>
-
-    <div className="mx-auto flex w-full max-w-7xl">
-      <aside className="sticky top-[72px] hidden h-fit w-60 shrink-0 py-6 pl-4 lg:block">
-        <div className="mb-4 sm:hidden">
+const AppShell = ({ children }: { children: React.ReactNode }) => {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return (
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+        <Logo />
+        <div className="hidden sm:block">
           <WorkspaceSwitcher />
         </div>
-        <NavLinkList layout="side" />
-        <PlanSummary />
-      </aside>
+        <ProfilePill />
+      </header>
 
-      <main className="min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">{children}</main>
-    </div>
+      <div className="mx-auto flex w-full max-w-7xl">
+        <aside className="sticky top-[72px] hidden h-fit w-60 shrink-0 py-6 pl-4 lg:block">
+          <div className="mb-4 sm:hidden">
+            <WorkspaceSwitcher />
+          </div>
+          <NavLinkList layout="side" />
+          <PlanSummary />
+        </aside>
 
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
-      <NavLinkList layout="bottom" />
+        <main key={pathname} className="page-enter min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">
+          {children}
+        </main>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
+        <NavLinkList layout="bottom" />
+      </div>
     </div>
-  </div>
-);
+  );
+};

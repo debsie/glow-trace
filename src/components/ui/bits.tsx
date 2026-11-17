@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Check, Lock, Pencil, Send } from "lucide-react";
 
+import { useAnimatedNumber } from "@/hooks/use-animated-number";
+import { useInView } from "@/hooks/use-in-view";
 import { LOOK_STATUS_META } from "@/lib/beauty";
 import { PLANS } from "@/lib/plans";
 import type { LookStatus, SubscriptionTier } from "@/lib/types";
@@ -65,7 +67,7 @@ export const LogoMark = ({ className = "h-6 w-6" }: { className?: string }) => (
     aria-hidden="true"
   >
     <circle cx="12" cy="12" r="9" />
-    <path d="M6.5 13.5c1.6-3.6 3.6-3.6 5.5 0s3.9 3.6 5.5 0" />
+    <path className="trace-draw" d="M6.5 13.5c1.6-3.6 3.6-3.6 5.5 0s3.9 3.6 5.5 0" />
   </svg>
 );
 
@@ -78,28 +80,32 @@ export const Gauge = ({
   label: string;
   value: number;
   caption?: string;
-}) => (
-  <div>
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="readout text-sm text-foreground">{value.toFixed(1)}</span>
-    </div>
-    <div
-      className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"
-      role="meter"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={value}
-      aria-label={label}
-    >
+}) => {
+  const { ref, inView } = useInView<HTMLDivElement>("0px");
+  const shown = useAnimatedNumber(value);
+  return (
+    <div ref={ref}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="readout text-sm text-foreground">{shown.toFixed(1)}</span>
+      </div>
       <div
-        className="h-full rounded-full bg-primary transition-[width] duration-700 motion-reduce:transition-none"
-        style={{ width: `${Math.max(3, Math.min(100, value))}%` }}
-      />
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        aria-label={label}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-700 motion-reduce:transition-none"
+          style={{ width: inView ? `${Math.max(3, Math.min(100, value))}%` : "0%" }}
+        />
+      </div>
+      {caption && <p className="mt-1 text-xs leading-[18px] text-muted-foreground">{caption}</p>}
     </div>
-    {caption && <p className="mt-1 text-xs leading-[18px] text-muted-foreground">{caption}</p>}
-  </div>
-);
+  );
+};
 
 export const SectionCard = ({
   title,
