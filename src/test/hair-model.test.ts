@@ -4,11 +4,11 @@ import { hairHeadMeans, hairModelParity, hairTextureSignal } from "@/lib/cv/hair
 import type { PixelBuffer } from "@/lib/cv/types";
 
 /** The same formula canvas as research/vision/export_web.py (128 x 128). */
-const formulaCanvas = (): Float32Array => {
-  const canvas = new Float32Array(128 * 128 * 3);
-  for (let y = 0; y < 128; y += 1) {
-    for (let x = 0; x < 128; x += 1) {
-      const p = (y * 128 + x) * 3;
+const formulaCanvas = (n = 128): Float32Array => {
+  const canvas = new Float32Array(n * n * 3);
+  for (let y = 0; y < n; y += 1) {
+    for (let x = 0; x < n; x += 1) {
+      const p = (y * n + x) * 3;
       canvas[p] = (150 + 3 * x + 2 * y) % 256;
       canvas[p + 1] = (100 + x + 5 * y) % 256;
       canvas[p + 2] = (80 + 2 * x + 3 * y) % 256;

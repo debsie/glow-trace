@@ -56,6 +56,9 @@ guide, it finds the outline of your face, eyes and lips on your device only, so 
 read your skin without the background; those points are used for that one scan and never stored
 or sent anywhere.
 
+If you scan a product label in the ingredient check, the text is read on your device by a reader
+we serve from our own site. The label photo and its text are not uploaded or stored.
+
 ### Sensitive information
 
 Information about your skin, hair and nails can reveal things about your health, and photos

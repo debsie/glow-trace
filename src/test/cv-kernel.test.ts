@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { scanScore } from "@/lib/beauty";
 import { rgbToLab, toPlanes } from "@/lib/cv/image";
-import { analyzeBiomarkers, reportScore, reportToBiomarkers } from "@/lib/cv/kernel";
+import { analyzeBiomarkers, lightTip, reportScore, reportToBiomarkers } from "@/lib/cv/kernel";
 import { yellowness } from "@/lib/cv/nails";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import { erythema, skinTexture } from "@/lib/cv/skin";
@@ -148,5 +148,36 @@ describe("Report validation and scoring", () => {
     expect(biomarkers.redness).toBe(20);
     expect(biomarkers.dryness).toBe(20);
     expect(scanScore({ biomarkers, report })).toBe(80);
+  });
+});
+
+describe("Light coach", () => {
+  const lit = (leftLevel: number, rightLevel: number, topBoost = 1): PixelBuffer => {
+    const width = 120;
+    const height = 120;
+    const data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const level = (x < width / 2 ? leftLevel : rightLevel) * (y < height / 2 ? topBoost : 1);
+        const o = (y * width + x) * 4;
+        data[o] = level;
+        data[o + 1] = level * 0.8;
+        data[o + 2] = level * 0.7;
+        data[o + 3] = 255;
+      }
+    }
+    return { width, height, data };
+  };
+
+  it("stays quiet under even light", () => {
+    expect(lightTip(lit(150, 150))).toBeUndefined();
+  });
+
+  it("spots side light", () => {
+    expect(lightTip(lit(200, 90))).toMatch(/shadow/);
+  });
+
+  it("spots overhead light", () => {
+    expect(lightTip(lit(110, 110, 2))).toMatch(/above/);
   });
 });

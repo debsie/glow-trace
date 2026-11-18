@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, X } from "lucide-react";
+import { ScanText, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { ACTIVE_LABEL, checkIngredients } from "@/lib/ingredients";
+import { cleanIngredientText } from "@/lib/label-text";
+import { OCR_DOWNLOAD_MB, readLabel } from "@/lib/ocr";
 import type { ProductInput } from "@/lib/ingredients";
 import { ingredientGate } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
@@ -32,6 +34,27 @@ function IngredientCheck() {
     { name: "", ingredients: "" },
   ]);
   const { detected, clashes } = checkIngredients(products);
+  const [reading, setReading] = useState<number | null>(null);
+  const [readNote, setReadNote] = useState<string>("");
+
+  const scanLabel = async (index: number, file: File | undefined) => {
+    if (!file) return;
+    setReading(index);
+    setReadNote("Reading the label on this device");
+    try {
+      const text = cleanIngredientText(await readLabel(file));
+      if (text.length < 8) {
+        setReadNote("Could not read that label. Try again closer, flat and in good light");
+      } else {
+        update(index, { ingredients: text });
+        setReadNote("Label read. Check the text for any misread words");
+      }
+    } catch {
+      setReadNote("The label reader did not load. Paste the ingredients instead");
+    } finally {
+      setReading(null);
+    }
+  };
 
   const update = (index: number, patch: Partial<ProductInput>) =>
     setProducts((current) =>
@@ -42,7 +65,7 @@ function IngredientCheck() {
     <div className="space-y-6">
       <PageHeader
         title="Ingredient Check"
-        subtitle="Paste the ingredient list from two or more products. Nothing leaves this device."
+        subtitle="Snap the label or paste the ingredient list from two or more products. Nothing leaves this device."
       />
 
       {!gate.allowed && <UpgradeCard gate={gate} />}
@@ -82,6 +105,24 @@ function IngredientCheck() {
                 <label className="mt-3 block text-sm font-semibold" htmlFor={`inci-${index}`}>
                   Ingredients
                 </label>
+                <label
+                  className="mt-1 inline-flex min-h-[50px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-secondary px-4 text-sm font-semibold"
+                  aria-disabled={reading !== null}
+                >
+                  <ScanText className="h-4 w-4" aria-hidden="true" />
+                  {reading === index ? "Reading the label" : "Scan the label"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    disabled={reading !== null}
+                    onChange={(event) => {
+                      void scanLabel(index, event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
                 <textarea
                   id={`inci-${index}`}
                   value={product.ingredients}
@@ -93,6 +134,11 @@ function IngredientCheck() {
               </SectionCard>
             ))}
           </div>
+
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {readNote ||
+              `The label reader runs on this phone. The first scan downloads about ${OCR_DOWNLOAD_MB} MB.`}
+          </p>
 
           {products.length < MAX_PRODUCTS && (
             <button

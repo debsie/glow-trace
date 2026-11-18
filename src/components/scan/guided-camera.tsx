@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { GhostButton, PrimaryButton } from "@/components/ui/bits";
-import { frameHint } from "@/lib/cv/kernel";
+import { frameHint, lightTip } from "@/lib/cv/kernel";
 import type { Overlay, Shot } from "@/lib/scan-session";
 
 /**
@@ -36,6 +36,7 @@ export const GuidedCamera = ({
   const gallery = useRef<HTMLInputElement>(null);
   const [failed, setFailed] = useState(false);
   const [hint, setHint] = useState<string | undefined>("Starting the camera");
+  const [tip, setTip] = useState<string | undefined>(undefined);
   const [waitedLong, setWaitedLong] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
@@ -77,7 +78,10 @@ export const GuidedCamera = ({
       const context = canvas.getContext("2d", { willReadFrequently: true });
       if (!context) return;
       context.drawImage(el, 0, 0, canvas.width, canvas.height);
-      setHint(frameHint(context.getImageData(0, 0, canvas.width, canvas.height)));
+      const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+      const blocking = frameHint(frame);
+      setHint(blocking);
+      setTip(blocking ? undefined : lightTip(frame));
     }, 500);
     return () => window.clearInterval(timer);
   }, []);
@@ -184,7 +188,7 @@ export const GuidedCamera = ({
             ""
           ) : ready ? (
             <span className="font-semibold text-foreground">
-              Ready. Hold still and take the photo.
+              {tip ? `Good to go. Tip: ${tip}.` : "Ready. Hold still and take the photo."}
             </span>
           ) : (
             <span className="text-muted-foreground">{hint}</span>

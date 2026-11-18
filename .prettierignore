@@ -11,3 +11,4 @@ routeTree.gen.ts
 public/mediapipe
 src/lib/cv/redness-weights.json
 src/lib/cv/hair-weights.json
+public/ocr

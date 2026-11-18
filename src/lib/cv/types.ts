@@ -46,7 +46,11 @@ export type BiomarkerReport = {
   metrics: BiomarkerMetric[];
   /** Skin colour readouts for makeup matching (skin scans only). */
   tone?: SkinTone | undefined;
+  /** Redness by face zone, 0-100 (face guide only). */
+  zones?: FaceZones | undefined;
 };
+
+export type FaceZones = { forehead: number; leftCheek: number; rightCheek: number; chin: number };
 
 /**
  * ITA° (individual typology angle, atan((L* - 50) / b*)) measures depth: higher is lighter.

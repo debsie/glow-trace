@@ -16,14 +16,13 @@ import type { PixelBuffer } from "./types";
 
 const tensorSchema = z.object({ shape: z.array(z.number().int()), data: z.string() });
 const weightsSchema = z.object({
-  area: z.literal("hair"),
+  area: z.enum(["skin", "hair", "nails"]),
   heads: z.array(z.string()),
-  size: z.literal(128),
+  size: z.number().int().min(64).max(512),
   parity: z.record(z.string(), z.number()),
   tensors: z.record(z.string(), tensorSchema),
 });
 
-const SIZE = 128;
 // Training multiplied the target maps by 10.
 const TARGET_SCALE = 10;
 
@@ -37,6 +36,7 @@ const decode = (b64: string): Float32Array => {
 };
 
 let cached: {
+  size: number;
   heads: string[];
   parity: Record<string, number>;
   convs: Record<"e1" | "e2" | "e3" | "mid" | "d2" | "d1" | "out", Conv>;
@@ -53,6 +53,7 @@ const model = () => {
     return { out, inp, k, w: decode(w.data), b: decode(b.data) };
   };
   cached = {
+    size: parsed.size,
     heads: parsed.heads,
     parity: parsed.parity,
     convs: {
@@ -125,7 +126,7 @@ const upCat = (x: Map, target: Map): Map => {
 
 /** Network input: optical density / 3 for r, g, b plus the valid-pixel channel. */
 const toInput = (canvas: Float32Array, valid: Uint8Array): Map => {
-  const plane = SIZE * SIZE;
+  const plane = model().size * model().size;
   const data = new Float32Array(4 * plane);
   for (let p = 0; p < plane; p += 1) {
     for (let c = 0; c < 3; c += 1) {
@@ -133,7 +134,7 @@ const toInput = (canvas: Float32Array, valid: Uint8Array): Map => {
     }
     data[3 * plane + p] = valid[p] ?? 0;
   }
-  return { c: 4, h: SIZE, w: SIZE, data };
+  return { c: 4, h: model().size, w: model().size, data };
 };
 
 const forward = (input: Map): Map => {
@@ -151,12 +152,12 @@ const forward = (input: Map): Map => {
  * when shrinking. Returns the canvas, the valid pixels and the area mask at canvas resolution.
  */
 const toCanvas = (image: PixelBuffer, mask: Uint8Array | null) => {
-  const scale = Math.min(1, SIZE / Math.max(image.width, image.height));
+  const scale = Math.min(1, model().size / Math.max(image.width, image.height));
   const w = Math.max(1, Math.round(image.width * scale));
   const h = Math.max(1, Math.round(image.height * scale));
-  const canvas = new Float32Array(SIZE * SIZE * 3);
-  const valid = new Uint8Array(SIZE * SIZE);
-  const area = new Float32Array(SIZE * SIZE);
+  const canvas = new Float32Array(model().size * model().size * 3);
+  const valid = new Uint8Array(model().size * model().size);
+  const area = new Float32Array(model().size * model().size);
   for (let y = 0; y < h; y += 1) {
     const y0 = Math.floor((y * image.height) / h);
     const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * image.height) / h));
@@ -178,7 +179,7 @@ const toCanvas = (image: PixelBuffer, mask: Uint8Array | null) => {
           n += 1;
         }
       }
-      const p = y * SIZE + x;
+      const p = y * model().size + x;
       canvas[p * 3] = Math.round(r / n);
       canvas[p * 3 + 1] = Math.round(g / n);
       canvas[p * 3 + 2] = Math.round(b / n);
@@ -200,7 +201,7 @@ export const hairTextureSignal = (
   const { canvas, valid, area } = toCanvas(image, mask);
   const maps = forward(toInput(canvas, valid));
   const head = model().heads.indexOf("texture");
-  const plane = SIZE * SIZE;
+  const plane = model().size * model().size;
   let sum = 0;
   let weight = 0;
   for (let p = 0; p < plane; p += 1) {
@@ -217,9 +218,9 @@ export const hairModelParity = (): Record<string, number> => model().parity;
 
 /** The mean of every head over a fully valid 128 x 128 canvas (parity test only). */
 export const hairHeadMeans = (canvas: Float32Array): Record<string, number> => {
-  const valid = new Uint8Array(SIZE * SIZE).fill(1);
+  const valid = new Uint8Array(model().size * model().size).fill(1);
   const maps = forward(toInput(canvas, valid));
-  const plane = SIZE * SIZE;
+  const plane = model().size * model().size;
   const result: Record<string, number> = {};
   model().heads.forEach((head, k) => {
     let sum = 0;

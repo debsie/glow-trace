@@ -31,6 +31,7 @@ import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
+import { ZONE_LABEL } from "@/lib/cv/zones";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
 import type { BlockedGate } from "@/lib/plans";
 import { scanAllowance, scanGate, scansLeft } from "@/lib/plans";
@@ -511,6 +512,24 @@ function ScanPage() {
                     ))}
               </div>
             </div>
+            {shown.report?.zones && !shown.demo && (
+              <div className="mt-5">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  Where the redness sits
+                </p>
+                <ul className="mt-2 divide-y divide-border">
+                  {(Object.keys(ZONE_LABEL) as (keyof typeof ZONE_LABEL)[]).map((zone) => (
+                    <li key={zone} className="flex items-center justify-between py-2 text-sm">
+                      <span>{ZONE_LABEL[zone]}</span>
+                      <span className="readout">{shown.report?.zones?.[zone].toFixed(1)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Left and right as seen in the photo. Watch which zone moves over a few weeks.
+                </p>
+              </div>
+            )}
             {nailReadings.length > 0 && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">

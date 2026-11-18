@@ -309,3 +309,17 @@ matches the Python network to 4 decimals (`src/test/hair-model.test.ts`).
 Not shipped from the same run: hair shine (r = 0.19, leak 0.25), nail spots (r = 0.15) and nail
 ridges (r = 0.01). Nail yellowing passed (r = 0.79, even across all four tone bands, leak -0.02)
 but its weights file has not arrived yet.
+
+Also in v2.3:
+
+- **Face zones** (`zones.ts`): with the face guide, redness is read separately for the forehead
+  (top 35% of the face-skin box), left and right cheek (middle, split at the centre) and chin and
+  jaw (bottom 30%), each with the same redness model. Saved as `report.zones`; a zone needs 400
+  face-skin pixels or the zones are left out.
+- **Light coach** (`lightTip` in `kernel.ts`): on the live camera, once the frame passes the
+  quality gate, one tip: side light (one half > 1.5x brighter), overhead light (top > 1.6x the
+  bottom) or a colour cast. A tip, never a block.
+- **Training v3** (`research/vision/multitask.py`): new simulated effects, giving skin breakouts and
+  dark circles, nail cuticles, and hair breakage and flakes. Pass `--size 256` for nails and hair so
+  fine detail is visible. The app reads the size from the weights file. Each new head ships only
+  after it passes the same rule.

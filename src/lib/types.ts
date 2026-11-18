@@ -51,6 +51,7 @@ export type ScanReport = {
     filtered?: boolean | undefined;
   };
   tone?: { ita: number; hueAngle: number } | undefined;
+  zones?: { forehead: number; leftCheek: number; rightCheek: number; chin: number } | undefined;
   metrics: {
     key: string;
     label: string;

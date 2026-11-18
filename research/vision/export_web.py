@@ -38,11 +38,12 @@ model = UNet(len(raw["heads"]))
 model.load_state_dict({k: torch.tensor(v) for k, v in raw["weights"].items()})
 model.eval()
 
-# Parity image: the same formula as src/test/hair-model.test.ts, 128 x 128, fully valid.
-y, x = np.mgrid[0:128, 0:128]
+# Parity image: the same formula as src/test/hair-model.test.ts, size x size, fully valid.
+n = raw["size"]
+y, x = np.mgrid[0:n, 0:n]
 rgb = np.stack([(150 + 3 * x + 2 * y) % 256, (100 + x + 5 * y) % 256, (80 + 2 * x + 3 * y) % 256], -1)
 t = torch.tensor(rgb, dtype=torch.float32).permute(2, 0, 1)[None]
-inp = torch.cat([-torch.log((t + 0.5) / 255.5) / 3.0, torch.ones(1, 1, 128, 128)], 1)
+inp = torch.cat([-torch.log((t + 0.5) / 255.5) / 3.0, torch.ones(1, 1, n, n)], 1)
 with torch.no_grad():
     out = model(inp)[0].mean((1, 2)).numpy() / 10.0
 
