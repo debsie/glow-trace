@@ -82,8 +82,11 @@ significant effects.
 
 ## 4. Cookies and tracking
 
-Glowtrace uses only the storage needed to keep you signed in and remember your settings.
-We do not use advertising cookies, tracking pixels or cross-site tracking. If that ever
+Glowtrace sets no cookies. It uses only the browser storage needed to keep you signed in, keep
+your scans on your device and let the app work offline; the full list is on the Cookies and
+storage page (`/cookies`). Fonts and all other files are served by Glowtrace itself, so no third
+party receives your IP address when you visit. We do not use advertising cookies, tracking
+pixels or cross-site tracking. If that ever
 changes, we will ask for your consent first where the law requires it. We honour Global
 Privacy Control signals.
 
@@ -92,12 +95,13 @@ Privacy Control signals.
 We share information only with service providers who act on our instructions under
 contract:
 
-| Provider                      | Purpose                                                                                 | Location |
-| ----------------------------- | --------------------------------------------------------------------------------------- | -------- |
-| [HOSTING / DATABASE PROVIDER] | Hosting and storage                                                                     | [REGION] |
-| [PAYMENT PROVIDER]            | Payments                                                                                | [REGION] |
-| [EMAIL PROVIDER]              | Sign-in and service emails                                                              | [REGION] |
-| [AI PROVIDER]                 | Routine Coach answers (scores and product names only; no photos; not used for training) | [REGION] |
+| Provider           | Purpose                                                                                 | Location                |
+| ------------------ | --------------------------------------------------------------------------------------- | ----------------------- |
+| Supabase Inc.      | Sign-in, account, beta access and feedback database                                     | United Kingdom (London) |
+| Vercel Inc.        | Website hosting; does not store personal information                                    | [CONFIRM REGION]        |
+| [PAYMENT PROVIDER] | Payments                                                                                | [REGION]                |
+| Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                         | United Kingdom (London) |
+| [AI PROVIDER]      | Routine Coach answers (scores and product names only; no photos; not used for training) | [REGION]                |
 
 We may also disclose information when the law requires it, or to a successor if the
 business is sold, on the condition that this policy continues to apply. We do **not** sell

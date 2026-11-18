@@ -425,6 +425,9 @@ function LandingPage() {
             <Link to="/privacy" className={NAV_LINK}>
               Your data
             </Link>
+            <Link to="/cookies" className={NAV_LINK}>
+              Cookies
+            </Link>
           </nav>
         </div>
         <p className={`${SECTION} pb-10 text-xs text-muted-foreground`}>

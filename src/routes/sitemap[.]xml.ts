@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   { path: "/pricing", priority: "0.9" },
   { path: "/refer", priority: "0.7" },
   { path: "/affiliates", priority: "0.7" },
+  { path: "/cookies", priority: "0.3" },
   { path: "/scan", priority: "0.6" },
   { path: "/routine", priority: "0.6" },
 ] as const;

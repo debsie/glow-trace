@@ -240,7 +240,11 @@ function PrivacyPage() {
       </SectionCard>
 
       <p className="text-center text-sm text-muted-foreground">
-        Questions about privacy?{" "}
+        Exactly what's kept in your browser:{" "}
+        <Link to="/cookies" className="font-semibold text-primary hover:underline">
+          Cookies and storage
+        </Link>
+        . Questions about privacy?{" "}
         <Link to="/pricing" className="font-semibold text-primary hover:underline">
           Read the FAQ
         </Link>
