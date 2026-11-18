@@ -3,8 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { GhostButton, PrimaryButton } from "@/components/ui/bits";
+import { measureSubject } from "@/lib/cv/guides";
 import { frameHint, lightTip } from "@/lib/cv/kernel";
+import { subjectHint, subjectKind } from "@/lib/cv/subject-check";
 import type { Overlay, Shot } from "@/lib/scan-session";
+import type { ScanCategory } from "@/lib/types";
 
 /**
  * Live camera for one shot: a framing outline, a live quality check (the same gate a scan uses),
@@ -22,12 +25,16 @@ const FRAMES: Record<Overlay, React.ReactElement> = {
 };
 
 const PREVIEW_PX = 160;
+// The guides need more pixels than the light check to find a face, hand or hair.
+const DETECT_PX = 320;
 
 export const GuidedCamera = ({
+  category,
   shot,
   onCapture,
   onCancel,
 }: {
+  category: ScanCategory;
   shot: Shot;
   onCapture: (photo: Blob) => void;
   onCancel: () => void;
@@ -37,6 +44,8 @@ export const GuidedCamera = ({
   const [failed, setFailed] = useState(false);
   const [hint, setHint] = useState<string | undefined>("Starting the camera");
   const [tip, setTip] = useState<string | undefined>(undefined);
+  // Undefined: in frame, or the guide is unavailable (the camera then works without it).
+  const [subject, setSubject] = useState<string | undefined>("Getting the guide ready");
   const [waitedLong, setWaitedLong] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
@@ -86,6 +95,36 @@ export const GuidedCamera = ({
     return () => window.clearInterval(timer);
   }, []);
 
+  // Look for the face, hand or hair about once a second, on this device only.
+  useEffect(() => {
+    const canvas = document.createElement("canvas");
+    const kind = subjectKind(category);
+    let busy = false;
+    let stopped = false;
+    const timer = window.setInterval(() => {
+      const el = video.current;
+      if (busy || !el || el.videoWidth === 0) return;
+      const scale = DETECT_PX / Math.max(el.videoWidth, el.videoHeight);
+      canvas.width = Math.round(el.videoWidth * scale);
+      canvas.height = Math.round(el.videoHeight * scale);
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return;
+      context.drawImage(el, 0, 0, canvas.width, canvas.height);
+      busy = true;
+      void measureSubject(kind, context.getImageData(0, 0, canvas.width, canvas.height))
+        .then((measure) => {
+          if (!stopped) setSubject(measure ? subjectHint(shot.id, measure) : undefined);
+        })
+        .finally(() => {
+          busy = false;
+        });
+    }, 900);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [category, shot.id]);
+
   const capture = useCallback(() => {
     const el = video.current;
     if (!el || el.videoWidth === 0) return;
@@ -115,7 +154,8 @@ export const GuidedCamera = ({
     return () => window.clearTimeout(timer);
   }, [countdown, capture]);
 
-  const ready = hint === undefined;
+  const blocking = hint ?? subject;
+  const ready = blocking === undefined;
 
   // Rendered on <body>: the page wrapper animates, and a transformed parent would trap a fixed
   // element inside it instead of covering the screen.
@@ -191,7 +231,7 @@ export const GuidedCamera = ({
               {tip ? `Good to go. Tip: ${tip}.` : "Ready. Hold still and take the photo."}
             </span>
           ) : (
-            <span className="text-muted-foreground">{hint}</span>
+            <span className="text-muted-foreground">{blocking}</span>
           )}
         </p>
         <p className="text-center text-xs text-muted-foreground">

@@ -323,3 +323,9 @@ Also in v2.3:
   dark circles, nail cuticles, and hair breakage and flakes. Pass `--size 256` for nails and hair so
   fine detail is visible. The app reads the size from the weights file. Each new head ships only
   after it passes the same rule.
+- **Live subject check** (`subject-check.ts`, `measureSubject` in `guides.ts`): about once a second
+  the camera runs the area's guide on a 320 px preview frame. The face must cover 12-60% of the
+  frame, centred within 18%. A flat-hand shot needs four fingertips in frame, a thumb shot the
+  thumb. Hair must fill 25% of the frame. The shutter waits for this as it does for light and focus
+  ("Take photo anyway" after 5 s). If a guide cannot load, the camera works without it. Checked in
+  a browser: each guide accepted its own sample photo and rejected the other two.

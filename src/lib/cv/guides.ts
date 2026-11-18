@@ -2,6 +2,7 @@ import { faceFeatureMask, faceSkinMask } from "./face-mask";
 import type { FaceRegions } from "./face-mask";
 import { nailBoxes } from "./nail-tiles";
 import type { Point, TileBox } from "./nail-tiles";
+import type { SubjectMeasure } from "./subject-check";
 
 /**
  * On-device guides (browser only), all MediaPipe (Apache-2.0) served from this site:
@@ -168,6 +169,59 @@ export const findHairMask = async (
     }
     category.close();
     return hair / mask.length >= MIN_HAIR_SHARE ? mask : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * For the live camera: what the guide for this area sees in a small preview frame. Null when the
+ * guide could not load (the camera then works without it). Nothing is stored or sent.
+ */
+export const measureSubject = async (
+  kind: SubjectMeasure["kind"],
+  frame: ImageData,
+): Promise<SubjectMeasure | null> => {
+  try {
+    if (kind === "face") {
+      const { instance } = await faceModel();
+      const face = instance.detect(frame).faceLandmarks[0];
+      if (!face) return { kind, found: false, share: 0, centreX: 0.5, centreY: 0.5 };
+      const xs = face.map((p) => p.x);
+      const ys = face.map((p) => p.y);
+      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+      return {
+        kind,
+        found: true,
+        share: Math.max(0, x1 - x0) * Math.max(0, y1 - y0),
+        centreX: (x0 + x1) / 2,
+        centreY: (y0 + y1) / 2,
+      };
+    }
+    if (kind === "hand") {
+      const instance = await handModel();
+      const hand: Point[] | undefined = instance.detect(frame).landmarks[0];
+      if (!hand) return { kind, found: false, fingertips: 0, thumb: false };
+      const inFrame = (i: number) => {
+        const p = hand[i];
+        return !!p && p.x > 0.02 && p.x < 0.98 && p.y > 0.02 && p.y < 0.98;
+      };
+      // Fingertip landmarks: thumb 4, then index, middle, ring and little 8, 12, 16, 20.
+      return {
+        kind,
+        found: true,
+        fingertips: [8, 12, 16, 20].filter(inFrame).length,
+        thumb: inFrame(4),
+      };
+    }
+    const instance = await hairModel();
+    const category = instance.segment(frame).categoryMask;
+    if (!category) return null;
+    const source = category.getAsUint8Array();
+    let hair = 0;
+    for (const value of source) if (value > 0) hair += 1;
+    category.close();
+    return { kind, share: hair / Math.max(1, source.length) };
   } catch {
     return null;
   }
