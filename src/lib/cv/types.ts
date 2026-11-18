@@ -1,7 +1,7 @@
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v1.2.0-ts-fallback";
+export const KERNEL_VERSION = "mojocv-v2.2.0-ts";
 
 export type { ScanCategory };
 
@@ -29,6 +29,14 @@ export type ImageQuality = {
   notice?: string | undefined;
   /** Shown alongside a usable result when the light may skew colour readings. */
   warning?: string | undefined;
+  /** True when the face guide limited the skin indicators to face skin. */
+  faceGuide?: boolean | undefined;
+  /** Skin detail divided by detail at eyes, brows and lips (face guide only). Low means smoothed. */
+  skinDetail?: number | undefined;
+  /** True when the photo looks smoothed by a beauty filter; kept out of trends. */
+  filtered?: boolean | undefined;
+  /** True when the hair guide limited the hair indicators to hair pixels. */
+  hairGuide?: boolean | undefined;
 };
 
 export type BiomarkerReport = {
@@ -36,7 +44,15 @@ export type BiomarkerReport = {
   category: ScanCategory;
   quality: ImageQuality;
   metrics: BiomarkerMetric[];
+  /** Skin colour readouts for makeup matching (skin scans only). */
+  tone?: SkinTone | undefined;
 };
+
+/**
+ * ITA° (individual typology angle, atan((L* - 50) / b*)) measures depth: higher is lighter.
+ * Hue angle (atan2(b*, a*)) measures undertone: higher is more golden, lower more pink.
+ */
+export type SkinTone = { ita: number; hueAngle: number };
 
 /** Minimal pixel buffer: the shape of the DOM's ImageData, so tests can build one without a DOM. */
 export type PixelBuffer = { width: number; height: number; data: Uint8ClampedArray };

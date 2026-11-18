@@ -7,11 +7,9 @@ import {
   score,
   specularRatio,
 } from "./image";
-import type { BiomarkerMetric } from "./types";
+import { rednessScore } from "./redness-model";
+import type { BiomarkerMetric, PixelBuffer } from "./types";
 
-// Calibration: pale skin reads a* ≈ 9-13, red skin ≈ 20-27.
-const ERYTHEMA_A_LOW = 9;
-const ERYTHEMA_A_SPAN = 18;
 // Calibration v1.1: on 256 px whole-area photos, smooth skin reads ≈ 8-11 gradient energy
 // (edges and pores included) and coarse or blemished skin ≈ 16-20.
 const TEXTURE_SPAN = 20;
@@ -22,12 +20,16 @@ const HYDRATION_SPECULAR_TARGET = 0.25;
 // Calibration: circular hue variance of even skin ≈ 0-0.05; patchy ≥ 0.25.
 const DISCOLORATION_WEIGHT = 400;
 
-export const erythema = (planes: Planes): BiomarkerMetric => ({
+/**
+ * Kernel v2: physics-supervised redness model (see redness-model.ts). Reads the photo itself,
+ * not the shared planes, because it needs raw camera values for optical density.
+ */
+export const erythema = (image: PixelBuffer, mask: Uint8Array | null = null): BiomarkerMetric => ({
   key: "erythema",
   label: "Redness",
-  value: score(((mean(planes.labA) - ERYTHEMA_A_LOW) / ERYTHEMA_A_SPAN) * 100),
+  value: score(rednessScore(image, mask)),
   higherMeans: "more",
-  description: "How red the skin tone reads.",
+  description: "How much blood colour the skin shows, separated from skin tone and light.",
 });
 
 export const skinTexture = (planes: Planes): BiomarkerMetric => ({
@@ -58,8 +60,31 @@ export const discoloration = (planes: Planes): BiomarkerMetric => ({
   description: "How patchy the colour is.",
 });
 
-export const analyzeSkin = (planes: Planes): BiomarkerMetric[] => [
-  erythema(planes),
+/** Median ITA° and hue angle of skin-coloured pixels (inside the mask). Null when too few. */
+export const skinTone = (planes: Planes): { ita: number; hueAngle: number } | null => {
+  const ita: number[] = [];
+  const hue: number[] = [];
+  for (let index = 0; index < planes.count; index += 1) {
+    if (planes.mask && planes.mask[index] !== 1) continue;
+    const L = planes.labL[index] ?? 0;
+    const a = planes.labA[index] ?? 0;
+    const b = planes.labB[index] ?? 0;
+    const angle = (Math.atan2(b, a) * 180) / Math.PI;
+    if (!(L > 20 && L < 95 && a > 2 && angle > 10 && angle < 80)) continue;
+    ita.push((Math.atan((L - 50) / b) * 180) / Math.PI);
+    hue.push(angle);
+  }
+  if (ita.length < planes.count * 0.05 || ita.length < 50) return null;
+  const median = (values: number[]) => {
+    const sorted = [...values].sort((x, y) => x - y);
+    return sorted[Math.floor(sorted.length / 2)] ?? 0;
+  };
+  const round1 = (value: number) => Math.round(value * 10) / 10;
+  return { ita: round1(median(ita)), hueAngle: round1(median(hue)) };
+};
+
+export const analyzeSkin = (planes: Planes, image: PixelBuffer): BiomarkerMetric[] => [
+  erythema(image, planes.mask),
   skinTexture(planes),
   hydration(planes),
   discoloration(planes),

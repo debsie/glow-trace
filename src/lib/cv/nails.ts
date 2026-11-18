@@ -1,5 +1,5 @@
 import type { Planes } from "./image";
-import { gradientEnergy, mean, outlierFraction, score } from "./image";
+import { gradientEnergy, maskedMean, outlierFraction, score } from "./image";
 import type { BiomarkerMetric } from "./types";
 
 // Calibration: healthy pale nail b* ≈ 10-14; yellowed ≈ 20-26.
@@ -15,7 +15,7 @@ const RIDGE_SPAN = 16;
 export const yellowness = (planes: Planes): BiomarkerMetric => ({
   key: "yellowness",
   label: "Yellowness",
-  value: score(((mean(planes.labB) - YELLOW_B_LOW) / YELLOW_B_SPAN) * 100),
+  value: score(((maskedMean(planes, planes.labB) - YELLOW_B_LOW) / YELLOW_B_SPAN) * 100),
   higherMeans: "more",
   description: "How much yellow staining shows.",
 });

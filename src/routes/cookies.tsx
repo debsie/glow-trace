@@ -49,6 +49,12 @@ const ITEMS: Item[] = [
     kept: "Until you delete your data",
   },
   {
+    name: "Scan guide files (only once you use a guided scan)",
+    where: "Browser cache storage (glowtrace-face-guide-1)",
+    why: "The on-device guides' program and models (face, hand, hair), about 15 MB plus 1-8 MB per area, so they download once. Nothing about you.",
+    kept: "Until you clear this site's data",
+  },
+  {
     name: "Offline copy of the app",
     where: "Browser cache storage (glowtrace-v1)",
     why: "Lets the app open and scan without a connection. Holds app pages and files, nothing about you.",

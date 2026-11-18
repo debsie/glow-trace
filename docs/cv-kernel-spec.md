@@ -158,3 +158,138 @@ are consistent across skin tones.
   and blur changes and fails if an indicator moves more than its stated tolerance. Those
   tolerances are the honest limit of what a reading can claim: a change smaller than the
   tolerance between two scans is noise, not progress.
+
+## v1.3 (`mojocv-v1.3.0-ts-fallback`): tone-adjusted redness
+
+Why: run against 160 close-up photos from Google's SCIN dataset (`scripts/scin-report.ts`),
+v1.2 redness read 0 on most real photos. It averaged a\* over the whole frame, so background and
+phone colour pulled it below the old floor (a\* 9). Raw skin a\* also rises with skin tone (Monk
+1-2 median 9.6, Monk 5-6 median 14.4), so a plain a\* score would call medium skin "red".
+
+Formula:
+
+- Skin pixels: L\* 20-95, a\* > 2, hue angle atan2(b\*, a\*) between 10° and 80°. If under 10% of
+  the photo qualifies, use every pixel.
+- `residual = median_skin_a − (3.21 + 0.539 × median_skin_b)`. The line is a least-squares fit of
+  a\* on b\* across 159 SCIN photos spanning Monk 1-10.
+- `redness = clamp((residual + 4.6) / 14 × 100)`. Residual p10 ≈ −6, median ≈ −0.5, p90 ≈ +6, so a
+  typical photo reads about 30.
+
+Results on the SCIN sample (median redness): Monk 1-2: 35.1, 3-4: 29.6, 5-6: 27.0, 7-10: 28.3.
+Under a 4% warm or cool light shift redness now moves at most 5 points (v1.2: 14); the agent's
+redness noise floor is 6. Other indicators are unchanged.
+
+Limits: SCIN has no redness labels, so this fixes fairness and range, not accuracy. Condition
+labels ("usually red" conditions) did not separate clearly, which is expected for small affected
+areas in varied photos.
+
+## Evaluated and not adopted (2026-11-18)
+
+Tested on the same SCIN sample (`scripts/scin-report.ts`, helpers in `src/lib/cv/pigment.ts`).
+Fairness = spread of skin-tone group medians, divided by the overall interquartile range
+(lower is fairer).
+
+| Redness candidate                                         | Fairness  | Note                                       |
+| --------------------------------------------------------- | --------- | ------------------------------------------ |
+| v1.3 Lab residual (shipped)                               | 0.20      |                                            |
+| Pigment separation, optical density `dG − β·dB`, β fitted | 0.28-0.78 | Less fair at every β tried                 |
+| Light correction (shades of grey, p = 6) before v1.3      | 0.45      | Washes out real skin colour with the light |
+
+The "usually red conditions" signal moved between +0.43 and −0.17 across settings: with 31 such
+photos it is noise, so it was not used to choose. Revisit pigment separation when there are
+labelled ratings (opt-in contributions) to test against.
+
+## v2.0 (`mojocv-v2.0.0-ts`): physics-supervised redness model
+
+Redness is now a trained model; the other indicators are unchanged. Code:
+`src/lib/cv/redness-model.ts`, weights `src/lib/cv/redness-weights.json`, training
+`research/redness/`.
+
+**How it is trained, without anyone labelling redness.** In optical density (OD = −ln
+reflectance) light absorbers add (Beer-Lambert). Adding a known amount `c` of haemoglobin
+(OD direction R:G:B ≈ 0.04 : 1 : 0.85, jittered ±20% per example because it is approximate) to
+the skin pixels of a real photo gives a photo whose extra redness is known. Each example is two
+views of the same SCIN photo, each under independent random light colour, exposure, blur and
+sensor noise, one with `c` added (sometimes everywhere, sometimes as a soft patch). The model `f`
+learns `f(B) − f(A) = c`, so it has to respond to blood and ignore light and camera. A fairness
+term keeps `f`'s mean on unaltered photos equal across Monk skin-tone groups. Deeper tones,
+rarer in SCIN, get twice the examples.
+
+**Model.** Five small networks (18 → 32 → 32 → 1, tanh), averaged. Inputs: 10th, 50th and 90th
+percentiles over skin pixels of `OD_green − OD_red`, `OD_blue − OD_red`, a\*, b\* and L\*, plus the
+shades-of-grey light estimate (r, b) and the skin share. Output mapped so the training sample's
+10th percentile reads 10 and its 90th reads 70. The TypeScript features and output match the
+Python trainer to six decimals (`src/test/redness-model.test.ts`).
+
+**Held-out results** (114 SCIN photos never used in training, 912 simulated pairs):
+
+| Measure                                                                | v2 model | v1.3 formula |
+| ---------------------------------------------------------------------- | -------- | ------------ |
+| Correlation with the true added redness                                | 0.64     | 0.32         |
+| Change caused by light alone, in haemoglobin units (lower is steadier) | 0.088    | 0.223        |
+| Same, deepest skin (Monk 7-10)                                         | 0.050    | 0.193        |
+| Gap between skin-tone group medians ÷ interquartile range              | 0.30     | 0.51         |
+
+**Synthetic checks** (`robustness.test.ts`): a 4% warm or cool shift on the flat test patches moves
+redness up to 7.4 points (v1.3: 5), so the tolerance and the agent's redness noise floor are 8.
+The same added blood raises every skin tone by more than 5 points, with 7.8 points between the
+largest and smallest rise.
+
+**Limits.** The haemoglobin direction is an approximation, and simulated blood is not real
+inflammation. This proves the model tracks blood-like colour change fairly and steadily; it does
+not prove agreement with what people or clinicians call redness. The opt-in ratings are the test
+for that, and the model must keep beating v1.3 there to stay.
+
+## v2.1 (`mojocv-v2.1.0-ts`): optional face guide
+
+Opt-in on skin scans. MediaPipe Face Landmarker (Apache-2.0, served from this site:
+`public/mediapipe/face_landmarker.task`, runtime copied from `node_modules` by
+`scripts/copy-mediapipe.ts`; about 18 MB, cached by the service worker) finds the face on a
+640 px copy of the photo. `src/lib/cv/face-mask.ts` turns the landmarks into a mask at the
+analysis size: the face outline shrunk to 92% about its centre, minus the eyes, brows and lips
+enlarged to 130%. A face covering under 8% of the photo is ignored.
+
+With a mask, every skin indicator reads only masked pixels: redness features, texture (pixel
+pairs fully inside), hydration (8 px blocks at least 75% inside, highlights inside), and colour
+evenness. The quality gate still judges the whole photo. Without the guide, or when no face is
+found, results are identical to v2.0. Landmarks are never stored. The browser needs
+`'wasm-unsafe-eval'` in `script-src`.
+
+Not yet calibrated: texture and hydration constants were set on whole-area photos, so masked
+readings sit lower (no hair or background edges). Compare scans taken with the same setting.
+
+### Tone readouts for makeup (added in v2.1, indicators unchanged)
+
+Skin reports carry `tone: { ita, hueAngle }`: medians over skin-coloured pixels (inside the face
+mask when the guide is on) of ITA° = atan((L\* − 50) / b\*) and hue angle atan2(b\*, a\*).
+`src/lib/makeup.ts` turns them, with the indicators, into shade depth (ITA bands of Chardon et
+al. 1991), undertone (hue split around the SCIN median: under 48° cool, over 60° warm), finish,
+primer, correctors and prep. The scan page and MUA client briefs show it. Undertone is marked
+unsure when the scan warned about coloured light.
+
+## v2.2 (`mojocv-v2.2.0-ts`): guided scans for nails and hair
+
+- **Masks for every area.** `analyzeBiomarkers(category, image, areaMask)` reads hair indicators
+  inside a hair mask (MediaPipe hair segmenter, about 0.8 MB) and records `quality.hairGuide`.
+  Masked helpers: `highlightContrast`, block means (blocks at least 75% inside),
+  `outlierFraction`, and nail yellowness via `maskedMean`. Trends compare only scans with the same
+  guide settings.
+- **Per-nail tiles.** MediaPipe Hand Landmarker (about 7.8 MB) finds the hand on a 1280 px copy of
+  the photo. `nail-tiles.ts` places each nail 30% back from the fingertip towards the last joint,
+  1.15 times the last bone long, and crops a 128 px tile; each tile is scored on its own.
+- **Sessions** (`scan-session.ts`): skin one shot; nails a flat hand (four fingers) and the thumb;
+  hair lengths (shine, porosity), parting or crown (density) and ends (porosity). Each indicator is
+  the mean over the shots trusted for it and every tile within them.
+- **Live camera check**: `frameHint` runs the same quality gate on a 160 px preview twice a
+  second; the shutter waits until a photo would score (or, after five seconds, offers "Take photo
+  anyway").
+
+## Beauty-filter check (`src/lib/cv/filter-check.ts`, with the face guide)
+
+Beauty filters, beauty mode and portrait mode smooth skin but keep eyes, brows and lips sharp. On
+a 640 px copy, fine detail (mean |luma − 3×3 mean|) inside face skin is divided by fine detail
+inside the eyes, brows and lips (`faceFeatureMask`, polygons enlarged to 130%). Measured on one
+real selfie: unfiltered 0.663, half resolution 0.631, soft focus 0.666; skin-only smoothing at
+30% 0.469, 60% 0.287, 90% 0.111. Below `FILTER_RATIO` = 0.45 the report gets `quality.filtered`,
+a warning asking for a retake without filters, and is kept out of trends. Provisional: re-check
+the threshold on more faces and phones before relying on it.

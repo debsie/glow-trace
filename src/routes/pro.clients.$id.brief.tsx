@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
+import { DEFAULT_PROFILE, recoverySteps, removalSteps } from "@/lib/makeup-day";
 import { PageHeader, PrimaryButton } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { findingsFor } from "@/lib/agent/agent";
@@ -15,7 +17,11 @@ function ClientBrief() {
   const client = clients.find((item) => item.id === id);
   if (!client) return <PageHeader title="Client not found" />;
 
-  const findings = findingsFor(scans.filter((scan) => scan.client_id === client.id));
+  const clientScans = scans.filter((scan) => scan.client_id === client.id);
+  const findings = findingsFor(clientScans);
+  const latestSkin = clientScans
+    .filter((scan) => scan.category === "skin" && !scan.demo)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   const look = looks.find((item) => item.client_id === client.id);
   const attention = findings.filter((finding) => finding.severity !== "good");
 
@@ -67,6 +73,32 @@ function ClientBrief() {
               ))}
             </ul>
           )}
+        </section>
+
+        <section>
+          <h2 className="font-display text-lg font-semibold">Base match and prep</h2>
+          <div className="mt-1">
+            <MakeupPrepPanel report={latestSkin?.report} />
+          </div>
+        </section>
+
+        <section>
+          <h2 className="font-display text-lg font-semibold">Aftercare: taking it off tonight</h2>
+          <ol className="mt-1 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+            {removalSteps(latestSkin?.report ?? null, { ...DEFAULT_PROFILE, wear: "long" }).map(
+              (step) => (
+                <li key={step}>{step}</li>
+              ),
+            )}
+          </ol>
+          <h3 className="mt-3 font-semibold">The night after</h3>
+          <ol className="mt-1 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+            {recoverySteps(latestSkin?.report ?? null, { ...DEFAULT_PROFILE, wear: "long" }).map(
+              (step) => (
+                <li key={step}>{step}</li>
+              ),
+            )}
+          </ol>
         </section>
 
         {attention.length > 0 && (

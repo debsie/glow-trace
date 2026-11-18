@@ -39,3 +39,11 @@ dist-ssr
 
 # Vercel build output and local link
 .vercel
+
+# Python
+__pycache__/
+*.pyc
+*.npz
+
+# Copied from node_modules at build time
+public/mediapipe/wasm/

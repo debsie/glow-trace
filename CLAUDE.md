@@ -26,8 +26,13 @@ Vitest, Supabase (sign-in and beta only), bun.
   migration file per change; run Supabase's security advisor afterwards.
 - Security headers (`lib/security-headers.ts`): any new origin must be added there. No third-party
   scripts, fonts, analytics or embeds without updating the CSP, `/cookies` and `docs/legal/privacy.md`.
-- Privacy: photos and scans stay on the device; only email, name, access, requests, feedback and
-  the audit log live in Supabase. Adults only (18+).
+- Privacy: photos and scans stay on the device; only email, name, access, requests, feedback, the
+  audit log and opt-in calibration numbers (scores and ratings, never photos) live in Supabase.
+  Adults only (18+).
+- Calibration (`docs/calibration-plan.md`): never claim clinical accuracy. Claims are repeatability
+  and direction of change. Trends come from a Kalman filter (`lib/trend.ts`): a change counts at 95%
+  certainty, with each indicator's noise floor (`NOISE_BY_CONCERN`, redness 8, measured in
+  `robustness.test.ts`) taken as two standard deviations of a reading.
 
 ## Design system ("clinical atelier")
 

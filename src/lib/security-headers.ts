@@ -30,7 +30,8 @@ export const contentSecurityPolicy = (supabaseUrl: string | undefined): string =
   [
     "default-src 'self'",
     // Cloudflare Turnstile (bot check on sign-in) is the only third-party script and frame.
-    `script-src 'self' 'unsafe-inline' ${TURNSTILE_ORIGIN}`,
+    // 'wasm-unsafe-eval' lets the on-device face guide (MediaPipe, served from this site) run.
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${TURNSTILE_ORIGIN}`,
     `frame-src ${TURNSTILE_ORIGIN}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",

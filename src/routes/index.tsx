@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Check, Eye, Lock, Pencil, Repeat, Send } from "lucide-react";
 
 import { HeroInstrument } from "@/components/landing/hero-instrument";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Reveal } from "@/components/motion/reveal";
 import { ThreeCanvas } from "@/components/three/three-canvas";
 import { Badge, BUTTON_GHOST, BUTTON_PRIMARY, LogoMark } from "@/components/ui/bits";
@@ -42,40 +43,35 @@ const INDICATORS = [
   {
     area: "Skin",
     name: "Redness",
-    reads: "How red the skin tone reads, from the a* axis of CIELab",
-    range: "a* 9 → 27",
+    reads: "How red your skin tone looks in the photo",
     ends: ["pale", "red"],
     fill: 33,
   },
   {
     area: "Skin",
     name: "Texture coarseness",
-    reads: "Surface unevenness, from local luminance change",
-    range: "0 → 14",
+    reads: "How smooth or uneven the surface looks",
     ends: ["flat", "rough"],
     fill: 38,
   },
   {
     area: "Skin",
     name: "Hydration",
-    reads: "Highlights against flaky, matte patches",
-    range: "0 → 100",
+    reads: "How dry or supple the skin looks",
     ends: ["dry", "supple"],
     fill: 70,
   },
   {
     area: "Hair",
     name: "Shine",
-    reads: "Share of specular pixels across the strands",
-    range: "0 → 20%",
+    reads: "How much light your strands reflect",
     ends: ["matte", "highlight"],
     fill: 58,
   },
   {
     area: "Nails",
     name: "Yellowness",
-    reads: "Staining, from the b* axis of CIELab",
-    range: "b* 10 → 26",
+    reads: "Yellowing or staining of the nail",
     ends: ["healthy", "yellowed"],
     fill: 13,
   },
@@ -117,8 +113,11 @@ function LandingPage() {
             <span className="font-display text-xl font-semibold text-foreground">Glowtrace</span>
           </Link>
           <nav aria-label="Primary" className="flex items-center gap-1">
+            <a href="#how" className={`${NAV_LINK} hidden md:inline-flex`}>
+              How it works
+            </a>
             <a href="#measures" className={`${NAV_LINK} hidden md:inline-flex`}>
-              What it measures
+              What it looks at
             </a>
             <a href="#artists" className={`${NAV_LINK} hidden md:inline-flex`}>
               For artists
@@ -126,10 +125,13 @@ function LandingPage() {
             <Link to="/pricing" className={`${NAV_LINK} hidden sm:inline-flex`}>
               Pricing
             </Link>
-            <Link to="/login" className={`${NAV_LINK} hidden sm:inline-flex`}>
+            <Link to="/login" className={NAV_LINK}>
               Sign in
             </Link>
-            <Link to="/app" className={`${BUTTON_PRIMARY} ml-2`}>
+            <span className="ml-1">
+              <ThemeToggle />
+            </span>
+            <Link to="/app" className={`${BUTTON_PRIMARY} ml-1`}>
               Open the app
             </Link>
           </nav>
@@ -162,16 +164,28 @@ function LandingPage() {
                 is doing, <span className="text-primary">from one photo.</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg text-muted-foreground">
-                One photo. Scored on your device. A routine built from what you already own.
+                Take a photo of your skin, hair or nails. Glowtrace reads it on your phone and tells
+                you what to look after, using products you already own. Your photo is never
+                uploaded.
               </p>
               <div className="mt-8 flex flex-wrap gap-2">
                 <Link to="/login" className={BUTTON_PRIMARY}>
                   Request Beta Access <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </Link>
-                <Link to="/pro/clients" className={BUTTON_GHOST}>
-                  I'm a makeup artist
-                </Link>
+                <a href="#how" className={BUTTON_GHOST}>
+                  See how it works
+                </a>
               </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Free during the beta. For people 18 and over. Makeup artist?{" "}
+                <Link
+                  to="/makeup-artist-app"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  See MUA Studio
+                </Link>
+                .
+              </p>
               <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6">
                 {PROOF.map((item) => (
                   <div key={item.label}>
@@ -209,9 +223,10 @@ function LandingPage() {
         <section id="measures" className={`${SECTION} scroll-mt-20 py-20`}>
           <Reveal>
             <p className={LABEL}>What it measures</p>
-            <h2 className={`${H2} max-w-2xl`}>Every score comes from pixels.</h2>
+            <h2 className={`${H2} max-w-2xl`}>What Glowtrace looks at.</h2>
             <p className="mt-4 max-w-xl text-muted-foreground">
-              No black box. Fixed formulas, in the open. Same photo, same result.
+              Each one is a score from 0 to 100 with a plain note on what it means. Same photo, same
+              result, every time.
             </p>
           </Reveal>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -223,7 +238,6 @@ function LandingPage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <Badge tone="accent">{item.area}</Badge>
-                  <span className="readout text-xs text-muted-foreground">{item.range}</span>
                 </div>
                 <h3 className="mt-5 font-display text-2xl font-semibold">{item.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{item.reads}</p>
@@ -243,7 +257,7 @@ function LandingPage() {
         </section>
 
         {/* How it works */}
-        <section className="border-y border-border bg-card py-20">
+        <section id="how" className="scroll-mt-20 border-y border-border bg-card py-20">
           <div className={SECTION}>
             <Reveal>
               <p className={LABEL}>How it works</p>
@@ -286,8 +300,8 @@ function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link to="/pro/clients" className={`${BUTTON_GHOST} mt-8`}>
-                Open the client roster <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              <Link to="/makeup-artist-app" className={`${BUTTON_GHOST} mt-8`}>
+                See MUA Studio <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
             </Reveal>
 

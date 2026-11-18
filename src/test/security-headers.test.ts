@@ -19,7 +19,9 @@ describe("Security headers", () => {
 
   it("allows Cloudflare Turnstile for scripts and frames, and nothing else third-party", () => {
     const csp = contentSecurityPolicy(supabase);
-    expect(csp).toContain("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
+    expect(csp).toContain(
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com",
+    );
     expect(csp).toContain("frame-src https://challenges.cloudflare.com");
     expect(csp.match(/https:\/\/(?!ysbruktqgqpbkhbshthi)[a-z.]+/g)).toEqual([
       "https://challenges.cloudflare.com",

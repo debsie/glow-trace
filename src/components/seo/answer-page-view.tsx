@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 
 import { FaqList } from "@/components/common/faq-list";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { BUTTON_GHOST, BUTTON_PRIMARY, LogoMark } from "@/components/ui/bits";
 import type { AnswerPage } from "@/content/answer-pages";
 
@@ -14,9 +15,12 @@ export const AnswerPageView = ({ page }: { page: AnswerPage }) => (
           <LogoMark />
           <span className="font-display text-xl font-semibold">Glowtrace</span>
         </Link>
-        <Link to={page.cta.to} className={BUTTON_PRIMARY}>
-          {page.cta.label}
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link to={page.cta.to} className={BUTTON_PRIMARY}>
+            {page.cta.label}
+          </Link>
+        </div>
       </div>
     </header>
 

@@ -2,7 +2,7 @@ import type { Biomarkers } from "../types";
 import { analyzeHair } from "./hair";
 import { clamp100, gradientEnergy, highlightCast, meanLuma, round1, toPlanes } from "./image";
 import { analyzeNails } from "./nails";
-import { analyzeSkin } from "./skin";
+import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
 import { KERNEL_VERSION } from "./types";
 
@@ -39,7 +39,16 @@ const qualityNotice = (
   return undefined;
 };
 
-export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): BiomarkerReport => {
+/**
+ * `areaMask`: 1 for the pixels to read. Skin: face skin from the face guide (no eyes, brows, lips,
+ * hair or background). Hair: hair from the hair guide. Quality is always judged on the whole
+ * photo; indicators only on the mask.
+ */
+export const analyzeBiomarkers = (
+  category: ScanCategory,
+  image: PixelBuffer,
+  areaMask: Uint8Array | null = null,
+): BiomarkerReport => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
   const notice = qualityNotice(image.width, sharpness, meanLuma(planes));
@@ -52,16 +61,20 @@ export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): B
   };
   const warning = notice ? undefined : castWarning(highlightCast(planes));
   if (warning) quality.warning = warning;
+  if (areaMask && category === "skin") quality.faceGuide = true;
+  if (areaMask && category === "hair") quality.hairGuide = true;
   if (!quality.usable) {
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }
+  const area = areaMask ? toPlanes(image, areaMask) : planes;
   const metrics =
     category === "skin"
-      ? analyzeSkin(planes)
+      ? analyzeSkin(area, image)
       : category === "hair"
-        ? analyzeHair(planes)
-        : analyzeNails(planes);
-  return { kernelVersion: KERNEL_VERSION, category, quality, metrics };
+        ? analyzeHair(area)
+        : analyzeNails(area);
+  const tone = category === "skin" ? skinTone(area) : null;
+  return { kernelVersion: KERNEL_VERSION, category, quality, metrics, ...(tone ? { tone } : {}) };
 };
 
 /** Overall 0-100 score for a report: higher is healthier. Null when nothing was scored. */
@@ -108,4 +121,14 @@ export const reportToBiomarkers = (report: BiomarkerReport): Biomarkers => {
     porosity: 0,
     discoloration: v("yellowness"),
   };
+};
+
+/**
+ * For the live camera: the same quality gate as a scan, on a small preview frame, so the
+ * shutter only enables when the photo would be scored. Undefined means good to go.
+ */
+export const frameHint = (image: PixelBuffer): string | undefined => {
+  const planes = toPlanes(image);
+  const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
+  return qualityNotice(image.width, sharpness, meanLuma(planes));
 };
