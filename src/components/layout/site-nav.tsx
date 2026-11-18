@@ -3,6 +3,7 @@ import {
   Droplets,
   Gift,
   Home,
+  LayoutDashboard,
   LineChart,
   MessagesSquare,
   ScanLine,
@@ -14,7 +15,9 @@ import type { LucideIcon } from "lucide-react";
 import { AccessGate } from "@/components/auth/access-gate";
 import { useAuth } from "@/context/auth";
 import { gateFor } from "@/lib/access";
-import { LogoMark, TierBadge } from "@/components/ui/bits";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { Badge, LogoMark, TierBadge } from "@/components/ui/bits";
+import { daysLeft, ENDING_SOON_DAYS } from "@/lib/beta";
 import { useAppState } from "@/context/app-state";
 import { PLANS, scansLeft } from "@/lib/plans";
 import type { Workspace } from "@/lib/types";
@@ -148,6 +151,32 @@ const PlanSummary = () => {
   );
 };
 
+/** Beta testers see how long their access lasts, with a heads-up near the end. */
+const BetaNotice = () => {
+  const { access, isAdmin } = useAuth();
+  if (access.kind !== "member" && access.kind !== "demo") return null;
+  const left = access.kind === "member" ? daysLeft(access.expiresAt, new Date()) : null;
+  const ending = left !== null && left <= ENDING_SOON_DAYS;
+  return (
+    <div className="mt-4 space-y-1 px-4 text-xs">
+      <span className="flex items-center gap-2">
+        <Badge tone={ending ? "warning" : "accent"}>Beta</Badge>
+        <span className={ending ? "font-semibold text-warning" : "text-muted-foreground"}>
+          {left === null ? "Early access" : `${left} ${left === 1 ? "day" : "days"} left`}
+        </span>
+      </span>
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="flex min-h-[44px] items-center gap-2 font-semibold text-primary hover:underline"
+        >
+          <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Beta dashboard
+        </Link>
+      )}
+    </div>
+  );
+};
+
 /** App shell: sticky top bar, side rail on desktop, bottom nav on mobile. */
 export const SiteShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -184,6 +213,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
           <NavLinkList layout="side" />
           <PlanSummary />
+          <BetaNotice />
           <Link
             to="/privacy"
             className="mt-1 flex min-h-[50px] items-center gap-2 rounded-xl px-4 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -196,6 +226,8 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           {children}
         </main>
       </div>
+
+      {pathname !== "/admin" && <FeedbackButton />}
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
         <NavLinkList layout="bottom" />

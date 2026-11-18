@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Droplets,
   Gift,
+  LayoutDashboard,
   MessagesSquare,
   ScanLine,
   ShieldCheck,
@@ -11,6 +12,7 @@ import {
 
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { useAuth } from "@/context/auth";
 import { briefing } from "@/lib/agent/agent";
 import { scanScore } from "@/lib/beauty";
 import { shortDate } from "@/lib/progress";
@@ -33,6 +35,7 @@ const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nai
 function Dashboard() {
   const { profile, scans, activeClients, looks, tier, usage, rewards, catalog, inventory } =
     useAppState();
+  const { isAdmin } = useAuth();
   const brief = briefing(scans, catalog, inventory);
   const topPick = brief.suggestions.find((suggestion) => !suggestion.onShelf);
   const left = scansLeft(tier, usage.scans, rewards.bonusScans);
@@ -124,6 +127,20 @@ function Dashboard() {
             </Link>
           </div>
         </section>
+      )}
+
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="surface lift flex min-h-[64px] items-center gap-3 px-5 text-sm text-muted-foreground"
+        >
+          <LayoutDashboard className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <span>
+            <span className="font-semibold text-foreground">Beta dashboard.</span> Requests, testers
+            and feedback.
+          </span>
+          <ArrowRight className="ml-auto h-5 w-5 shrink-0" aria-hidden="true" />
+        </Link>
       )}
 
       <Link to="/agent" className="surface-strong lift block p-5">

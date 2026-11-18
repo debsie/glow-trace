@@ -13,7 +13,16 @@ export type AccessState =
   | { kind: "signed-out" }
   /** Signed in but not on the invite list yet. */
   | { kind: "waitlisted"; email: string }
-  | { kind: "member"; userId: string; email: string; displayName: string };
+  /** Was a tester, but the access window ended or was revoked. */
+  | { kind: "expired"; email: string }
+  | {
+      kind: "member";
+      userId: string;
+      email: string;
+      displayName: string;
+      /** ISO end of access; null when it has no end date. */
+      expiresAt: string | null;
+    };
 
 export const emailSchema = z
   .string()
@@ -41,10 +50,11 @@ export const isPublicPath = (pathname: string): boolean =>
 export const gateFor = (
   pathname: string,
   state: AccessState,
-): "show" | "wait" | "sign-in" | "waitlist" => {
+): "show" | "wait" | "sign-in" | "waitlist" | "expired" => {
   if (isPublicPath(pathname) || state.kind === "demo" || state.kind === "member") return "show";
   if (state.kind === "checking") return "wait";
   if (state.kind === "signed-out") return "sign-in";
+  if (state.kind === "expired") return "expired";
   return "waitlist";
 };
 

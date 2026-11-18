@@ -18,8 +18,15 @@ describe("Beta access", () => {
     expect(gateFor("/scan", { kind: "signed-out" })).toBe("sign-in");
     expect(gateFor("/scan", { kind: "waitlisted", email: "a@b.co" })).toBe("waitlist");
     expect(
-      gateFor("/scan", { kind: "member", userId: "u", email: "a@b.co", displayName: "A" }),
+      gateFor("/scan", {
+        kind: "member",
+        userId: "u",
+        email: "a@b.co",
+        displayName: "A",
+        expiresAt: null,
+      }),
     ).toBe("show");
+    expect(gateFor("/scan", { kind: "expired", email: "a@b.co" })).toBe("expired");
     expect(gateFor("/pricing", { kind: "signed-out" })).toBe("show");
   });
 
