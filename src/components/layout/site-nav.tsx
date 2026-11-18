@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  FlaskConical,
   PanelLeftClose,
   PanelLeftOpen,
   Droplets,
@@ -33,6 +34,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; sideOnly?: boole
   { to: "/routine", label: "Routine", icon: Droplets },
   { to: "/progress", label: "Progress", icon: LineChart },
   { to: "/pro/clients", label: "Clients", icon: Users },
+  { to: "/ingredients", label: "Ingredients", icon: FlaskConical, sideOnly: true },
   { to: "/refer", label: "Earn", icon: Gift, sideOnly: true },
 ];
 
@@ -241,7 +243,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   };
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+      <header className="sticky top-0 z-40 flex print:hidden items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
         <Logo />
         <div className="hidden sm:block">
           <WorkspaceSwitcher />
@@ -251,7 +253,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 
       <div className="mx-auto flex w-full max-w-7xl">
         <aside
-          className={`sticky top-[72px] hidden h-fit shrink-0 py-6 pl-4 transition-[width] duration-200 lg:block ${
+          className={`sticky top-[72px] hidden h-fit shrink-0 print:!hidden py-6 pl-4 transition-[width] duration-200 lg:block ${
             collapsed ? "w-[72px]" : "w-60"
           }`}
         >
@@ -325,9 +327,13 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         </main>
       </div>
 
-      {pathname !== "/admin" && <FeedbackButton />}
+      {pathname !== "/admin" && (
+        <div className="print:hidden">
+          <FeedbackButton />
+        </div>
+      )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden print:hidden">
         <NavLinkList layout="bottom" />
       </div>
     </div>

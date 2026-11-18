@@ -89,7 +89,7 @@ export const PLANS: Record<SubscriptionTier, Plan> = {
       { label: "Unlimited skin, hair and nail check-ins", status: "live" },
       { label: "All 4 routines: AM, PM, Pre-Makeup Prep, Barrier Reset", status: "live" },
       { label: "Up to 25 products on your shelf", status: "live" },
-      { label: "Ingredient conflict checks", status: "soon" },
+      { label: "Ingredient conflict checks", status: "live" },
       { label: "10 Routine Coach consults a month", status: "soon" },
     ],
     boundaries: [
@@ -118,9 +118,9 @@ export const PLANS: Record<SubscriptionTier, Plan> = {
       { label: "Up to 5 active clients at a time", status: "live" },
       { label: "Client lookbooks with sign-off", status: "live" },
       { label: "Shareable guest links and codes", status: "soon" },
-      { label: "7-day pre-event prep planner", status: "soon" },
+      { label: "7-day pre-event prep planner", status: "live" },
       { label: "Client check-in photo storage", status: "soon" },
-      { label: "Printable PDF client briefs", status: "soon" },
+      { label: "Printable PDF client briefs", status: "live" },
     ],
     boundaries: [
       "5 active clients at once — archive finished bookings to free a spot",
@@ -267,6 +267,16 @@ export const studioAccessGate = (tier: SubscriptionTier): Gate => {
     title: "Client tools live in MUA Studio",
     message: `Keep up to ${PLANS.studio.limits.activeClients} active clients, build lookbooks and get sign-off for ${perMonth(PLANS.studio)}.`,
     upgradeTo: "studio",
+  };
+};
+
+export const ingredientGate = (tier: SubscriptionTier): Gate => {
+  if (tier !== "free") return OPEN;
+  return {
+    allowed: false,
+    title: "Ingredient checks come with Glow Pro",
+    message: `Paste any ingredient list and see which products should not share a routine, for ${perMonth(PLANS.pro)}.`,
+    upgradeTo: "pro",
   };
 };
 

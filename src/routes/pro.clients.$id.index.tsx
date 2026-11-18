@@ -55,6 +55,20 @@ function ClientDetail() {
             >
               Open Lookbook
             </Link>
+            <Link
+              to="/pro/clients/$id/prep"
+              params={{ id: client.id }}
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Prep plan
+            </Link>
+            <Link
+              to="/pro/clients/$id/brief"
+              params={{ id: client.id }}
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-6 text-base font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Client brief
+            </Link>
             <PrimaryButton
               disabled={!look || look.status !== "drafting"}
               onClick={() => {
