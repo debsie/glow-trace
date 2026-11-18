@@ -120,8 +120,17 @@ def load_scin(per_group):
 
 
 def load_folder(folder, limit):
-    paths = sorted(glob.glob(os.path.join(folder, "**", "*.*"), recursive=True))
-    paths = [p for p in paths if p.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))][:limit]
+    # A fair share from every dataset (top-level folder), so one large set cannot crowd out others.
+    by_set = {}
+    for p in sorted(glob.glob(os.path.join(folder, "**", "*.*"), recursive=True)):
+        if p.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            by_set.setdefault(os.path.relpath(p, folder).split(os.sep)[0], []).append(p)
+    share = max(1, limit // max(1, len(by_set)))
+    paths = []
+    for top, items in sorted(by_set.items()):
+        np.random.default_rng(0).shuffle(items)
+        paths += items[:share]
+        print(f"  {top}: using {min(share, len(items))} of {len(items)}")
     loaded = []
     for path in paths:
         try:
