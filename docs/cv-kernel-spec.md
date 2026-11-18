@@ -239,3 +239,21 @@ largest and smallest rise.
 inflammation. This proves the model tracks blood-like colour change fairly and steadily; it does
 not prove agreement with what people or clinicians call redness. The opt-in ratings are the test
 for that, and the model must keep beating v1.3 there to stay.
+
+## v2.1 (`mojocv-v2.1.0-ts`): optional face guide
+
+Opt-in on skin scans. MediaPipe Face Landmarker (Apache-2.0, served from this site:
+`public/mediapipe/face_landmarker.task`, runtime copied from `node_modules` by
+`scripts/copy-mediapipe.ts`; about 18 MB, cached by the service worker) finds the face on a
+640 px copy of the photo. `src/lib/cv/face-mask.ts` turns the landmarks into a mask at the
+analysis size: the face outline shrunk to 92% about its centre, minus the eyes, brows and lips
+enlarged to 130%. A face covering under 8% of the photo is ignored.
+
+With a mask, every skin indicator reads only masked pixels: redness features, texture (pixel
+pairs fully inside), hydration (8 px blocks at least 75% inside, highlights inside), and colour
+evenness. The quality gate still judges the whole photo. Without the guide, or when no face is
+found, results are identical to v2.0. Landmarks are never stored. The browser needs
+`'wasm-unsafe-eval'` in `script-src`.
+
+Not yet calibrated: texture and hydration constants were set on whole-area photos, so masked
+readings sit lower (no hair or background edges). Compare scans taken with the same setting.

@@ -61,7 +61,13 @@ export type Planes = {
   chromatic: Uint8Array;
   /** Hue angle in radians, valid where chromatic is set. */
   hue: Float32Array;
+  /** Optional area to read (1 = include), e.g. face skin from the face guide. Null = everything. */
+  mask: Uint8Array | null;
 };
+
+/** True when the pixel is inside the planes' mask (or there is no mask). */
+export const inMask = (planes: Planes, index: number): boolean =>
+  planes.mask === null || planes.mask[index] === 1;
 
 const hueOf = (r: number, g: number, b: number): number => {
   const max = Math.max(r, g, b);
@@ -75,7 +81,7 @@ const hueOf = (r: number, g: number, b: number): number => {
   return (h / 6) * Math.PI * 2;
 };
 
-export const toPlanes = (image: PixelBuffer): Planes => {
+export const toPlanes = (image: PixelBuffer, mask: Uint8Array | null = null): Planes => {
   const { width, height, data } = image;
   const count = width * height;
   const planes: Planes = {
@@ -88,6 +94,7 @@ export const toPlanes = (image: PixelBuffer): Planes => {
     labB: new Float32Array(count),
     chromatic: new Uint8Array(count),
     hue: new Float32Array(count),
+    mask: mask && mask.length === count ? mask : null,
   };
   for (let index = 0; index < count; index += 1) {
     const offset = index * 4;
@@ -127,6 +134,9 @@ export const gradientEnergy = (planes: Planes): number => {
   for (let y = 0; y < height - 1; y += 1) {
     for (let x = 0; x < width - 1; x += 1) {
       const index = y * width + x;
+      if (!inMask(planes, index) || !inMask(planes, index + 1) || !inMask(planes, index + width)) {
+        continue;
+      }
       const here = values[index] ?? 0;
       sum +=
         Math.abs(here - (values[index + 1] ?? 0)) + Math.abs(here - (values[index + width] ?? 0));
@@ -142,14 +152,17 @@ export const gradientEnergy = (planes: Planes): number => {
  * hiding every real highlight.
  */
 export const specularRatio = (planes: Planes): number => {
-  if (planes.count === 0) return 0;
-  const sorted = Float32Array.from(planes.luma).sort();
+  const inside = planes.mask
+    ? planes.luma.filter((_, index) => planes.mask?.[index] === 1)
+    : planes.luma;
+  if (inside.length === 0) return 0;
+  const sorted = Float32Array.from(inside).sort();
   const reference = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))] ?? 0;
   if (reference === 0) return 0;
   const threshold = reference * 0.92;
   let bright = 0;
-  for (const value of planes.luma) if (value > threshold) bright += 1;
-  return bright / planes.count;
+  for (const value of inside) if (value > threshold) bright += 1;
+  return bright / inside.length;
 };
 
 /**
@@ -188,7 +201,7 @@ export const hueCircularVariance = (planes: Planes): number => {
   let sumSin = 0;
   let samples = 0;
   for (let index = 0; index < planes.count; index += 1) {
-    if (planes.chromatic[index] !== 1) continue;
+    if (planes.chromatic[index] !== 1 || !inMask(planes, index)) continue;
     const angle = planes.hue[index] ?? 0;
     sumCos += Math.cos(angle);
     sumSin += Math.sin(angle);
@@ -236,9 +249,12 @@ export const brightnessVariance = (planes: Planes): number => {
     for (let left = 0; left + block <= width; left += block) {
       const cell: number[] = [];
       for (let y = top; y < top + block; y += 1) {
-        for (let x = left; x < left + block; x += 1) cell.push((values[y * width + x] ?? 0) / 255);
+        for (let x = left; x < left + block; x += 1) {
+          if (inMask(planes, y * width + x)) cell.push((values[y * width + x] ?? 0) / 255);
+        }
       }
-      spreads.push(stdDev(cell));
+      // With a mask, read only blocks that are mostly inside it.
+      if (cell.length >= block * block * 0.75) spreads.push(stdDev(cell));
     }
   }
   return spreads.length === 0 ? 0 : spreads.reduce((sum, value) => sum + value, 0) / spreads.length;

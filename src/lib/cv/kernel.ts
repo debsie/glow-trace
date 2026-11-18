@@ -39,7 +39,15 @@ const qualityNotice = (
   return undefined;
 };
 
-export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): BiomarkerReport => {
+/**
+ * `faceMask` (skin only): 1 for face skin found by the face guide, 0 for eyes, brows, lips, hair
+ * and background. Quality is always judged on the whole photo; indicators on the mask.
+ */
+export const analyzeBiomarkers = (
+  category: ScanCategory,
+  image: PixelBuffer,
+  faceMask: Uint8Array | null = null,
+): BiomarkerReport => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
   const notice = qualityNotice(image.width, sharpness, meanLuma(planes));
@@ -52,12 +60,13 @@ export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): B
   };
   const warning = notice ? undefined : castWarning(highlightCast(planes));
   if (warning) quality.warning = warning;
+  if (faceMask && category === "skin") quality.faceGuide = true;
   if (!quality.usable) {
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }
   const metrics =
     category === "skin"
-      ? analyzeSkin(planes, image)
+      ? analyzeSkin(faceMask ? toPlanes(image, faceMask) : planes, image)
       : category === "hair"
         ? analyzeHair(planes)
         : analyzeNails(planes);

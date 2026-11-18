@@ -8,3 +8,5 @@ bun.lock
 routeTree.gen.ts
 .claude/skills
 .vercel
+public/mediapipe
+src/lib/cv/redness-weights.json

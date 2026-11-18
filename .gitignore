@@ -44,3 +44,6 @@ dist-ssr
 __pycache__/
 *.pyc
 *.npz
+
+# Copied from node_modules at build time
+public/mediapipe/wasm/

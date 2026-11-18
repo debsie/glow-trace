@@ -112,7 +112,13 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
       const noise = NOISE_BY_CONCERN[concern as keyof typeof CONCERNS] ?? TREND_NOISE;
       // Every reading of this indicator, filtered: a noise floor of N points is treated as
       // about two standard deviations of a single reading.
-      const series = history.flatMap((scan) => {
+      // Only like with like: the same kernel version and face-guide setting as the latest scan.
+      const comparable = history.filter(
+        (scan) =>
+          scan.report?.kernelVersion === latest.report?.kernelVersion &&
+          Boolean(scan.report?.quality.faceGuide) === Boolean(latest.report?.quality.faceGuide),
+      );
+      const series = comparable.flatMap((scan) => {
         const value = reading(scan, spec);
         return value ? [{ at: scan.created_at, value: value.health }] : [];
       });

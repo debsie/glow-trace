@@ -17,6 +17,7 @@ export const imageQualitySchema = z.object({
   usable: z.boolean(),
   notice: z.string().optional(),
   warning: z.string().optional(),
+  faceGuide: z.boolean().optional(),
 });
 
 export const biomarkerReportSchema = z.object({

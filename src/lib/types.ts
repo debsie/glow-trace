@@ -45,6 +45,7 @@ export type ScanReport = {
     usable: boolean;
     notice?: string | undefined;
     warning?: string | undefined;
+    faceGuide?: boolean | undefined;
   };
   metrics: {
     key: string;

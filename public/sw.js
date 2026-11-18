@@ -6,6 +6,8 @@
  * Bump CACHE_VERSION to retire old caches.
  */
 const CACHE_VERSION = "glowtrace-v1";
+// The face guide (about 18 MB) keeps its own cache so app updates do not re-download it.
+const FACE_GUIDE_CACHE = "glowtrace-face-guide-1";
 const SHELL = [
   "/app",
   "/scan",
@@ -31,7 +33,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_VERSION && key !== FACE_GUIDE_CACHE)
+            .map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -58,6 +64,19 @@ self.addEventListener("fetch", (event) => {
           const cached = await caches.match(request, { ignoreSearch: true });
           return cached || (await caches.match("/app")) || Response.error();
         }),
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith("/mediapipe/")) {
+    event.respondWith(
+      caches.open(FACE_GUIDE_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        const response = await fetch(request);
+        if (response.ok) cache.put(request, response.clone());
+        return response;
+      }),
     );
     return;
   }

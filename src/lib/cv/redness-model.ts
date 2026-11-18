@@ -46,7 +46,7 @@ const percentile = (values: Float64Array, q: number): number => {
 };
 
 /** The 18 model inputs: percentiles of density differences and Lab, light estimate, skin share. */
-export const rednessFeatures = (image: PixelBuffer): number[] => {
+export const rednessFeatures = (image: PixelBuffer, mask: Uint8Array | null = null): number[] => {
   const { data } = image;
   const count = image.width * image.height;
   const lab = new Float64Array(count * 3);
@@ -58,18 +58,22 @@ export const rednessFeatures = (image: PixelBuffer): number[] => {
     lab[i * 3 + 1] = a;
     lab[i * 3 + 2] = b;
     const hue = (Math.atan2(b, a) * 180) / Math.PI;
-    if (L > 20 && L < 95 && a > 2 && hue > 10 && hue < 80) {
+    if ((mask === null || mask[i] === 1) && L > 20 && L < 95 && a > 2 && hue > 10 && hue < 80) {
       skin[i] = 1;
       skinCount += 1;
     }
   }
   const share = count === 0 ? 0 : skinCount / count;
+  // Too little skin-coloured area: read the whole mask, or the whole photo without one.
   const useAll = share < MIN_SKIN_SHARE;
-  const n = useAll ? count : skinCount;
+  const inArea = (i: number) => mask === null || mask[i] === 1;
+  let areaCount = 0;
+  if (useAll) for (let i = 0; i < count; i += 1) if (inArea(i)) areaCount += 1;
+  const n = useAll ? areaCount : skinCount;
   const columns = Array.from({ length: 5 }, () => new Float64Array(n));
   let k = 0;
   for (let i = 0; i < count; i += 1) {
-    if (!useAll && !skin[i]) continue;
+    if (useAll ? !inArea(i) : !skin[i]) continue;
     const odR = -Math.log(((data[i * 4] ?? 0) + 0.5) / 255.5);
     const odG = -Math.log(((data[i * 4 + 1] ?? 0) + 0.5) / 255.5);
     const odB = -Math.log(((data[i * 4 + 2] ?? 0) + 0.5) / 255.5);
@@ -99,14 +103,14 @@ const memberOutput = (member: (typeof WEIGHTS.members)[number], features: number
 };
 
 /** Raw ensemble output: higher means more haemoglobin in the skin. */
-export const rednessSignal = (image: PixelBuffer): number => {
-  const features = rednessFeatures(image);
+export const rednessSignal = (image: PixelBuffer, mask: Uint8Array | null = null): number => {
+  const features = rednessFeatures(image, mask);
   const outputs = WEIGHTS.members.map((member) => memberOutput(member, features));
   return outputs.reduce((sum, value) => sum + value, 0) / outputs.length;
 };
 
 /** 0-100: the training sample's 10th percentile reads 10 and its 90th reads 70. */
-export const rednessScore = (image: PixelBuffer): number => {
+export const rednessScore = (image: PixelBuffer, mask: Uint8Array | null = null): number => {
   const span = WEIGHTS.score_p90 - WEIGHTS.score_p10 || 1;
-  return 10 + ((rednessSignal(image) - WEIGHTS.score_p10) / span) * 60;
+  return 10 + ((rednessSignal(image, mask) - WEIGHTS.score_p10) / span) * 60;
 };

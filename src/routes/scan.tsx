@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -15,7 +15,13 @@ import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
-import { loadImageData, makeThumbnail } from "@/lib/cv/image";
+import {
+  FACE_GUIDE_DOWNLOAD_MB,
+  faceGuideEnabled,
+  findFaceMask,
+  setFaceGuide,
+} from "@/lib/cv/face-guide";
+import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
@@ -155,6 +161,10 @@ function ScanPage() {
   // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
   // site's content security policy (connect-src) blocks in production.
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
+  // Optional face guide: reads face skin only. Off until the person turns it on (18 MB, once).
+  const [faceGuide, setFaceGuideState] = useState(false);
+  const [faceResult, setFaceResult] = useState<"used" | "none" | null>(null);
+  useEffect(() => setFaceGuideState(faceGuideEnabled()), []);
   const [step, setStep] = useState<number | null>(null);
   const [result, setResult] = useState<ScanRecord | null>(null);
   const [makeupOpen, setMakeupOpen] = useState(false);
@@ -187,7 +197,13 @@ function ScanPage() {
       const pixels = await loadImageData(photoFile ?? imageUrl);
       setStep(1);
       // Validate before the report enters app state, as with any other payload.
-      report = parseBiomarkerReport(analyzeBiomarkers(category, pixels));
+      let faceMask: Uint8Array | null = null;
+      if (category === "skin" && faceGuide && photoFile) {
+        const larger = await loadImageData(photoFile, PHOTO_DIM);
+        faceMask = await findFaceMask(larger, pixels.width, pixels.height);
+        setFaceResult(faceMask ? "used" : "none");
+      } else setFaceResult(null);
+      report = parseBiomarkerReport(analyzeBiomarkers(category, pixels, faceMask));
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
     } catch {
@@ -260,6 +276,28 @@ function ScanPage() {
         }}
       />
 
+      {category === "skin" && (
+        <label className="surface flex min-h-[50px] items-start gap-3 p-4 text-sm">
+          <input
+            type="checkbox"
+            checked={faceGuide}
+            onChange={(event) => {
+              setFaceGuideState(event.target.checked);
+              setFaceGuide(event.target.checked);
+            }}
+            className="mt-0.5 h-5 w-5 shrink-0"
+          />
+          <span>
+            <span className="font-semibold text-foreground">Face guide</span>
+            <span className="block text-muted-foreground">
+              Reads only the skin of your face, skipping eyes, brows, lips, hair and background, for
+              steadier results. Runs on this device. Downloads about {FACE_GUIDE_DOWNLOAD_MB} MB the
+              first time, so use Wi-Fi.
+            </span>
+          </span>
+        </label>
+      )}
+
       {blocked && <UpgradeCard gate={blocked} showInvite onDismiss={() => setBlocked(null)} />}
 
       <PrimaryButton onClick={runAnalysis} disabled={step !== null} className="w-full">
@@ -291,6 +329,13 @@ function ScanPage() {
                 <span className="font-semibold text-warning">Not scored. </span>
                 {shown.report?.quality.notice ?? "We couldn't read that photo"}. The values below
                 are sample values, not your results.
+              </p>
+            )}
+            {!shown.demo && faceResult && (
+              <p className="mb-4 text-sm text-muted-foreground" role="status">
+                {faceResult === "used"
+                  ? "Face guide on: only face skin was read."
+                  : "Face guide found no face, so the whole photo was read."}
               </p>
             )}
             {!shown.demo && shown.report?.quality.warning && (

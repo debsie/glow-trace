@@ -79,6 +79,16 @@ describe("Care agent findings", () => {
     expect(findings.find((finding) => finding.concern === "tone")?.severity).toBe("good");
   });
 
+  it("compares only scans from the same kernel version and face-guide setting", () => {
+    const oldKernel = { ...older, report: { ...older.report!, kernelVersion: "older" } };
+    expect(findingsFor([oldKernel, latest]).every((finding) => finding.trend === "new")).toBe(true);
+    const guided = {
+      ...older,
+      report: { ...older.report!, quality: { ...older.report!.quality, faceGuide: true } },
+    };
+    expect(findingsFor([guided, latest]).every((finding) => finding.trend === "new")).toBe(true);
+  });
+
   it("ignores scans that could not be scored", () => {
     expect(findingsFor([{ ...latest, demo: true }])).toEqual([]);
   });

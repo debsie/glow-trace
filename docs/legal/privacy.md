@@ -51,7 +51,10 @@ Contact your artist first; we will help them respond.
 | Client details kept by an artist (name, contact, skin notes, scores, lookbooks)                                                                                                    | The artist's account                                                                                    | For the artist's work with that client                            |
 
 We do **not** collect: precise location, contacts, advertising identifiers, or face
-templates that identify you. We do not use face recognition.
+templates that identify you. We do not use face recognition. If you turn on the optional face
+guide, it finds the outline of your face, eyes and lips on your device only, so the analysis can
+read your skin without the background; those points are used for that one scan and never stored
+or sent anywhere.
 
 ### Sensitive information
 

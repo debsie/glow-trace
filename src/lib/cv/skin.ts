@@ -24,10 +24,10 @@ const DISCOLORATION_WEIGHT = 400;
  * Kernel v2: physics-supervised redness model (see redness-model.ts). Reads the photo itself,
  * not the shared planes, because it needs raw camera values for optical density.
  */
-export const erythema = (image: PixelBuffer): BiomarkerMetric => ({
+export const erythema = (image: PixelBuffer, mask: Uint8Array | null = null): BiomarkerMetric => ({
   key: "erythema",
   label: "Redness",
-  value: score(rednessScore(image)),
+  value: score(rednessScore(image, mask)),
   higherMeans: "more",
   description: "How much blood colour the skin shows, separated from skin tone and light.",
 });
@@ -61,7 +61,7 @@ export const discoloration = (planes: Planes): BiomarkerMetric => ({
 });
 
 export const analyzeSkin = (planes: Planes, image: PixelBuffer): BiomarkerMetric[] => [
-  erythema(image),
+  erythema(image, planes.mask),
   skinTexture(planes),
   hydration(planes),
   discoloration(planes),
