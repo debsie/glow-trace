@@ -4,7 +4,17 @@ import { checkEmail, displayNameFor, gateFor, isPublicPath, safeNext } from "@/l
 
 describe("Beta access", () => {
   it("keeps marketing pages public and the app behind sign-in", () => {
-    for (const path of ["/", "/pricing", "/refer", "/affiliates", "/login", "/privacy"]) {
+    for (const path of [
+      "/",
+      "/pricing",
+      "/refer",
+      "/affiliates",
+      "/login",
+      "/privacy",
+      "/cookies",
+      "/skin-analysis-app",
+      "/makeup-artist-app",
+    ]) {
       expect(isPublicPath(path)).toBe(true);
     }
     for (const path of ["/app", "/scan", "/agent", "/routine", "/progress", "/pro/clients"]) {

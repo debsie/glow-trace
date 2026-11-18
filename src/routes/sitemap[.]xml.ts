@@ -6,6 +6,8 @@ import { SITE_URL } from "@/lib/seo";
 const PUBLIC_PATHS = [
   { path: "/", priority: "1.0" },
   { path: "/pricing", priority: "0.9" },
+  { path: "/skin-analysis-app", priority: "0.9" },
+  { path: "/makeup-artist-app", priority: "0.9" },
   { path: "/refer", priority: "0.7" },
   { path: "/affiliates", priority: "0.7" },
   { path: "/cookies", priority: "0.3" },

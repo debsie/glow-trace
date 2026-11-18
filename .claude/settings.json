@@ -16,7 +16,15 @@
       "Bash(git rebase:*)",
       "Bash(git commit --amend:*)",
       "Read(./.env)",
-      "Read(./.env.*)"
+      "Read(./.env.*)",
+      "Read(./node_modules/**)",
+      "Read(./.output/**)",
+      "Read(./.vercel/**)",
+      "Read(./dist/**)",
+      "Read(./bun.lock)",
+      "Read(./src/routeTree.gen.ts)",
+      "Read(./public/*.png)",
+      "Read(./src/assets/**)"
     ]
   },
   "hooks": {

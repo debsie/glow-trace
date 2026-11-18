@@ -1,4 +1,4 @@
-import type { AccessRequest, Feedback, FeedbackInput, Tester } from "./beta";
+import type { AccessRequest, AuditEntry, Feedback, FeedbackInput, Tester } from "./beta";
 import { extendedExpiry } from "./beta";
 import type { AccessDuration } from "./beta";
 
@@ -15,9 +15,42 @@ export type DemoStore = {
   requests: AccessRequest[];
   testers: Tester[];
   feedback: Feedback[];
+  audit: AuditEntry[];
 };
 
+const audit = (
+  id: number,
+  daysAgo: number,
+  now: Date,
+  table: string,
+  action: AuditEntry["action"],
+  key: string,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): AuditEntry => ({
+  id,
+  at: ago(daysAgo, now),
+  actor_email: table === "waitlist" && action === "INSERT" ? key : "admin@glowtrace.app",
+  action,
+  table_name: table,
+  record_key: key,
+  old_data: before,
+  new_data: after,
+});
+
 export const seedDemoStore = (now: Date): DemoStore => ({
+  audit: [
+    audit(6, 3, now, "feedback", "UPDATE", "fb3", { status: "new" }, { status: "triaged" }),
+    audit(5, 4, now, "feedback", "UPDATE", "fb5", {}, { status: "resolved", thanked_at: "x" }),
+    audit(4, 12, now, "beta_allowlist", "INSERT", "thandi.m@mail.co.za", null, {
+      duration_days: 14,
+    }),
+    audit(3, 17, now, "beta_allowlist", "INSERT", "pieter.v@mail.co.za", null, {
+      duration_days: 14,
+    }),
+    audit(2, 19, now, "beta_allowlist", "INSERT", "lebo.k@mail.co.za", null, { duration_days: 30 }),
+    audit(1, 20, now, "waitlist", "INSERT", "lebo.k@mail.co.za", null, { status: "pending" }),
+  ],
   requests: [
     {
       email: "naledi.m@mail.co.za",

@@ -16,6 +16,7 @@ import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MakeupArtistAppRouteImport } from './routes/makeup-artist-app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -23,6 +24,7 @@ import { Route as ReferRouteImport } from './routes/refer'
 import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SkinAnalysisAppRouteImport } from './routes/skin-analysis-app'
 import { Route as ProClientsRouteImport } from './routes/pro.clients'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
 import { Route as ProClientsIdRouteImport } from './routes/pro.clients.$id'
@@ -64,6 +66,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MakeupArtistAppRoute = MakeupArtistAppRouteImport.update({
+  id: '/makeup-artist-app',
+  path: '/makeup-artist-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -97,6 +104,11 @@ const ScanRoute = ScanRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkinAnalysisAppRoute = SkinAnalysisAppRouteImport.update({
+  id: '/skin-analysis-app',
+  path: '/skin-analysis-app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProClientsRoute = ProClientsRouteImport.update({
@@ -133,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
+  '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -140,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -154,6 +168,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
+  '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -161,6 +176,7 @@ export interface FileRoutesByTo {
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/pro/clients': typeof ProClientsIndexRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
   '/pro/clients/$id': typeof ProClientsIdIndexRoute
@@ -174,6 +190,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
+  '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -181,6 +198,7 @@ export interface FileRoutesById {
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -197,6 +215,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/cookies'
     | '/login'
+    | '/makeup-artist-app'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -204,6 +223,7 @@ export interface FileRouteTypes {
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
+    | '/skin-analysis-app'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -218,6 +238,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/cookies'
     | '/login'
+    | '/makeup-artist-app'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -225,6 +246,7 @@ export interface FileRouteTypes {
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
+    | '/skin-analysis-app'
     | '/pro/clients'
     | '/pro/clients/$id/lookbook'
     | '/pro/clients/$id'
@@ -237,6 +259,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/cookies'
     | '/login'
+    | '/makeup-artist-app'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -244,6 +267,7 @@ export interface FileRouteTypes {
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
+    | '/skin-analysis-app'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -259,6 +283,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   CookiesRoute: typeof CookiesRoute
   LoginRoute: typeof LoginRoute
+  MakeupArtistAppRoute: typeof MakeupArtistAppRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProgressRoute: typeof ProgressRoute
@@ -266,6 +291,7 @@ export interface RootRouteChildren {
   RoutineRoute: typeof RoutineRoute
   ScanRoute: typeof ScanRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SkinAnalysisAppRoute: typeof SkinAnalysisAppRoute
   ProClientsRoute: typeof ProClientsRouteWithChildren
 }
 
@@ -320,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/makeup-artist-app': {
+      id: '/makeup-artist-app'
+      path: '/makeup-artist-app'
+      fullPath: '/makeup-artist-app'
+      preLoaderRoute: typeof MakeupArtistAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -367,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skin-analysis-app': {
+      id: '/skin-analysis-app'
+      path: '/skin-analysis-app'
+      fullPath: '/skin-analysis-app'
+      preLoaderRoute: typeof SkinAnalysisAppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pro/clients': {
@@ -443,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   CookiesRoute: CookiesRoute,
   LoginRoute: LoginRoute,
+  MakeupArtistAppRoute: MakeupArtistAppRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProgressRoute: ProgressRoute,
@@ -450,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoutineRoute: RoutineRoute,
   ScanRoute: ScanRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SkinAnalysisAppRoute: SkinAnalysisAppRoute,
   ProClientsRoute: ProClientsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

@@ -428,6 +428,12 @@ function LandingPage() {
             <Link to="/cookies" className={NAV_LINK}>
               Cookies
             </Link>
+            <Link to="/skin-analysis-app" className={NAV_LINK}>
+              Skin analysis app
+            </Link>
+            <Link to="/makeup-artist-app" className={NAV_LINK}>
+              Makeup artist app
+            </Link>
           </nav>
         </div>
         <p className={`${SECTION} pb-10 text-xs text-muted-foreground`}>

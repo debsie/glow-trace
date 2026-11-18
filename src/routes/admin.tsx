@@ -8,6 +8,7 @@ import {
   Heart,
   Mail,
   MessageSquareText,
+  ScrollText,
   Minus,
   UserPlus,
   Users,
@@ -18,11 +19,13 @@ import { toast } from "sonner";
 import { Badge, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
 import { useAuth } from "@/context/auth";
 import type { AdminData } from "@/integrations/beta-api";
+import type { AuditEntry } from "@/lib/beta";
 import {
   declineRequest,
   grantAccess,
   isDemo,
   loadAdminData,
+  loadAuditLog,
   revokeAccess,
   updateFeedback,
 } from "@/integrations/beta-api";
@@ -32,6 +35,7 @@ import {
   accessUntil,
   CATEGORY_LABEL,
   daysLeft,
+  describeAudit,
   feedbackSummary,
   firstNameFrom,
   grantSchema,
@@ -54,7 +58,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Tab = "feedback" | "requests" | "testers" | "grant";
+type Tab = "feedback" | "requests" | "testers" | "grant" | "audit";
 
 const SENTIMENT: Record<
   Sentiment,
@@ -181,14 +185,16 @@ function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [grantEmail, setGrantEmail] = useState("");
   const [grantDays, setGrantDays] = useState<AccessDuration>(30);
+  const [audit, setAudit] = useState<AuditEntry[] | null>(null);
   const now = new Date();
 
   const reload = useCallback(async () => {
-    const result = await loadAdminData();
+    const [result, auditResult] = await Promise.all([loadAdminData(), loadAuditLog()]);
     if (result.ok) {
       setData(result.data);
       setError(null);
     } else setError(result.reason);
+    setAudit(auditResult.ok ? auditResult.data : []);
   }, []);
 
   useEffect(() => {
@@ -258,6 +264,7 @@ function AdminPage() {
     { id: "requests", label: "Requests", icon: Clock, count: pending.length },
     { id: "testers", label: "Testers", icon: Users },
     { id: "grant", label: "Grant access", icon: UserPlus },
+    { id: "audit", label: "Audit log", icon: ScrollText },
   ];
 
   return (
@@ -499,6 +506,34 @@ function AdminPage() {
               </ul>
             )}
           </section>
+        )}
+
+        {tab === "audit" && (
+          <SectionCard title="Audit log">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Every change to access, requests, admin rights and feedback status, recorded by the
+              database itself. Entries can't be edited or deleted, by anyone. Showing the latest
+              200.
+            </p>
+            {!audit || audit.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No changes recorded yet.</p>
+            ) : (
+              <ol className="divide-y divide-border">
+                {audit.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="flex min-h-[56px] flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2"
+                  >
+                    <span className="text-sm text-foreground">{describeAudit(entry)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {entry.actor_email ?? "system"} · {shortDate(entry.at)}{" "}
+                      <span className="readout">{entry.at.slice(11, 16)} UTC</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </SectionCard>
         )}
 
         {tab === "grant" && (

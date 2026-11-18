@@ -1,6 +1,7 @@
 import type {
   AccessDuration,
   AccessRequest,
+  AuditEntry,
   Feedback,
   FeedbackInput,
   FeedbackStatus,
@@ -63,6 +64,18 @@ export const loadAdminData = async (): Promise<Result<AdminData>> => {
     testers: (testers.data ?? []) as Tester[],
     feedback: (feedback.data ?? []) as Feedback[],
   });
+};
+
+/** Newest audit entries first. Admin-only: the database returns nothing to anyone else. */
+export const loadAuditLog = async (): Promise<Result<AuditEntry[]>> => {
+  const supabase = getSupabase();
+  if (!supabase) return ok([...demoStore().audit].sort((a, b) => b.at.localeCompare(a.at)));
+  const { data, error } = await supabase
+    .from("audit_log")
+    .select("id, at, actor_email, action, table_name, record_key, old_data, new_data")
+    .order("at", { ascending: false })
+    .limit(200);
+  return error ? fail(error.message) : ok((data ?? []) as AuditEntry[]);
 };
 
 export const grantAccess = async (email: string, days: AccessDuration): Promise<Result<string>> => {
