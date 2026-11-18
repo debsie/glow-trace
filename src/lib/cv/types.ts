@@ -1,7 +1,7 @@
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v1.1.0-ts-fallback";
+export const KERNEL_VERSION = "mojocv-v1.2.0-ts-fallback";
 
 export type { ScanCategory };
 
@@ -27,6 +27,8 @@ export type ImageQuality = {
   usable: boolean;
   /** Shown to the user when the photo is not usable. */
   notice?: string | undefined;
+  /** Shown alongside a usable result when the light may skew colour readings. */
+  warning?: string | undefined;
 };
 
 export type BiomarkerReport = {

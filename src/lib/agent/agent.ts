@@ -50,6 +50,12 @@ export type Briefing = {
 const FOCUS_BELOW = 45;
 const WATCH_BELOW = 65;
 const TREND_NOISE = 2;
+/**
+ * Redness reads from colour, so ordinary changes in the colour of the light move it. Measured
+ * in src/test/robustness.test.ts: a 4% warm or cool shift moves it up to 14 points. A smaller
+ * change between two scans is the light, not the skin, so it reads as steady.
+ */
+const NOISE_BY_CONCERN: Partial<Record<keyof typeof CONCERNS, number>> = { redness: 15 };
 const AREAS: ScanCategory[] = ["skin", "hair", "nails"];
 const SEVERITY_WEIGHT: Record<Severity, number> = { focus: 3, watch: 1.5, good: 0 };
 
@@ -100,12 +106,13 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
       if (!now) continue;
       const before = previous ? reading(previous, spec) : undefined;
       const change = before ? Math.round((now.health - before.health) * 10) / 10 : null;
+      const noise = NOISE_BY_CONCERN[concern as keyof typeof CONCERNS] ?? TREND_NOISE;
       const trend: Trend =
         change === null
           ? "new"
-          : change > TREND_NOISE
+          : change > noise
             ? "improving"
-            : change < -TREND_NOISE
+            : change < -noise
               ? "worsening"
               : "steady";
       findings.push({

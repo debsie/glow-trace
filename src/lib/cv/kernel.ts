@@ -1,6 +1,6 @@
 import type { Biomarkers } from "../types";
 import { analyzeHair } from "./hair";
-import { clamp100, gradientEnergy, meanLuma, round1, toPlanes } from "./image";
+import { clamp100, gradientEnergy, highlightCast, meanLuma, round1, toPlanes } from "./image";
 import { analyzeNails } from "./nails";
 import { analyzeSkin } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
@@ -16,6 +16,16 @@ const MIN_WIDTH = 96;
 const MIN_SHARPNESS = 8;
 const MIN_LUMA = 30;
 const MAX_LUMA = 235;
+// Colour-cast warning: highlight chroma (Lab) above this reads as coloured light.
+// Skin highlights under daylight sit around 8-14; tungsten and LED casts land above 22.
+const MAX_HIGHLIGHT_CHROMA = 22;
+
+/** A warning, not a block: the photo is still scored, but readings may shift. */
+export const castWarning = (cast: { a: number; b: number }): string | undefined => {
+  if (Math.hypot(cast.a, cast.b) <= MAX_HIGHLIGHT_CHROMA) return undefined;
+  const tone = cast.a < -8 ? "green" : cast.b > 0 ? "warm" : "cool";
+  return `The light looks ${tone}, which can shift colour readings. Daylight from a window gives steadier results`;
+};
 
 const qualityNotice = (
   width: number,
@@ -40,6 +50,8 @@ export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): B
     usable: notice === undefined,
     ...(notice ? { notice } : {}),
   };
+  const warning = notice ? undefined : castWarning(highlightCast(planes));
+  if (warning) quality.warning = warning;
   if (!quality.usable) {
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }

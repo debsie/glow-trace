@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportError } from "@/lib/report-error";
 import { AppStateProvider } from "@/context/app-state";
 import { AuthProvider } from "@/context/auth";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { SiteShell } from "@/components/layout/site-nav";
 import { organizationSchema, pageHead, SITE, websiteSchema } from "@/lib/seo";
 
@@ -110,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "geo.placename", content: "South Africa" },
       ...rootHead.meta,
     ],
-    scripts: rootHead.scripts,
+    scripts: [{ children: THEME_INIT_SCRIPT }, ...rootHead.scripts],
     links: [
       {
         rel: "stylesheet",
@@ -130,7 +131,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang={SITE.language}>
+    <html lang={SITE.language} suppressHydrationWarning>
       <head>
         <HeadContent />
         <noscript>

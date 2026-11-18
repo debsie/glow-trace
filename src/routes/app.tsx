@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Droplets,
+  FlaskConical,
   Gift,
-  LayoutDashboard,
   MessagesSquare,
   ScanLine,
   ShieldCheck,
@@ -45,19 +45,25 @@ function Dashboard() {
   const actions = [
     {
       to: "/scan",
-      label: "New Scan",
+      label: "New scan",
       description: left === null ? "Skin, hair or nails" : `${left} free left this month`,
       icon: ScanLine,
     },
     {
       to: "/routine",
-      label: "Daily Routine",
+      label: "Daily routine",
       description: "Match products on your shelf",
       icon: Droplets,
     },
     {
+      to: "/ingredients",
+      label: "Ingredient check",
+      description: "See which products clash",
+      icon: FlaskConical,
+    },
+    {
       to: "/pro/clients",
-      label: "MUA Portal",
+      label: "MUA portal",
       description:
         tier === "studio"
           ? `${activeClients.length} of ${PLANS.studio.limits.activeClients} active clients`
@@ -67,49 +73,71 @@ function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title={`Welcome back, ${profile.display_name.split(" ")[0]}`}
-        subtitle="Recent scans, daily routines and client work in one place."
+        subtitle="Your latest readings and what to do next."
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <Link to="/agent" className="surface-strong lift grid gap-6 p-6 sm:grid-cols-[auto_1fr]">
+        <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:justify-center">
+          <p className="font-display text-6xl leading-none font-semibold text-foreground">
+            {recent[0] ? scanScore(recent[0]) : "—"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {recent[0]
+              ? `${CATEGORY_LABEL[recent[0].category]} score · ${shortDate(recent[0].created_at)}`
+              : "No scans yet"}
+          </p>
+        </div>
+        <div className="flex flex-col justify-center">
+          <span className="flex items-center gap-2 text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">
+            <MessagesSquare className="h-4 w-4 text-accent" aria-hidden="true" /> Your care agent
+          </span>
+          <span className="mt-2 block font-display text-xl leading-snug font-semibold text-foreground">
+            {brief.headline}
+          </span>
+          {topPick && (
+            <span className="mt-2 block text-sm text-muted-foreground">
+              Suggested:{" "}
+              <span className="font-semibold text-foreground">{topPick.product.name}</span> ·{" "}
+              {topPick.match}% match
+            </span>
+          )}
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+            Open your agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </span>
+        </div>
+      </Link>
+
+      <section aria-label="Quick actions" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {actions.map((action) => (
           <Link
             key={action.to}
             to={action.to}
-            className="surface lift group flex min-h-[96px] items-center gap-4 p-5"
+            className="surface lift flex min-h-[112px] flex-col justify-between p-5"
           >
-            <span className="bg-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-primary-foreground">
-              <action.icon className="h-6 w-6" aria-hidden="true" />
-            </span>
-            <span className="min-w-0">
+            <action.icon className="h-6 w-6 text-accent" aria-hidden="true" />
+            <span>
               <span className="font-display block text-lg font-semibold">{action.label}</span>
-              <span className="block truncate text-sm text-muted-foreground">
-                {action.description}
-              </span>
+              <span className="block text-sm text-muted-foreground">{action.description}</span>
             </span>
-            <ArrowRight
-              className="ml-auto h-5 w-5 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
           </Link>
         ))}
-      </div>
+      </section>
 
-      {tier === "free" && (
+      {tier === "free" && !isAdmin && (
         <section
           aria-labelledby="home-pitch"
-          className="surface-strong flex flex-wrap items-center justify-between gap-4 p-6"
+          className="surface flex flex-wrap items-center justify-between gap-4 p-6"
         >
           <div className="max-w-xl">
-            <h2 id="home-pitch" className="font-display text-2xl font-semibold text-foreground">
-              Your skin, hair and nails, <span className="text-primary">checked from a photo</span>
+            <h2 id="home-pitch" className="font-display text-xl font-semibold text-foreground">
+              Unlimited check-ins for {formatZar(PLANS.pro.monthlyZar)} a month
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You're on the free plan: {PLANS.free.limits.scansPerMonth} check-ins a month, morning
-              and evening routines, and DIY remedies. Go unlimited for{" "}
-              {formatZar(PLANS.pro.monthlyZar)} a month — or invite friends and earn it free.
+            <p className="mt-1 text-sm text-muted-foreground">
+              The free plan has {PLANS.free.limits.scansPerMonth} check-ins a month. Invite friends
+              and earn Pro free.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -128,38 +156,6 @@ function Dashboard() {
           </div>
         </section>
       )}
-
-      {isAdmin && (
-        <Link
-          to="/admin"
-          className="surface lift flex min-h-[64px] items-center gap-3 px-5 text-sm text-muted-foreground"
-        >
-          <LayoutDashboard className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-          <span>
-            <span className="font-semibold text-foreground">Beta dashboard.</span> Requests, testers
-            and feedback.
-          </span>
-          <ArrowRight className="ml-auto h-5 w-5 shrink-0" aria-hidden="true" />
-        </Link>
-      )}
-
-      <Link to="/agent" className="surface-strong lift block p-5">
-        <span className="flex items-center gap-2 text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">
-          <MessagesSquare className="h-4 w-4 text-accent" aria-hidden="true" /> Your care agent
-        </span>
-        <span className="mt-2 block font-display text-xl leading-snug font-semibold text-foreground">
-          {brief.headline}
-        </span>
-        {topPick && (
-          <span className="mt-2 block text-sm text-muted-foreground">
-            Suggested: <span className="font-semibold text-foreground">{topPick.product.name}</span>{" "}
-            · {topPick.match}% match
-          </span>
-        )}
-        <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">
-          Open your agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </span>
-      </Link>
 
       <SectionCard title="Recent scans">
         <ul className="space-y-3">

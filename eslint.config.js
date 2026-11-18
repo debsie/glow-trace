@@ -36,5 +36,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Providers export their hook beside the component, and the vendored UI kit exports
+    // variant helpers. Both are intended; fast refresh only reloads these files in full.
+    files: ["src/context/**/*.tsx", "src/components/ui/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   eslintPluginPrettier,
 );

@@ -50,7 +50,7 @@ const shelf = (...ids: string[]): InventoryItem[] =>
   ids.map((id, index) => ({ id: `i${index}`, user_id: "u", product_id: id, in_stock: true }));
 
 const older = skinScan("a", "2026-11-01T08:00:00Z", {
-  erythema: 40,
+  erythema: 55,
   texture: 50,
   hydration: 70,
   discoloration: 10,

@@ -83,6 +83,8 @@ export const ANSWER_PAGES: AnswerPage[] = [
       `${PLANS.studio.limits.activeClients} active clients; archive finished bookings to free a spot`,
       "Daylight, studio flash and candlelight presets",
       "Read-only client lookbook with one-tap approval",
+      "A 7-day skin-prep countdown for each event, from the client's latest scan",
+      "A one-page client brief you can print or save as a PDF",
       "Includes everything in Glow Pro for your own skin",
     ],
     faqs: [
@@ -94,6 +96,16 @@ export const ANSWER_PAGES: AnswerPage[] = [
         question: "How do I send a bridal client their makeup look for approval?",
         answer:
           "In MUA Studio, build the lookbook (skin prep, base, hair, nails and lighting) and send the client their private link. They review it and approve with one tap, and you see the approval immediately.",
+      },
+      {
+        question: "How do I prepare a bride's skin in the week before her wedding?",
+        answer:
+          "Pause retinoids five days out and acids three days out, add nothing new, keep to cleanser, moisturiser and sunscreen, and add one hydrating mask. MUA Studio turns this into a day-by-day plan from the event date and the client's latest scan. It is general cosmetic guidance, so a client with a skin condition should follow their clinician's advice.",
+      },
+      {
+        question: "Can I give a client a printable summary?",
+        answer:
+          "Yes. Each client has a one-page brief with their skin notes, latest readings, habits and look plan. Print it or choose Save as PDF in the print dialog. It carries a small Powered by Glowtrace Pro note.",
       },
       {
         question: "Can I use it for more than 5 clients?",

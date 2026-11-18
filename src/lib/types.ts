@@ -44,6 +44,7 @@ export type ScanReport = {
     sharpness: number;
     usable: boolean;
     notice?: string | undefined;
+    warning?: string | undefined;
   };
   metrics: {
     key: string;

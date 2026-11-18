@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Eye, Lock, Pencil, Repeat, Send, SunMedium } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Eye, Lock, Pencil, Repeat, Send } from "lucide-react";
 
 import { HeroInstrument } from "@/components/landing/hero-instrument";
 import { Reveal } from "@/components/motion/reveal";
@@ -90,9 +90,9 @@ const STEPS = [
 
 const ARTIST_POINTS = [
   { icon: Repeat, text: "Scan history per client" },
-  { icon: SunMedium, text: "Daylight, flash and candlelight presets" },
-  { icon: Eye, text: "Read-only lookbook, one-tap sign-off" },
+  { icon: Eye, text: "Lookbook with one-tap sign-off" },
   { icon: Lock, text: "A private link for each client" },
+  { icon: CalendarDays, text: "7-day prep plan and printable client brief" },
 ];
 
 const LOOK_STAGES = [

@@ -265,6 +265,15 @@ function ScanPage() {
                 are sample values, not your results.
               </p>
             )}
+            {!shown.demo && shown.report?.quality.warning && (
+              <p
+                className="mb-4 rounded-2xl border border-border px-4 py-3 text-sm text-foreground"
+                role="status"
+              >
+                <span className="font-semibold">Check the light. </span>
+                {shown.report.quality.warning}.
+              </p>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-display text-2xl font-semibold">

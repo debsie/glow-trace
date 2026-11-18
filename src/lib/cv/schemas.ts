@@ -16,6 +16,7 @@ export const imageQualitySchema = z.object({
   sharpness: z.number().min(0).max(100),
   usable: z.boolean(),
   notice: z.string().optional(),
+  warning: z.string().optional(),
 });
 
 export const biomarkerReportSchema = z.object({
