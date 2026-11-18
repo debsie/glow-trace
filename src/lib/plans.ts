@@ -88,6 +88,7 @@ export const PLANS: Record<SubscriptionTier, Plan> = {
     features: [
       { label: "Unlimited skin, hair and nail check-ins", status: "live" },
       { label: "All 4 routines: AM, PM, Pre-Makeup Prep, Barrier Reset", status: "live" },
+      { label: "Makeup Day: foundation match, removal and recovery", status: "live" },
       { label: "Up to 25 products on your shelf", status: "live" },
       { label: "Ingredient conflict checks", status: "live" },
       { label: "10 Routine Coach consults a month", status: "soon" },
@@ -217,6 +218,17 @@ export const routineModeGate = (tier: SubscriptionTier, mode: RoutineMode): Gate
     allowed: false,
     title: "This routine is part of Glow Pro",
     message: `Pre-Makeup Prep and Barrier Reset come with Glow Pro, along with unlimited check-ins, for ${perMonth(PLANS.pro)}.`,
+    upgradeTo: "pro",
+  };
+};
+
+/** Makeup Day: the Before phase is free; removal and recovery come with Glow Pro. */
+export const makeupDayGate = (tier: SubscriptionTier): Gate => {
+  if (tier !== "free") return OPEN;
+  return {
+    allowed: false,
+    title: "Removal and recovery come with Glow Pro",
+    message: `Get the full Makeup Day routine, from prep to the night after, with unlimited check-ins, for ${perMonth(PLANS.pro)}.`,
     upgradeTo: "pro",
   };
 };

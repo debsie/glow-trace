@@ -21,9 +21,11 @@ import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
 import {
   FACE_GUIDE_DOWNLOAD_MB,
   faceGuideEnabled,
-  findFaceMask,
+  findFace,
   setFaceGuide,
 } from "@/lib/cv/face-guide";
+import { filterCheck, withFilterCheck } from "@/lib/cv/filter-check";
+import type { FilterCheck } from "@/lib/cv/filter-check";
 import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
@@ -108,8 +110,8 @@ const UploadZone = ({
           </span>
           <p className="font-display text-lg font-semibold">Drop a {category} photo here</p>
           <p className="text-sm text-muted-foreground">
-            Take one now or choose one from your gallery. Your photo is analysed on this device and
-            never uploaded.
+            Take one now or choose one from your gallery, unedited: no filters, beauty mode or
+            portrait mode. Your photo is analysed on this device and never uploaded.
           </p>
         </div>
       )}
@@ -205,13 +207,20 @@ function ScanPage() {
       const pixels = await loadImageData(photoFile ?? imageUrl);
       setStep(1);
       // Validate before the report enters app state, as with any other payload.
-      let faceMask: Uint8Array | null = null;
+      let skin: Uint8Array | null = null;
+      let check: FilterCheck | null = null;
       if (category === "skin" && faceGuide && photoFile) {
         const larger = await loadImageData(photoFile, PHOTO_DIM);
-        faceMask = await findFaceMask(larger, pixels.width, pixels.height);
-        setFaceResult(faceMask ? "used" : "none");
+        const face = await findFace(larger);
+        skin = face?.skinAt(pixels.width, pixels.height) ?? null;
+        const largeSkin = face?.skinAt(larger.width, larger.height) ?? null;
+        if (face && largeSkin)
+          check = filterCheck(larger, largeSkin, face.featuresAt(larger.width, larger.height));
+        setFaceResult(skin ? "used" : "none");
       } else setFaceResult(null);
-      report = parseBiomarkerReport(analyzeBiomarkers(category, pixels, faceMask));
+      report = parseBiomarkerReport(
+        withFilterCheck(analyzeBiomarkers(category, pixels, skin), check),
+      );
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
     } catch {
@@ -552,6 +561,13 @@ function ScanPage() {
               <div className="mt-4 rounded-2xl border border-border p-4">
                 <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
                 <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
+                <Link
+                  to="/makeup-day"
+                  className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                >
+                  Full Makeup Day: foundation, removal and recovery
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </div>
             )}
           </SectionCard>

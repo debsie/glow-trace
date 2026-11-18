@@ -1,6 +1,7 @@
 import type { Shot, ShotResult } from "../scan-session";
 import type { ScanCategory } from "../types";
-import { findFaceMask, findHairMask, findNails } from "./guides";
+import { filterCheck, withFilterCheck } from "./filter-check";
+import { findFace, findHairMask, findNails } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
 import { analyzeBiomarkers } from "./kernel";
 import { cropTile } from "./nail-tiles";
@@ -47,10 +48,16 @@ export const analyseShot = async (
     return { shotId: shot.id, reports: kept.map((nail) => nail.report), nails: kept };
   }
   const large = await loadImageData(photo, PHOTO_DIM);
+  const face = category === "skin" ? await findFace(large) : null;
   const mask =
     category === "skin"
-      ? await findFaceMask(large, pixels.width, pixels.height)
+      ? (face?.skinAt(pixels.width, pixels.height) ?? null)
       : await findHairMask(large, pixels.width, pixels.height);
+  const largeSkin = face?.skinAt(large.width, large.height) ?? null;
+  const check =
+    face && largeSkin
+      ? filterCheck(large, largeSkin, face.featuresAt(large.width, large.height))
+      : null;
   const note = mask
     ? undefined
     : category === "skin"
@@ -58,7 +65,9 @@ export const analyseShot = async (
       : "Not enough hair found, so the whole photo was read.";
   return {
     shotId: shot.id,
-    reports: [parseBiomarkerReport(analyzeBiomarkers(category, pixels, mask))],
+    reports: [
+      parseBiomarkerReport(withFilterCheck(analyzeBiomarkers(category, pixels, mask), check)),
+    ],
     nails: [],
     ...(note ? { note } : {}),
   };

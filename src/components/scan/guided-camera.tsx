@@ -190,7 +190,9 @@ export const GuidedCamera = ({
             <span className="text-muted-foreground">{hint}</span>
           )}
         </p>
-        <p className="text-center text-xs text-muted-foreground">{shot.steps[0]}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {shot.steps[0]}. No filters or beauty mode.
+        </p>
         <div className="flex flex-wrap justify-center gap-2">
           {!failed && (
             <PrimaryButton onClick={capture} disabled={!ready && !waitedLong}>

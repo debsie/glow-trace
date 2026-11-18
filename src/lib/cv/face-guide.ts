@@ -1,7 +1,7 @@
 /**
  * The face-guide setting. The detectors live in guides.ts; this keeps the person's choice.
  */
-export { findFaceMask } from "./guides";
+export { findFace, findFaceMask } from "./guides";
 
 export const FACE_GUIDE_KEY = "glowtrace.faceGuide";
 export const FACE_GUIDE_DOWNLOAD_MB = 18;

@@ -18,6 +18,7 @@ import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as IngredientsRouteImport } from './routes/ingredients'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MakeupArtistAppRouteImport } from './routes/makeup-artist-app'
+import { Route as MakeupDayRouteImport } from './routes/makeup-day'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -77,6 +78,11 @@ const LoginRoute = LoginRouteImport.update({
 const MakeupArtistAppRoute = MakeupArtistAppRouteImport.update({
   id: '/makeup-artist-app',
   path: '/makeup-artist-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MakeupDayRoute = MakeupDayRouteImport.update({
+  id: '/makeup-day',
+  path: '/makeup-day',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
+  '/makeup-day': typeof MakeupDayRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
+  '/makeup-day': typeof MakeupDayRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
+  '/makeup-day': typeof MakeupDayRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
+    | '/makeup-day'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
+    | '/makeup-day'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
+    | '/makeup-day'
     | '/pricing'
     | '/privacy'
     | '/progress'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   IngredientsRoute: typeof IngredientsRoute
   LoginRoute: typeof LoginRoute
   MakeupArtistAppRoute: typeof MakeupArtistAppRoute
+  MakeupDayRoute: typeof MakeupDayRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProgressRoute: typeof ProgressRoute
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/makeup-artist-app'
       fullPath: '/makeup-artist-app'
       preLoaderRoute: typeof MakeupArtistAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/makeup-day': {
+      id: '/makeup-day'
+      path: '/makeup-day'
+      fullPath: '/makeup-day'
+      preLoaderRoute: typeof MakeupDayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -547,6 +567,7 @@ const rootRouteChildren: RootRouteChildren = {
   IngredientsRoute: IngredientsRoute,
   LoginRoute: LoginRoute,
   MakeupArtistAppRoute: MakeupArtistAppRoute,
+  MakeupDayRoute: MakeupDayRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProgressRoute: ProgressRoute,

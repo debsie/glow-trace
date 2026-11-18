@@ -98,3 +98,21 @@ export const faceSkinMask = (
   const share = mask.reduce((sum, value) => sum + value, 0) / mask.length;
   return share >= MIN_FACE_SHARE ? mask : null;
 };
+
+/** 1 = eyes, brows and lips: the features a beauty filter leaves sharp while it smooths skin. */
+export const faceFeatureMask = (
+  landmarks: readonly Point[],
+  regions: FaceRegions,
+  width: number,
+  height: number,
+): Uint8Array => {
+  const mask = new Uint8Array(width * height);
+  for (const part of regions.exclude) {
+    const polygon = loopFromConnections(part).flatMap((index) => {
+      const point = landmarks[index];
+      return point ? [point] : [];
+    });
+    fillPolygon(mask, width, height, scalePolygon(polygon, 1.3), 1);
+  }
+  return mask;
+};

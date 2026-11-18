@@ -47,6 +47,8 @@ export type ScanReport = {
     warning?: string | undefined;
     faceGuide?: boolean | undefined;
     hairGuide?: boolean | undefined;
+    skinDetail?: number | undefined;
+    filtered?: boolean | undefined;
   };
   tone?: { ita: number; hueAngle: number } | undefined;
   metrics: {

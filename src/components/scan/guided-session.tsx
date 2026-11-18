@@ -121,8 +121,9 @@ export const GuidedSession = ({
           </ul>
           <p className="flex items-start gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-            Photos are read on this phone and never uploaded. The first guided {category} scan
-            downloads about {GUIDE_DOWNLOAD_MB[category]} MB once, so Wi-Fi is best.
+            No filters, beauty mode or portrait mode: they hide exactly what Glowtrace reads. Photos
+            are read on this phone and never uploaded. The first guided {category} scan downloads
+            about {GUIDE_DOWNLOAD_MB[category]} MB once, so Wi-Fi is best.
           </p>
           <div className="flex flex-wrap gap-2">
             <PrimaryButton

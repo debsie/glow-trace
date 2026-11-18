@@ -115,6 +115,7 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
       // Only like with like: the same kernel version and face-guide setting as the latest scan.
       const comparable = history.filter(
         (scan) =>
+          !scan.report?.quality.filtered &&
           scan.report?.kernelVersion === latest.report?.kernelVersion &&
           Boolean(scan.report?.quality.faceGuide) === Boolean(latest.report?.quality.faceGuide) &&
           Boolean(scan.report?.quality.hairGuide) === Boolean(latest.report?.quality.hairGuide),

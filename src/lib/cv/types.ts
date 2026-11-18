@@ -31,6 +31,10 @@ export type ImageQuality = {
   warning?: string | undefined;
   /** True when the face guide limited the skin indicators to face skin. */
   faceGuide?: boolean | undefined;
+  /** Skin detail divided by detail at eyes, brows and lips (face guide only). Low means smoothed. */
+  skinDetail?: number | undefined;
+  /** True when the photo looks smoothed by a beauty filter; kept out of trends. */
+  filtered?: boolean | undefined;
   /** True when the hair guide limited the hair indicators to hair pixels. */
   hairGuide?: boolean | undefined;
 };

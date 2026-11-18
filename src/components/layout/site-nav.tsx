@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Brush,
   CreditCard,
   Droplets,
   FlaskConical,
@@ -45,6 +46,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Tools",
     items: [
+      { to: "/makeup-day", label: "Makeup Day", icon: Brush },
       { to: "/ingredients", label: "Ingredients", icon: FlaskConical },
       { to: "/refer", label: "Earn", icon: Gift },
     ],

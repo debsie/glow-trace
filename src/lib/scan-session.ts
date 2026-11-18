@@ -117,6 +117,8 @@ export const combineShots = (
   let warning: string | undefined;
   let hairGuide = false;
   let faceGuide = false;
+  let filtered = false;
+  let skinDetail: number | undefined;
   for (const result of results) {
     const shot = shots.find((item) => item.id === result.shotId);
     if (!shot) continue;
@@ -129,6 +131,8 @@ export const combineShots = (
       warning ??= report.quality.warning;
       hairGuide ||= Boolean(report.quality.hairGuide);
       faceGuide ||= Boolean(report.quality.faceGuide);
+      filtered ||= Boolean(report.quality.filtered);
+      skinDetail ??= report.quality.skinDetail;
       for (const metric of report.metrics) {
         if (!shot.reads.includes(metric.key)) continue;
         templates.set(metric.key, metric);
@@ -153,6 +157,8 @@ export const combineShots = (
       ...(warning ? { warning } : {}),
       ...(faceGuide ? { faceGuide } : {}),
       ...(hairGuide ? { hairGuide } : {}),
+      ...(filtered ? { filtered } : {}),
+      ...(skinDetail !== undefined ? { skinDetail } : {}),
     },
     metrics,
   };

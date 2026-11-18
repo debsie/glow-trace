@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
+import { DEFAULT_PROFILE, recoverySteps, removalSteps } from "@/lib/makeup-day";
 import { PageHeader, PrimaryButton } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { findingsFor } from "@/lib/agent/agent";
@@ -79,6 +80,25 @@ function ClientBrief() {
           <div className="mt-1">
             <MakeupPrepPanel report={latestSkin?.report} />
           </div>
+        </section>
+
+        <section>
+          <h2 className="font-display text-lg font-semibold">Aftercare: taking it off tonight</h2>
+          <ol className="mt-1 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+            {removalSteps(latestSkin?.report ?? null, { ...DEFAULT_PROFILE, wear: "long" }).map(
+              (step) => (
+                <li key={step}>{step}</li>
+              ),
+            )}
+          </ol>
+          <h3 className="mt-3 font-semibold">The night after</h3>
+          <ol className="mt-1 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+            {recoverySteps(latestSkin?.report ?? null, { ...DEFAULT_PROFILE, wear: "long" }).map(
+              (step) => (
+                <li key={step}>{step}</li>
+              ),
+            )}
+          </ol>
         </section>
 
         {attention.length > 0 && (

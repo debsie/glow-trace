@@ -283,3 +283,13 @@ unsure when the scan warned about coloured light.
 - **Live camera check**: `frameHint` runs the same quality gate on a 160 px preview twice a
   second; the shutter waits until a photo would score (or, after five seconds, offers "Take photo
   anyway").
+
+## Beauty-filter check (`src/lib/cv/filter-check.ts`, with the face guide)
+
+Beauty filters, beauty mode and portrait mode smooth skin but keep eyes, brows and lips sharp. On
+a 640 px copy, fine detail (mean |luma − 3×3 mean|) inside face skin is divided by fine detail
+inside the eyes, brows and lips (`faceFeatureMask`, polygons enlarged to 130%). Measured on one
+real selfie: unfiltered 0.663, half resolution 0.631, soft focus 0.666; skin-only smoothing at
+30% 0.469, 60% 0.287, 90% 0.111. Below `FILTER_RATIO` = 0.45 the report gets `quality.filtered`,
+a warning asking for a retake without filters, and is kept out of trends. Provisional: re-check
+the threshold on more faces and phones before relying on it.
