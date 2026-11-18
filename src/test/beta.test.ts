@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accessRequestSchema,
+  describeAudit,
   daysLeft,
   extendedExpiry,
   feedbackSchema,
@@ -13,7 +14,7 @@ import {
   thankYouMailto,
   triageOrder,
 } from "@/lib/beta";
-import type { Feedback } from "@/lib/beta";
+import type { AuditEntry, Feedback } from "@/lib/beta";
 
 const NOW = new Date("2026-11-18T10:00:00Z");
 
@@ -154,5 +155,57 @@ describe("Feedback triage", () => {
     expect(firstNameFrom("x@y.co", "Thandi Mokoena")).toBe("Thandi");
     expect(firstNameFrom("lebo.k@mail.co.za")).toBe("Lebo");
     expect(firstNameFrom("@mail.co.za")).toBe("there");
+  });
+});
+
+describe("Audit log", () => {
+  const entry = (overrides: Partial<AuditEntry>): AuditEntry => ({
+    id: 1,
+    at: "2026-11-18T10:00:00Z",
+    actor_email: "admin@glowtrace.app",
+    action: "INSERT",
+    table_name: "beta_allowlist",
+    record_key: "lebo@mail.co.za",
+    old_data: null,
+    new_data: null,
+    ...overrides,
+  });
+
+  it("describes access changes in plain language", () => {
+    expect(describeAudit(entry({ new_data: { duration_days: 30 } }))).toBe(
+      "Granted lebo@mail.co.za 30 days of access",
+    );
+    expect(
+      describeAudit(entry({ action: "UPDATE", old_data: {}, new_data: { duration_days: 14 } })),
+    ).toBe("Extended lebo@mail.co.za by 14 days");
+    expect(
+      describeAudit(
+        entry({ action: "UPDATE", old_data: { revoked_at: null }, new_data: { revoked_at: "x" } }),
+      ),
+    ).toBe("Revoked access for lebo@mail.co.za");
+  });
+
+  it("describes requests, roles and feedback", () => {
+    expect(describeAudit(entry({ table_name: "waitlist" }))).toBe(
+      "lebo@mail.co.za requested access",
+    );
+    expect(
+      describeAudit(
+        entry({ table_name: "waitlist", action: "UPDATE", new_data: { status: "declined" } }),
+      ),
+    ).toBe("Declined the request from lebo@mail.co.za");
+    expect(describeAudit(entry({ table_name: "user_roles", record_key: "u1" }))).toBe(
+      "Gave admin rights to u1",
+    );
+    expect(
+      describeAudit(
+        entry({
+          table_name: "feedback",
+          action: "UPDATE",
+          old_data: {},
+          new_data: { thanked_at: "x" },
+        }),
+      ),
+    ).toBe("Thanked a tester for feedback");
   });
 });

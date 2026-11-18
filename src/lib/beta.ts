@@ -169,3 +169,57 @@ export const firstNameFrom = (email: string, name?: string | null): string => {
   const word = local.split(/[._-]/)[0] ?? "";
   return word ? word.charAt(0).toUpperCase() + word.slice(1) : "there";
 };
+
+/* ---------- Audit log ---------- */
+
+export type AuditEntry = {
+  id: number;
+  at: string;
+  actor_email: string | null;
+  action: "INSERT" | "UPDATE" | "DELETE";
+  table_name: string;
+  record_key: string | null;
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
+};
+
+const field = (data: Record<string, unknown> | null, key: string): unknown => data?.[key];
+
+/** One plain-language line per audit entry, for the admin dashboard. */
+export const describeAudit = (entry: AuditEntry): string => {
+  const who = entry.record_key ?? "a record";
+  const { action, table_name: table, old_data: before, new_data: after } = entry;
+  if (table === "beta_allowlist") {
+    if (action === "DELETE") return `Removed ${who} from the invite list`;
+    if (field(after, "revoked_at") && !field(before, "revoked_at"))
+      return `Revoked access for ${who}`;
+    const days = field(after, "duration_days");
+    if (action === "INSERT") {
+      return typeof days === "number"
+        ? `Granted ${who} ${days} days of access`
+        : `Added ${who} to the invite list`;
+    }
+    return typeof days === "number"
+      ? `Extended ${who} by ${days} days`
+      : `Updated access for ${who}`;
+  }
+  if (table === "waitlist") {
+    if (action === "INSERT") return `${who} requested access`;
+    if (action === "DELETE") return `Removed the access request from ${who}`;
+    const status = field(after, "status");
+    if (status === "declined") return `Declined the request from ${who}`;
+    if (status === "approved") return `Approved the request from ${who}`;
+    return `${who} asked for access again`;
+  }
+  if (table === "user_roles") {
+    return action === "DELETE" ? `Removed admin rights from ${who}` : `Gave admin rights to ${who}`;
+  }
+  if (table === "feedback") {
+    if (action === "DELETE") return "Deleted a feedback item";
+    if (field(after, "thanked_at") && !field(before, "thanked_at"))
+      return "Thanked a tester for feedback";
+    const status = field(after, "status");
+    return typeof status === "string" ? `Marked feedback ${status}` : "Updated a feedback item";
+  }
+  return `${action.toLowerCase()} on ${table}`;
+};
