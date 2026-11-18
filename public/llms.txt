@@ -28,6 +28,8 @@ Glowtrace is a cosmetic self-care guide, not a medical or diagnostic tool. Check
 
 - [Home](/): what Glowtrace does
 - [Pricing](/pricing): the three plans, limits and common questions
+- [Skin analysis app](/skin-analysis-app): how the photo analysis works, what it measures, privacy
+- [Makeup artist app](/makeup-artist-app): MUA Studio for bridal and event artists
 - [Invite friends](/refer): the referral programme
 - [Partner programme](/affiliates): the affiliate programme and an earnings calculator
 - [Check-in](/scan): take a skin, hair or nail check-in

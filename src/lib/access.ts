@@ -41,7 +41,17 @@ export const checkEmail = (input: string): EmailCheck => {
 };
 
 /** Routes anyone can open. Everything else is the app and needs beta access. */
-const PUBLIC_PATHS = ["/", "/pricing", "/refer", "/affiliates", "/login", "/privacy", "/cookies"];
+const PUBLIC_PATHS = [
+  "/",
+  "/pricing",
+  "/refer",
+  "/affiliates",
+  "/login",
+  "/privacy",
+  "/cookies",
+  "/skin-analysis-app",
+  "/makeup-artist-app",
+];
 
 export const isPublicPath = (pathname: string): boolean =>
   PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/sitemap");
