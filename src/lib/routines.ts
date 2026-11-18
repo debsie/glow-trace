@@ -18,7 +18,7 @@ export const ROUTINE_MODES: readonly RoutineModeSpec[] = [
     summary: "Light layers and sun protection to carry you through the day.",
     steps: [
       "Rinse or use a gentle cleanser",
-      "Apply your treatment serum from the matches below",
+      "Apply the serum from your matches below",
       "Moisturise while skin is still slightly damp",
       "Finish with SPF 30 or higher — every day, even in winter",
     ],
@@ -31,7 +31,7 @@ export const ROUTINE_MODES: readonly RoutineModeSpec[] = [
     steps: [
       "Remove makeup and sunscreen first",
       "Cleanse gently — no scrubbing",
-      "Apply your treatment serum from the matches below",
+      "Apply the serum from your matches below",
       "Seal it in with a moisturiser",
     ],
   },

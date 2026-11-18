@@ -1,7 +1,7 @@
 import type {
   Biomarkers,
   Client,
-  DiagnosticScan,
+  ScanRecord,
   EventLook,
   InventoryItem,
   LightingPreset,
@@ -287,7 +287,7 @@ export const MOCK_INVENTORY: InventoryItem[] = [
   { id: "inv_6", user_id: "u_ava", product_id: "p_nailoil", in_stock: true },
 ];
 
-export const MOCK_SCANS: DiagnosticScan[] = [
+export const MOCK_SCANS: ScanRecord[] = [
   {
     id: "s_skin_1",
     user_id: "u_ava",

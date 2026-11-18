@@ -10,7 +10,7 @@ import {
 } from "@/lib/agent/agent";
 import { PRODUCT_PROFILES } from "@/lib/agent/knowledge";
 import { MOCK_CATALOG } from "@/lib/mock-data";
-import type { DiagnosticScan, InventoryItem, ScanReport } from "@/lib/types";
+import type { ScanRecord, InventoryItem, ScanReport } from "@/lib/types";
 
 type Metric = ScanReport["metrics"][number];
 
@@ -26,7 +26,7 @@ const skinScan = (
   id: string,
   date: string,
   values: { erythema: number; texture: number; hydration: number; discoloration: number },
-): DiagnosticScan => ({
+): ScanRecord => ({
   id,
   user_id: "u",
   category: "skin",

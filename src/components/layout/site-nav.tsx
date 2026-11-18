@@ -1,5 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
+  PanelLeftClose,
+  PanelLeftOpen,
   Droplets,
   Gift,
   Home,
@@ -93,7 +96,13 @@ const Logo = () => (
   </Link>
 );
 
-const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
+const NavLinkList = ({
+  layout,
+  collapsed = false,
+}: {
+  layout: "side" | "bottom";
+  collapsed?: boolean;
+}) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isActive = (to: string) => pathname.startsWith(to);
   if (layout === "side") {
@@ -104,14 +113,18 @@ const NavLinkList = ({ layout }: { layout: "side" | "bottom" }) => {
             key={item.to}
             to={item.to}
             aria-current={isActive(item.to) ? "page" : undefined}
-            className={`flex min-h-[50px] items-center gap-3 rounded-xl px-4 text-base font-semibold transition-colors ${
+            aria-label={collapsed ? item.label : undefined}
+            title={collapsed ? item.label : undefined}
+            className={`flex min-h-[50px] items-center rounded-xl text-base font-semibold transition-colors ${
+              collapsed ? "justify-center px-0" : "gap-3 px-4"
+            } ${
               isActive(item.to)
                 ? "bg-accent/15 text-accent"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <item.icon className="h-5 w-5" aria-hidden="true" />
-            {item.label}
+            <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+            {!collapsed && item.label}
           </Link>
         ))}
       </nav>
@@ -201,8 +214,31 @@ export const SiteShell = ({ children }: { children: React.ReactNode }) => {
   return <AppShell>{children}</AppShell>;
 };
 
+const COLLAPSE_KEY = "glowtrace.sidebar";
+
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { isAdmin } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  // Read after mount so server and first client render match.
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "collapsed");
+    } catch {
+      // Storage blocked: stay expanded.
+    }
+  }, []);
+  const toggle = () => {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "collapsed" : "expanded");
+      } catch {
+        // Not saved; still works for this visit.
+      }
+      return next;
+    });
+  };
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
@@ -214,19 +250,74 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       </header>
 
       <div className="mx-auto flex w-full max-w-7xl">
-        <aside className="sticky top-[72px] hidden h-fit w-60 shrink-0 py-6 pl-4 lg:block">
+        <aside
+          className={`sticky top-[72px] hidden h-fit shrink-0 py-6 pl-4 transition-[width] duration-200 lg:block ${
+            collapsed ? "w-[72px]" : "w-60"
+          }`}
+        >
           <div className="mb-4 sm:hidden">
             <WorkspaceSwitcher />
           </div>
-          <NavLinkList layout="side" />
-          <PlanSummary />
-          <BetaNotice />
-          <Link
-            to="/privacy"
-            className="mt-1 flex min-h-[50px] items-center gap-2 rounded-xl px-4 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+          <NavLinkList layout="side" collapsed={collapsed} />
+          {collapsed ? (
+            <div className="mt-4 flex flex-col gap-1">
+              <Link
+                to="/pricing"
+                aria-label="Plans and pricing"
+                title="Plans and pricing"
+                className="flex min-h-[50px] items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <Gift className="h-5 w-5" aria-hidden="true" />
+              </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  aria-label="Beta dashboard"
+                  title="Beta dashboard"
+                  className="flex min-h-[50px] items-center justify-center rounded-xl text-primary hover:bg-secondary"
+                >
+                  <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+                </Link>
+              )}
+              <Link
+                to="/privacy"
+                aria-label="Your data and privacy"
+                title="Your data and privacy"
+                className="flex min-h-[50px] items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </div>
+          ) : (
+            <>
+              <PlanSummary />
+              <BetaNotice />
+              <Link
+                to="/privacy"
+                className="mt-1 flex min-h-[50px] items-center gap-2 rounded-xl px-4 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Your data and privacy
+              </Link>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`mt-4 flex min-h-[50px] w-full items-center rounded-xl text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground ${
+              collapsed ? "justify-center" : "gap-3 px-4"
+            }`}
           >
-            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Your data and privacy
-          </Link>
+            {collapsed ? (
+              <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-5 w-5" aria-hidden="true" /> Collapse
+              </>
+            )}
+          </button>
         </aside>
 
         <main key={pathname} className="page-enter min-w-0 flex-1 px-4 py-6 pb-28 lg:pb-10">

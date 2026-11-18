@@ -9,7 +9,7 @@ import {
 } from "./image";
 import type { BiomarkerMetric } from "./types";
 
-// Calibration: pale skin reads a* ≈ 9-13, inflamed/red skin ≈ 20-27.
+// Calibration: pale skin reads a* ≈ 9-13, red skin ≈ 20-27.
 const ERYTHEMA_A_LOW = 9;
 const ERYTHEMA_A_SPAN = 18;
 // Calibration v1.1: on 256 px whole-area photos, smooth skin reads ≈ 8-11 gradient energy
@@ -24,7 +24,7 @@ const DISCOLORATION_WEIGHT = 400;
 
 export const erythema = (planes: Planes): BiomarkerMetric => ({
   key: "erythema",
-  label: "Erythema / Redness",
+  label: "Redness",
   value: score(((mean(planes.labA) - ERYTHEMA_A_LOW) / ERYTHEMA_A_SPAN) * 100),
   higherMeans: "more",
   description: "How red the skin tone reads.",

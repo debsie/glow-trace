@@ -271,7 +271,11 @@ function AdminPage() {
     <div className="space-y-6">
       <PageHeader
         title="Beta Dashboard"
-        subtitle={`Requests, testers and feedback for the Glowtrace beta. Average rating ${summary.averageRating ?? "—"} from ${summary.total} responses.`}
+        subtitle={
+          summary.total === 0
+            ? "Requests, testers and feedback for the Glowtrace beta. No feedback yet."
+            : `Requests, testers and feedback for the Glowtrace beta. Average rating ${summary.averageRating} from ${summary.total} ${summary.total === 1 ? "response" : "responses"}.`
+        }
       />
       {isDemo() && (
         <p

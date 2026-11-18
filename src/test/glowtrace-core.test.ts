@@ -11,11 +11,11 @@ import {
 } from "@/lib/beauty";
 import { MOCK_BIOMARKERS, MOCK_CATALOG, MOCK_INVENTORY, MOCK_LOOKS } from "@/lib/mock-data";
 
-describe("Diagnostic gauges", () => {
+describe("Scan gauges", () => {
   it("shows three labeled gauges per category, inverting hydration for skin", () => {
     const skin = gaugesFor("skin", MOCK_BIOMARKERS.skin);
     expect(skin).toHaveLength(3);
-    expect(skin[0]?.label).toBe("Erythema / Redness");
+    expect(skin[0]?.label).toBe("Redness");
     expect(skin[0]?.value).toBe(38);
     // Dryness is inverted: higher gauge = better hydration.
     expect(skin[2]?.label).toBe("Hydration");

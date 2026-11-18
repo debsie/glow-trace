@@ -1,7 +1,7 @@
 import type {
   Biomarkers,
   Client,
-  DiagnosticScan,
+  ScanRecord,
   EventLook,
   InventoryItem,
   LightingPreset,
@@ -62,7 +62,7 @@ type AppState = {
   profile: Profile;
   workspace: Workspace;
   clients: Client[];
-  scans: DiagnosticScan[];
+  scans: ScanRecord[];
   catalog: Product[];
   inventory: InventoryItem[];
   looks: EventLook[];
@@ -96,7 +96,7 @@ type AppState = {
     demo?: boolean | undefined;
     /** Compact copy of the photo to keep in the on-device history. */
     photo?: Blob | undefined;
-  }) => DiagnosticScan | Gate;
+  }) => ScanRecord | Gate;
   storageStatus: StorageStatus;
   /** Everything stored on this device, as a portable JSON-ready object. */
   exportData: () => Promise<unknown>;
@@ -130,7 +130,7 @@ const nextId = (prefix: string): string => {
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [workspace, setWorkspace] = useState<Workspace>("personal");
   const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS);
-  const [scans, setScans] = useState<DiagnosticScan[]>(MOCK_SCANS);
+  const [scans, setScans] = useState<ScanRecord[]>(MOCK_SCANS);
   const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
   const [account, setAccount] = useState<AccountState>(() => defaultAccount(new Date()));
   const [hydrated, setHydrated] = useState(false);
@@ -233,7 +233,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         mua_id: me.id,
         client_name: input.client_name.trim() || "Unnamed client",
         contact_info: input.contact_info.trim(),
-        skin_type: input.skin_type.trim() || "Undiagnosed",
+        skin_type: input.skin_type.trim() || "Not assessed",
         notes: input.notes.trim(),
       };
       setClients((current) => [client, ...current]);
@@ -296,7 +296,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       report?: ScanReport | undefined;
       demo?: boolean | undefined;
       photo?: Blob | undefined;
-    }): DiagnosticScan | Gate => {
+    }): ScanRecord | Gate => {
       const gate = scanGate(tier, usage.scans, rewards.bonusScans);
       if (!gate.allowed) return gate;
       const id = nextId("s");
@@ -305,7 +305,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         imageUrl = URL.createObjectURL(input.photo);
         if (storageAvailable()) void putPhoto(id, input.photo).catch(() => undefined);
       }
-      const scan: DiagnosticScan = {
+      const scan: ScanRecord = {
         id,
         user_id: me.id,
         category: input.category,

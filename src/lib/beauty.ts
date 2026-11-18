@@ -20,7 +20,7 @@ export type Gauge = {
 };
 
 const GAUGE_LABELS: Record<keyof Biomarkers, string> = {
-  redness: "Erythema / Redness",
+  redness: "Redness",
   texture: "Texture Coarseness",
   dryness: "Hydration",
   porosity: "Hydration / Porosity",

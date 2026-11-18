@@ -1,5 +1,5 @@
 import { gaugesFor } from "../beauty";
-import type { DiagnosticScan, InventoryItem, Product, ScanCategory } from "../types";
+import type { ScanRecord, InventoryItem, Product, ScanCategory } from "../types";
 import type { Active, Concern, ConcernSpec, ProductProfile } from "./knowledge";
 import { CONCERNS, CONFLICTS, DIY_FOR, PRODUCT_PROFILES } from "./knowledge";
 
@@ -54,7 +54,7 @@ const AREAS: ScanCategory[] = ["skin", "hair", "nails"];
 const SEVERITY_WEIGHT: Record<Severity, number> = { focus: 3, watch: 1.5, good: 0 };
 
 /** 0-100 health per indicator key for one scan (report first, older scans by legacy key). */
-const healthByMetric = (scan: DiagnosticScan): Map<string, { value: number; health: number }> => {
+const healthByMetric = (scan: ScanRecord): Map<string, { value: number; health: number }> => {
   const result = new Map<string, { value: number; health: number }>();
   if (scan.report && !scan.demo && scan.report.metrics.length > 0) {
     for (const metric of scan.report.metrics) {
@@ -75,7 +75,7 @@ const healthByMetric = (scan: DiagnosticScan): Map<string, { value: number; heal
   return result;
 };
 
-const reading = (scan: DiagnosticScan, spec: ConcernSpec) => {
+const reading = (scan: ScanRecord, spec: ConcernSpec) => {
   const metrics = healthByMetric(scan);
   return (
     metrics.get(spec.metric) ?? (spec.legacyMetric ? metrics.get(spec.legacyMetric) : undefined)
@@ -86,7 +86,7 @@ const severityFor = (health: number): Severity =>
   health < FOCUS_BELOW ? "focus" : health < WATCH_BELOW ? "watch" : "good";
 
 /** What stands out in the latest scan of each area, worst first. */
-export const findingsFor = (scans: readonly DiagnosticScan[]): Finding[] => {
+export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
   const findings: Finding[] = [];
   for (const area of AREAS) {
     const history = scans
@@ -221,7 +221,7 @@ export const suggestProducts = (
 };
 
 export const briefing = (
-  scans: readonly DiagnosticScan[],
+  scans: readonly ScanRecord[],
   catalog: readonly Product[],
   inventory: readonly InventoryItem[],
 ): Briefing => {

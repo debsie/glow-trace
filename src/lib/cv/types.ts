@@ -8,7 +8,7 @@ export type { ScanCategory };
 export type BiomarkerMetric = {
   /** Stable id, e.g. "erythema". */
   key: string;
-  /** Display name, e.g. "Erythema / Redness". */
+  /** Display name, e.g. "Redness". */
   label: string;
   /** 0-100, rounded to one decimal. */
   value: number;

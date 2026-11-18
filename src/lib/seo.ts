@@ -14,7 +14,7 @@ export const SITE_URL: string =
 
 export const SITE = {
   name: "Glowtrace",
-  tagline: "Skin, hair and nail diagnostics from a photo",
+  tagline: "Skin, hair and nail wellness scans from a photo",
   description:
     "Glowtrace is a South African beauty app that checks your skin, hair and nails from a photo, builds a routine around the products you already own, and gives makeup artists a simple way to prep clients. Free to start, Glow Pro from R59 a month.",
   locale: "en_ZA",
@@ -99,7 +99,7 @@ export const softwareApplicationSchema = (): Record<string, unknown> => ({
   "@type": "SoftwareApplication",
   name: SITE.name,
   description: SITE.description,
-  applicationCategory: "HealthApplication",
+  applicationCategory: "LifestyleApplication",
   applicationSubCategory: "Beauty and personal care",
   operatingSystem: "Web, iOS, Android",
   inLanguage: SITE.language,
