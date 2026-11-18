@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Check, Eye, Lock, Pencil, Repeat, Send } from "lucide-react";
 
 import { HeroInstrument } from "@/components/landing/hero-instrument";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Reveal } from "@/components/motion/reveal";
 import { ThreeCanvas } from "@/components/three/three-canvas";
 import { Badge, BUTTON_GHOST, BUTTON_PRIMARY, LogoMark } from "@/components/ui/bits";
@@ -129,7 +130,10 @@ function LandingPage() {
             <Link to="/login" className={`${NAV_LINK} hidden sm:inline-flex`}>
               Sign in
             </Link>
-            <Link to="/app" className={`${BUTTON_PRIMARY} ml-2`}>
+            <span className="ml-1">
+              <ThemeToggle />
+            </span>
+            <Link to="/app" className={`${BUTTON_PRIMARY} ml-1`}>
               Open the app
             </Link>
           </nav>
