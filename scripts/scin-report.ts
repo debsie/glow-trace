@@ -15,6 +15,8 @@ import { chromium } from "playwright";
 
 import { analyzeBiomarkers } from "../src/lib/cv/kernel";
 import { MAX_DIM, toPlanes } from "../src/lib/cv/image";
+import { correctLight, densityDifferences, estimateIlluminant } from "../src/lib/cv/pigment";
+import type { Illuminant } from "../src/lib/cv/pigment";
 import type { PixelBuffer } from "../src/lib/cv/types";
 
 const BUCKET = "https://storage.googleapis.com/dx-scin-public-data/";
@@ -126,6 +128,7 @@ const main = async () => {
   };
   const results: Result[] = [];
   const raw: Record<string, number | string>[] = [];
+  const kept: { group: string; condition: string; image: PixelBuffer }[] = [];
   for (const [index, item] of sample.entries()) {
     const response = await fetch(BUCKET + item.path);
     if (!response.ok) continue;
@@ -157,6 +160,7 @@ const main = async () => {
       data: Uint8ClampedArray.from(decoded.pixels),
     };
     const report = analyzeBiomarkers("skin", image);
+    kept.push({ group: item.group, condition: item.condition, image });
     const planes = toPlanes(image);
     const skinA: number[] = [];
     const skinL: number[] = [];
@@ -201,6 +205,47 @@ const main = async () => {
     if ((index + 1) % 20 === 0) console.error(`${index + 1} / ${sample.length}`);
   }
   await browser.close();
+
+  // ---------- Candidate redness features (pigment physics, light correction) ----------
+  const illuminants = kept.map((entry) => estimateIlluminant(entry.image));
+  const med = (values: number[]) => median(values);
+  const reference: Illuminant = {
+    r: med(illuminants.map((e) => e.r)),
+    g: med(illuminants.map((e) => e.g)),
+    b: med(illuminants.map((e) => e.b)),
+  };
+  const features = (image: PixelBuffer) => {
+    const planes = toPlanes(image);
+    const dG: number[] = [];
+    const dB: number[] = [];
+    const la: number[] = [];
+    const lb: number[] = [];
+    for (let i = 0; i < planes.count; i += 1) {
+      const L = planes.labL[i] ?? 0;
+      const a = planes.labA[i] ?? 0;
+      const b = planes.labB[i] ?? 0;
+      const hue = (Math.atan2(b, a) * 180) / Math.PI;
+      if (!(L > 20 && L < 95 && a > 2 && hue > 10 && hue < 80)) continue;
+      const d = densityDifferences(
+        image.data[i * 4] ?? 0,
+        image.data[i * 4 + 1] ?? 0,
+        image.data[i * 4 + 2] ?? 0,
+      );
+      dG.push(d.dG);
+      dB.push(d.dB);
+      la.push(a);
+      lb.push(b);
+    }
+    return { dG: med(dG), dB: med(dB), a: med(la), b: med(lb), skin: dG.length / planes.count };
+  };
+  const candidates = kept.map((entry, index) => ({
+    group: entry.group,
+    condition: entry.condition,
+    illuminant: illuminants[index],
+    raw: features(entry.image),
+    corrected: features(correctLight(entry.image, reference)),
+  }));
+  writeFileSync(join(folder, "candidates.json"), JSON.stringify({ reference, candidates }));
 
   // ---------- Aggregate report ----------
   const keys = ["erythema", "texture", "hydration", "discoloration"];

@@ -1,4 +1,5 @@
 import { gaugesFor } from "../beauty";
+import { DEFAULT_DRIFT_PER_DAY, estimateTrend } from "../trend";
 import type { ScanRecord, InventoryItem, Product, ScanCategory } from "../types";
 import type { Active, Concern, ConcernSpec, ProductProfile } from "./knowledge";
 import { CONCERNS, CONFLICTS, DIY_FOR, PRODUCT_PROFILES } from "./knowledge";
@@ -21,8 +22,10 @@ export type Finding = {
   health: number;
   severity: Severity;
   trend: Trend;
-  /** Change in health since the previous scan of this area; null on the first. */
+  /** Filtered change in health since the previous scan of this area; null on the first. */
   change: number | null;
+  /** Probability (0-1) that the change is real rather than noise; null on the first scan. */
+  certainty: number | null;
   line: string;
   habit: string;
 };
@@ -50,6 +53,8 @@ export type Briefing = {
 const FOCUS_BELOW = 45;
 const WATCH_BELOW = 65;
 const TREND_NOISE = 2;
+/** Call a change real only when the filter is at least this sure (one-sided 95%). */
+const TREND_CERTAINTY = 0.95;
 /**
  * Redness reads from colour, so ordinary changes in the colour of the light move it. Measured
  * in src/test/robustness.test.ts: with kernel v1.3 a 4% warm or cool shift moves it up to 5
@@ -98,23 +103,33 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
     const history = scans
       .filter((scan) => scan.category === area && !scan.demo)
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
-    const [latest, previous] = history;
+    const [latest] = history;
     if (!latest) continue;
     for (const [concern, spec] of Object.entries(CONCERNS) as [Finding["concern"], ConcernSpec][]) {
       if (spec.area !== area) continue;
       const now = reading(latest, spec);
       if (!now) continue;
-      const before = previous ? reading(previous, spec) : undefined;
-      const change = before ? Math.round((now.health - before.health) * 10) / 10 : null;
       const noise = NOISE_BY_CONCERN[concern as keyof typeof CONCERNS] ?? TREND_NOISE;
+      // Every reading of this indicator, filtered: a noise floor of N points is treated as
+      // about two standard deviations of a single reading.
+      const series = history.flatMap((scan) => {
+        const value = reading(scan, spec);
+        return value ? [{ at: scan.created_at, value: value.health }] : [];
+      });
+      const estimate =
+        series.length >= 2
+          ? estimateTrend(series, { readingSd: noise / 2, driftPerDay: DEFAULT_DRIFT_PER_DAY })
+          : null;
+      const change = estimate ? Math.round(estimate.change * 10) / 10 : null;
+      const certainty = estimate ? Math.round(estimate.certainty * 100) / 100 : null;
       const trend: Trend =
-        change === null
+        !estimate || change === null
           ? "new"
-          : change > noise
-            ? "improving"
-            : change < -noise
-              ? "worsening"
-              : "steady";
+          : estimate.certainty < TREND_CERTAINTY
+            ? "steady"
+            : change > 0
+              ? "improving"
+              : "worsening";
       findings.push({
         concern,
         area,
@@ -124,6 +139,7 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
         severity: severityFor(now.health),
         trend,
         change,
+        certainty,
         line: spec.focusLine,
         habit: spec.habit,
       });

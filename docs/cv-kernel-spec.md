@@ -182,3 +182,19 @@ redness noise floor is 6. Other indicators are unchanged.
 Limits: SCIN has no redness labels, so this fixes fairness and range, not accuracy. Condition
 labels ("usually red" conditions) did not separate clearly, which is expected for small affected
 areas in varied photos.
+
+## Evaluated and not adopted (2026-11-18)
+
+Tested on the same SCIN sample (`scripts/scin-report.ts`, helpers in `src/lib/cv/pigment.ts`).
+Fairness = spread of skin-tone group medians, divided by the overall interquartile range
+(lower is fairer).
+
+| Redness candidate                                         | Fairness  | Note                                       |
+| --------------------------------------------------------- | --------- | ------------------------------------------ |
+| v1.3 Lab residual (shipped)                               | 0.20      |                                            |
+| Pigment separation, optical density `dG − β·dB`, β fitted | 0.28-0.78 | Less fair at every β tried                 |
+| Light correction (shades of grey, p = 6) before v1.3      | 0.45      | Washes out real skin colour with the light |
+
+The "usually red conditions" signal moved between +0.43 and −0.17 across settings: with 31 such
+photos it is noise, so it was not used to choose. Revisit pigment separation when there are
+labelled ratings (opt-in contributions) to test against.
