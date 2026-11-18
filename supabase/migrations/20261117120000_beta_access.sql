@@ -44,7 +44,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ---------- Beta invite list ----------
--- Add testers here (Lovable Cloud → Database → beta_allowlist). Emails are stored lower-case.
+-- Testers are added from the beta dashboard, or in the Supabase table editor. Emails are stored lower-case.
 create table if not exists public.beta_allowlist (
   email text primary key check (email = lower(email)),
   note text,

@@ -1,28 +1,42 @@
-# Glow Trace
+# Glowtrace
 
-It's called Glow Trace
+Skin, hair and nail check-ins from a photo, analysed on the device, with routines built from
+the products you already own and tools for makeup artists. Built for South Africa; priced in
+rands.
 
-This project was built with [Lovable](https://lovable.dev).
+## Stack
 
-## Build with Lovable
+TanStack Start (React 19, server rendering) on Vite, Tailwind CSS v4, Zod, Vitest. Supabase for
+sign-in and the beta programme. Deployed on Vercel. Package manager: [bun](https://bun.sh).
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/8e9ef1d5-eca1-4a67-abd5-0ff84174c8b2).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and [bun](https://bun.sh) — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Develop
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
 bun install
-bun run dev
+bun run dev        # http://localhost:8080
+bun run test       # unit tests
+bun run lint       # ESLint + Prettier
+npx tsc --noEmit   # typecheck
 ```
 
-## License
+Without Supabase settings the app runs in **demo mode**: no sign-in, sample data, everything
+saved in the browser. To develop against Supabase, copy `.env.example` to `.env.local` and fill
+it in.
 
-Copyright (c) 2026 debsie. All rights reserved. This is proprietary software — see [LICENSE](./LICENSE). No use, copying, or distribution is permitted without written permission.
+## Deploy
+
+See [`docs/deploy.md`](docs/deploy.md): Supabase project, database migrations, Vercel project,
+environment variables, and making yourself the beta admin.
+
+## Where things live
+
+- `src/routes/` pages (file-based routing); `/` is the landing page, `/app` the dashboard,
+  `/admin` the beta dashboard
+- `src/lib/cv/` the on-device photo analysis engine; `src/lib/agent/` the care agent
+- `src/lib/plans.ts`, `src/lib/referrals.ts`, `src/lib/beta.ts` business rules (all tested)
+- `supabase/migrations/` database schema and security rules
+- `docs/` product plan, analysis spec, legal drafts, deploy guide
+
+## Licence
+
+Copyright (c) 2026 debsie. All rights reserved. Proprietary software; see [LICENSE](LICENSE).

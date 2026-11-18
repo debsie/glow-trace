@@ -3,7 +3,7 @@ import { extendedExpiry } from "./beta";
 import type { AccessDuration } from "./beta";
 
 /**
- * Sample beta data for demo mode (no Lovable Cloud connected), so the admin dashboard and
+ * Sample beta data for demo mode (no Supabase configured), so the admin dashboard and
  * feedback flow can be tried end to end. Lives in memory only; a reload resets it.
  */
 

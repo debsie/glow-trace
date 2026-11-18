@@ -1,19 +1,15 @@
-<!-- LOVABLE:BEGIN -->
+# Glowtrace: notes for coding agents
 
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+Read `CLAUDE.md` for the full project guide. The essentials:
 
-<!-- LOVABLE:END -->
-
-## Architecture
-
-- The Glowtrace AI beauty app lives in a project draft ("Glowtrace AI beauty app", drft_01m5vypj01f09rpwzhtryf5gj3); the main project stays the kids' focus board until the draft is accepted. The draft's CV analysis kernel spec is at `docs/cv-kernel-spec.md` (on-device, deterministic, Zod-validated).
-- Glow Trace state (focus tasks, parent PIN) persists in localStorage via `src/hooks/use-focus-tasks.ts` and `src/hooks/use-parent-pin.ts`; when accounts are added, move this data to Lovable Cloud tables owned by the parent account (hackathon COPPA/GDPR-K rule).
-- The theme is dark-only; all colors are semantic oklch tokens in `src/styles.css` (amber accent is `--glow`). Never hardcode colors in components.
-- Pure app logic (tasks, PIN, progress) lives in `src/lib/focus.ts` and is covered by `src/test/glow-trace-core.test.ts` — extend those tests when the rules change.
+- Run `bun run test`, `npx tsc --noEmit` and `bun run lint` before every commit; keep all three
+  clean.
+- Never force-push, rebase or amend commits that are already pushed. Keep `main` deployable:
+  every push to it deploys to production on Vercel.
+- Photos and scan results stay on the person's device. Only email, name, beta access,
+  access requests and feedback live in Supabase. Do not add analytics, trackers or uploads
+  without updating `docs/legal/privacy.md` and asking the owner.
+- Security for anything in Supabase lives in row-level security and the database functions in
+  `supabase/migrations/`, never only in the app. Add schema changes as new migration files;
+  never edit one that has been applied.
+- Proprietary code: no GPL/AGPL dependencies without asking.
