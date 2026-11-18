@@ -5,6 +5,8 @@ import type { Session } from "@supabase/supabase-js";
 import { cloudConfigured, getSupabase } from "@/integrations/supabase/client";
 import type { AccessState } from "@/lib/access";
 import { checkEmail, displayNameFor, safeNext } from "@/lib/access";
+import { requestAccess as sendAccessRequest } from "@/integrations/beta-api";
+import { accessRequestSchema } from "@/lib/beta";
 
 type Result = { ok: true } | { ok: false; reason: string };
 
@@ -14,8 +16,10 @@ type Auth = {
   sendEmailLink: (email: string, next?: string) => Promise<Result>;
   signInWithGoogle: (next?: string) => Promise<Result>;
   signOut: () => Promise<void>;
-  /** Put the signed-in email on the waitlist (safe to call more than once). */
-  joinWaitlist: () => Promise<Result>;
+  /** True for admin accounts (checked by the database; demo mode is always admin). */
+  isAdmin: boolean;
+  /** Ask for beta access, or for more time after it ends. */
+  requestAccess: (name: string, note: string) => Promise<Result>;
   /** Permanently delete the signed-in account (profile included). */
   deleteAccount: () => Promise<Result>;
 };
@@ -34,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [access, setAccess] = useState<AccessState>(
     cloudConfigured ? { kind: "checking" } : { kind: "demo" },
   );
+  const [isAdmin, setIsAdmin] = useState(!cloudConfigured);
 
   const resolve = useCallback(async (session: Session | null) => {
     const supabase = getSupabase();
@@ -44,12 +49,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     const email = user.email.toLowerCase();
-    const [{ data: allowed, error }, { data: profile }] = await Promise.all([
+    const [{ data: allowed, error }, { data: profile }, window_, admin] = await Promise.all([
       supabase.rpc("has_beta_access"),
       supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+      supabase.rpc("my_beta_access"),
+      supabase.rpc("is_admin"),
     ]);
+    setIsAdmin(admin.data === true);
+    // my_beta_access returns at most one row: this person's own place on the invite list.
+    const row: unknown = Array.isArray(window_.data) ? window_.data[0] : undefined;
+    const listed = typeof row === "object" && row !== null;
+    const expiresAt =
+      listed && "expires_at" in row && typeof row.expires_at === "string" ? row.expires_at : null;
     if (error || allowed !== true) {
-      setAccess({ kind: "waitlisted", email });
+      // On the list but not allowed in: their window ended or was revoked.
+      setAccess(listed ? { kind: "expired", email } : { kind: "waitlisted", email });
       return;
     }
     const name: unknown = profile?.display_name;
@@ -58,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userId: user.id,
       email,
       displayName: displayNameFor(typeof name === "string" ? name : null, email),
+      expiresAt,
     });
   }, []);
 
@@ -107,17 +122,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!supabase) return;
     await supabase.auth.signOut();
     setAccess({ kind: "signed-out" });
+    setIsAdmin(false);
   }, []);
 
-  const joinWaitlist = useCallback(async (): Promise<Result> => {
-    const supabase = getSupabase();
-    if (!supabase || access.kind !== "waitlisted") return { ok: false, reason: "Sign in first." };
-    const { error } = await supabase.from("waitlist").insert({ email: access.email });
-    // 23505 = already on the list, which is fine.
-    return error && error.code !== "23505"
-      ? { ok: false, reason: friendly(error.message) }
-      : { ok: true };
-  }, [access]);
+  const requestAccess = useCallback(
+    async (name: string, note: string): Promise<Result> => {
+      if (access.kind !== "waitlisted" && access.kind !== "expired") {
+        return { ok: false, reason: "Sign in first." };
+      }
+      const parsed = accessRequestSchema.safeParse({ name, note });
+      if (!parsed.success) {
+        return { ok: false, reason: parsed.error.issues[0]?.message ?? "Check the form." };
+      }
+      const result = await sendAccessRequest(access.email, parsed.data.name, parsed.data.note);
+      return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+    },
+    [access],
+  );
 
   const deleteAccount = useCallback(async (): Promise<Result> => {
     const supabase = getSupabase();
@@ -130,8 +151,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const value = useMemo<Auth>(
-    () => ({ access, sendEmailLink, signInWithGoogle, signOut, joinWaitlist, deleteAccount }),
-    [access, sendEmailLink, signInWithGoogle, signOut, joinWaitlist, deleteAccount],
+    () => ({
+      access,
+      isAdmin,
+      sendEmailLink,
+      signInWithGoogle,
+      signOut,
+      requestAccess,
+      deleteAccount,
+    }),
+    [access, isAdmin, sendEmailLink, signInWithGoogle, signOut, requestAccess, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

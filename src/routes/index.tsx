@@ -154,7 +154,7 @@ function LandingPage() {
                   className="pulse-dot h-1.5 w-1.5 rounded-full bg-success"
                   aria-hidden="true"
                 />
-                Skin, hair and nail diagnostics
+                Private beta · Skin, hair and nail diagnostics
               </p>
               <h1 className="mt-5 font-display text-5xl leading-[1.02] font-semibold text-foreground sm:text-7xl">
                 Read your skin
@@ -165,8 +165,8 @@ function LandingPage() {
                 One photo. Scored on your device. A routine built from what you already own.
               </p>
               <div className="mt-8 flex flex-wrap gap-2">
-                <Link to="/scan" className={BUTTON_PRIMARY}>
-                  Start a scan <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                <Link to="/login" className={BUTTON_PRIMARY}>
+                  Request Beta Access <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </Link>
                 <Link to="/pro/clients" className={BUTTON_GHOST}>
                   I'm a makeup artist
@@ -384,16 +384,16 @@ function LandingPage() {
           <Reveal className="grid items-center overflow-hidden rounded-2xl bg-primary text-primary-foreground lg:grid-cols-[1.1fr_1fr]">
             <div className="px-6 py-14 sm:px-12">
               <h2 className="font-display text-4xl leading-tight font-semibold sm:text-6xl">
-                Run your first scan.
+                Join the private beta.
               </h2>
               <p className="mt-4 max-w-md opacity-90">
-                Under a second. Nothing leaves your device.
+                Free for testers. Sign in, tell us a little about you, and we'll open your access.
               </p>
               <Link
-                to="/scan"
+                to="/login"
                 className="mt-8 inline-flex min-h-[50px] items-center justify-center gap-2 rounded-lg bg-primary-foreground px-7 text-base font-semibold text-primary transition-opacity hover:opacity-90"
               >
-                Start a scan <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                Request Beta Access <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
             </div>
             <ThreeCanvas

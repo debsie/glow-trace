@@ -11,9 +11,10 @@ secret goes in the code.
 
 ## 2. Create the beta tables
 
-Apply `supabase/migrations/20261117120000_beta_access.sql`. Either ask Lovable's chat to
-"apply the migration in supabase/migrations/20261117120000_beta_access.sql", or paste the
-file into **Cloud → Database → SQL editor** and run it. It creates:
+Apply both files in `supabase/migrations/`, oldest first:
+`20261117120000_beta_access.sql`, then `20261118090000_beta_admin.sql`. Either ask Lovable's
+chat to "apply the migrations in supabase/migrations", or paste each file into
+**Cloud → Database → SQL editor** and run it. Together they create:
 
 | Table / function      | What it is                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------ |
@@ -33,15 +34,43 @@ In **Cloud → Users → Authentication settings**:
 - **Redirect URLs:** add your site address followed by `/login`, for example
   `https://your-domain.co.za/login`, plus the Lovable preview address.
 
-## 4. Invite testers
+## 4. Make yourself the admin
 
-In **Cloud → Database → beta_allowlist**, add a row per tester with their email in
-lower case. Testers not on the list can still sign in, but land on a "You're early" screen
-and can join the waitlist. Check **waitlist** for people asking to join, and copy those you
-accept into **beta_allowlist**.
+Sign in to your app once (email link or Google), so your account exists. Then in
+**Cloud → Database → SQL editor**, run this with your own email:
+
+```sql
+insert into public.beta_allowlist (email) values ('you@example.co.za')
+  on conflict (email) do nothing;
+insert into public.user_roles (user_id, role)
+  select id, 'admin' from auth.users where email = 'you@example.co.za';
+```
+
+Reload the app. You'll see **Beta dashboard** in the sidebar and on the home screen, at
+`/admin`. Only accounts in `user_roles` with the admin role can open it, and the database
+refuses admin actions from anyone else.
+
+## 5. Run the beta from your dashboard
+
+- **Requests:** people who sign in without access fill in a short request. Approve with
+  14, 30 or 60 days, or decline.
+- **Grant access:** type any email and pick 14, 30 or 60 days. Granting again adds days to
+  what's left.
+- **Testers:** days left per person, flagged "Ending soon" in the last 3 days. Extend or
+  revoke. When access ends, the tester sees "Your beta access has ended" and can ask for
+  more time.
+- **Feedback:** testers send it from the Feedback button on every screen. It's sorted with
+  open problems first (bug reports and 1-2 stars), then neutral, then praise. Mark
+  items triaged or resolved. **Thank** opens a ready-written email in your mail app,
+  quoting their words, and marks them thanked. Glowtrace doesn't send email itself yet.
+
+## 6. Invite testers by hand (optional)
+
+Rows added straight to **Cloud → Database → beta_allowlist** (email in lower case) have no
+end date. Use the dashboard's **Grant access** instead when you want 14, 30 or 60 days.
 
 ## What is and isn't stored
 
-- In Lovable Cloud: email, name, invite and waitlist entries. Nothing else.
+- In Lovable Cloud: email, name, access requests, access dates and feedback. Nothing else.
 - On the device only: scans, photos, shelf, clients, lookbooks, plan and usage.
 - Payments are not switched on. Plans still change only on the person's own device.
