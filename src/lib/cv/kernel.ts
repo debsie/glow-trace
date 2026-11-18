@@ -57,7 +57,7 @@ export const analyzeBiomarkers = (category: ScanCategory, image: PixelBuffer): B
   }
   const metrics =
     category === "skin"
-      ? analyzeSkin(planes)
+      ? analyzeSkin(planes, image)
       : category === "hair"
         ? analyzeHair(planes)
         : analyzeNails(planes);

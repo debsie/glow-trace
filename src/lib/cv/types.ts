@@ -1,7 +1,7 @@
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v1.3.0-ts-fallback";
+export const KERNEL_VERSION = "mojocv-v2.0.0-ts";
 
 export type { ScanCategory };
 

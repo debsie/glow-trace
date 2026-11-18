@@ -55,9 +55,10 @@ describe("Colour maths", () => {
 });
 
 describe("Metric formulas", () => {
-  it("scores a uniform red image high for erythema and a pale one low", () => {
-    expect(erythema(toPlanes(solid(220, 40, 40))).value).toBeGreaterThanOrEqual(80);
-    expect(erythema(toPlanes(solid(245, 240, 235))).value).toBeLessThanOrEqual(15);
+  it("scores flushed skin redder than the same skin without the flush", () => {
+    const calm = erythema(solid(205, 160, 140)).value;
+    const flushed = erythema(solid(215, 140, 130)).value;
+    expect(flushed).toBeGreaterThan(calm + 5);
   });
 
   it("scores a checkerboard high for texture and a flat grey low", () => {

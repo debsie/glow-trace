@@ -198,3 +198,44 @@ Fairness = spread of skin-tone group medians, divided by the overall interquarti
 The "usually red conditions" signal moved between +0.43 and −0.17 across settings: with 31 such
 photos it is noise, so it was not used to choose. Revisit pigment separation when there are
 labelled ratings (opt-in contributions) to test against.
+
+## v2.0 (`mojocv-v2.0.0-ts`): physics-supervised redness model
+
+Redness is now a trained model; the other indicators are unchanged. Code:
+`src/lib/cv/redness-model.ts`, weights `src/lib/cv/redness-weights.json`, training
+`research/redness/`.
+
+**How it is trained, without anyone labelling redness.** In optical density (OD = −ln
+reflectance) light absorbers add (Beer-Lambert). Adding a known amount `c` of haemoglobin
+(OD direction R:G:B ≈ 0.04 : 1 : 0.85, jittered ±20% per example because it is approximate) to
+the skin pixels of a real photo gives a photo whose extra redness is known. Each example is two
+views of the same SCIN photo, each under independent random light colour, exposure, blur and
+sensor noise, one with `c` added (sometimes everywhere, sometimes as a soft patch). The model `f`
+learns `f(B) − f(A) = c`, so it has to respond to blood and ignore light and camera. A fairness
+term keeps `f`'s mean on unaltered photos equal across Monk skin-tone groups. Deeper tones,
+rarer in SCIN, get twice the examples.
+
+**Model.** Five small networks (18 → 32 → 32 → 1, tanh), averaged. Inputs: 10th, 50th and 90th
+percentiles over skin pixels of `OD_green − OD_red`, `OD_blue − OD_red`, a\*, b\* and L\*, plus the
+shades-of-grey light estimate (r, b) and the skin share. Output mapped so the training sample's
+10th percentile reads 10 and its 90th reads 70. The TypeScript features and output match the
+Python trainer to six decimals (`src/test/redness-model.test.ts`).
+
+**Held-out results** (114 SCIN photos never used in training, 912 simulated pairs):
+
+| Measure                                                                | v2 model | v1.3 formula |
+| ---------------------------------------------------------------------- | -------- | ------------ |
+| Correlation with the true added redness                                | 0.64     | 0.32         |
+| Change caused by light alone, in haemoglobin units (lower is steadier) | 0.088    | 0.223        |
+| Same, deepest skin (Monk 7-10)                                         | 0.050    | 0.193        |
+| Gap between skin-tone group medians ÷ interquartile range              | 0.30     | 0.51         |
+
+**Synthetic checks** (`robustness.test.ts`): a 4% warm or cool shift on the flat test patches moves
+redness up to 7.4 points (v1.3: 5), so the tolerance and the agent's redness noise floor are 8.
+The same added blood raises every skin tone by more than 5 points, with 7.8 points between the
+largest and smallest rise.
+
+**Limits.** The haemoglobin direction is an approximation, and simulated blood is not real
+inflammation. This proves the model tracks blood-like colour change fairly and steadily; it does
+not prove agreement with what people or clinicians call redness. The opt-in ratings are the test
+for that, and the model must keep beating v1.3 there to stay.
