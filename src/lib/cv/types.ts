@@ -1,7 +1,7 @@
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v2.2.0-ts";
+export const KERNEL_VERSION = "mojocv-v2.3.0-ts";
 
 export type { ScanCategory };
 
@@ -46,7 +46,11 @@ export type BiomarkerReport = {
   metrics: BiomarkerMetric[];
   /** Skin colour readouts for makeup matching (skin scans only). */
   tone?: SkinTone | undefined;
+  /** Redness by face zone, 0-100 (face guide only). */
+  zones?: FaceZones | undefined;
 };
+
+export type FaceZones = { forehead: number; leftCheek: number; rightCheek: number; chin: number };
 
 /**
  * ITA° (individual typology angle, atan((L* - 50) / b*)) measures depth: higher is lighter.

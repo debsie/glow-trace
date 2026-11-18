@@ -5,6 +5,7 @@ import { analyzeNails } from "./nails";
 import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
 import { KERNEL_VERSION } from "./types";
+import { faceZones } from "./zones";
 
 /**
  * The on-device analysis kernel. A pure function of the pixels: the same image always gives
@@ -71,10 +72,18 @@ export const analyzeBiomarkers = (
     category === "skin"
       ? analyzeSkin(area, image)
       : category === "hair"
-        ? analyzeHair(area)
+        ? analyzeHair(area, image, areaMask)
         : analyzeNails(area);
   const tone = category === "skin" ? skinTone(area) : null;
-  return { kernelVersion: KERNEL_VERSION, category, quality, metrics, ...(tone ? { tone } : {}) };
+  const zones = category === "skin" ? faceZones(image, areaMask) : null;
+  return {
+    kernelVersion: KERNEL_VERSION,
+    category,
+    quality,
+    metrics,
+    ...(tone ? { tone } : {}),
+    ...(zones ? { zones } : {}),
+  };
 };
 
 /** Overall 0-100 score for a report: higher is healthier. Null when nothing was scored. */
@@ -131,4 +140,39 @@ export const frameHint = (image: PixelBuffer): string | undefined => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
   return qualityNotice(image.width, sharpness, meanLuma(planes));
+};
+
+// Light coach: one side brighter than the other by this ratio reads as side light.
+const SIDE_LIGHT_RATIO = 1.5;
+// Top much brighter than the bottom: overhead light, which shadows eyes and lower face.
+const OVERHEAD_RATIO = 1.6;
+
+/**
+ * For the live camera, once the frame passes the quality gate: one tip that makes readings
+ * steadier from scan to scan (even light from the front, daylight colour). A tip, never a block.
+ */
+export const lightTip = (image: PixelBuffer): string | undefined => {
+  const planes = toPlanes(image);
+  const { width, height } = image;
+  let left = 0;
+  let right = 0;
+  let top = 0;
+  let bottom = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const v = planes.luma[y * width + x] ?? 0;
+      if (x < width / 2) left += v;
+      else right += v;
+      if (y < height / 2) top += v;
+      else bottom += v;
+    }
+  }
+  const side = Math.max(left, right) / Math.max(1, Math.min(left, right));
+  if (side > SIDE_LIGHT_RATIO) {
+    return "One side is in shadow. Turn until the light falls evenly on both sides";
+  }
+  if (top / Math.max(1, bottom) > OVERHEAD_RATIO) {
+    return "The light is coming from above. Face a window instead of a ceiling light";
+  }
+  return castWarning(highlightCast(planes));
 };

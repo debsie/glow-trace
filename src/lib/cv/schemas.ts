@@ -29,6 +29,14 @@ export const biomarkerReportSchema = z.object({
   quality: imageQualitySchema,
   metrics: z.array(biomarkerMetricSchema),
   tone: z.object({ ita: z.number().min(-90).max(90), hueAngle: z.number() }).optional(),
+  zones: z
+    .object({
+      forehead: z.number().min(0).max(100),
+      leftCheek: z.number().min(0).max(100),
+      rightCheek: z.number().min(0).max(100),
+      chin: z.number().min(0).max(100),
+    })
+    .optional(),
 });
 
 export class InvalidReportError extends Error {

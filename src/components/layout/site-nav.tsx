@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Brush,
   CreditCard,
   Droplets,
   FlaskConical,
@@ -46,7 +45,6 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Tools",
     items: [
-      { to: "/makeup-day", label: "Makeup Day", icon: Brush },
       { to: "/ingredients", label: "Ingredients", icon: FlaskConical },
       { to: "/refer", label: "Earn", icon: Gift },
     ],
@@ -309,6 +307,8 @@ export const SiteShell = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+  // First-run onboarding gets the whole screen.
+  if (pathname === "/welcome") return <div className="min-h-dvh">{children}</div>;
   return <AppShell>{children}</AppShell>;
 };
 

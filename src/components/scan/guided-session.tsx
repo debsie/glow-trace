@@ -185,6 +185,7 @@ export const GuidedSession = ({
     if (!shot) return null;
     return (
       <GuidedCamera
+        category={category}
         shot={shot}
         onCancel={() => setStage({ kind: "guide", index: stage.index })}
         onCapture={(photo) => {

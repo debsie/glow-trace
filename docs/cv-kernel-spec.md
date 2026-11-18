@@ -293,3 +293,39 @@ real selfie: unfiltered 0.663, half resolution 0.631, soft focus 0.666; skin-onl
 30% 0.469, 60% 0.287, 90% 0.111. Below `FILTER_RATIO` = 0.45 the report gets `quality.filtered`,
 a warning asking for a retake without filters, and is kept out of trends. Provisional: re-check
 the threshold on more faces and phones before relying on it.
+
+## v2.3 (`mojocv-v2.3.0-ts`): trained hair texture
+
+Hair "Porosity / Texture" now comes from a physics-supervised U-Net (`hair-model.ts`, weights
+`hair-weights.json`, packed by `research/vision/export_web.py`). It was trained on 2,867 real hair
+photos with known strand roughness added under random light, exposure, blur and noise. Held-out:
+correlation with the true amount 0.932, noise when absent 0.0057, leak from other effects 0.098.
+The photo is fitted into 128 x 128 (area average), the texture map is averaged over the hair mask
+(or the whole photo), and mapped to 0-100 with `TEXTURE_ZERO = -0.12`, `TEXTURE_SPAN = 0.24`
+(provisional, set from one reference photo). Falls back to the v1.1 formula when the mask holds
+fewer than 16 canvas pixels. Exposure changes of ±15% move the signal by < 0.02. The forward pass
+matches the Python network to 4 decimals (`src/test/hair-model.test.ts`).
+
+Not shipped from the same run: hair shine (r = 0.19, leak 0.25), nail spots (r = 0.15) and nail
+ridges (r = 0.01). Nail yellowing passed (r = 0.79, even across all four tone bands, leak -0.02)
+but its weights file has not arrived yet.
+
+Also in v2.3:
+
+- **Face zones** (`zones.ts`): with the face guide, redness is read separately for the forehead
+  (top 35% of the face-skin box), left and right cheek (middle, split at the centre) and chin and
+  jaw (bottom 30%), each with the same redness model. Saved as `report.zones`; a zone needs 400
+  face-skin pixels or the zones are left out.
+- **Light coach** (`lightTip` in `kernel.ts`): on the live camera, once the frame passes the
+  quality gate, one tip: side light (one half > 1.5x brighter), overhead light (top > 1.6x the
+  bottom) or a colour cast. A tip, never a block.
+- **Training v3** (`research/vision/multitask.py`): new simulated effects, giving skin breakouts and
+  dark circles, nail cuticles, and hair breakage and flakes. Pass `--size 256` for nails and hair so
+  fine detail is visible. The app reads the size from the weights file. Each new head ships only
+  after it passes the same rule.
+- **Live subject check** (`subject-check.ts`, `measureSubject` in `guides.ts`): about once a second
+  the camera runs the area's guide on a 320 px preview frame. The face must cover 12-60% of the
+  frame, centred within 18%. A flat-hand shot needs four fingertips in frame, a thumb shot the
+  thumb. Hair must fill 25% of the frame. The shutter waits for this as it does for light and focus
+  ("Take photo anyway" after 5 s). If a guide cannot load, the camera works without it. Checked in
+  a browser: each guide accepted its own sample photo and rejected the other two.

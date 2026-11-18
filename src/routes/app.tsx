@@ -1,4 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+import { loadOnboarding } from "@/lib/onboarding";
 import {
   ArrowRight,
   Droplets,
@@ -35,6 +38,11 @@ const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nai
 function Dashboard() {
   const { profile, scans, activeClients, looks, tier, usage, rewards, catalog, inventory } =
     useAppState();
+  const navigate = useNavigate();
+  // First visit: onboarding first. Answers live on the device, so a new device asks again.
+  useEffect(() => {
+    if (loadOnboarding() === null) void navigate({ to: "/welcome", replace: true });
+  }, [navigate]);
   const { isAdmin } = useAuth();
   const brief = briefing(scans, catalog, inventory);
   const topPick = brief.suggestions.find((suggestion) => !suggestion.onShelf);

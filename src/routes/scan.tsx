@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
+import { ZONE_LABEL } from "@/lib/cv/zones";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
 import type { BlockedGate } from "@/lib/plans";
 import { scanAllowance, scanGate, scansLeft } from "@/lib/plans";
@@ -41,6 +43,7 @@ import scanHair from "@/assets/scan-hair.jpg";
 import scanNails from "@/assets/scan-nails.jpg";
 
 export const Route = createFileRoute("/scan")({
+  validateSearch: z.object({ area: z.enum(["skin", "hair", "nails"]).optional().catch(undefined) }),
   head: () =>
     pageHead({
       title: "Skin, Hair & Nail Check-In — Glowtrace",
@@ -161,7 +164,8 @@ const UploadZone = ({
 
 function ScanPage() {
   const { scans, addScan, tier, usage, rewards } = useAppState();
-  const [category, setCategory] = useState<ScanCategory>("skin");
+  const { area } = Route.useSearch();
+  const [category, setCategory] = useState<ScanCategory>(area ?? "skin");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
   // site's content security policy (connect-src) blocks in production.
@@ -508,6 +512,24 @@ function ScanPage() {
                     ))}
               </div>
             </div>
+            {shown.report?.zones && !shown.demo && (
+              <div className="mt-5">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  Where the redness sits
+                </p>
+                <ul className="mt-2 divide-y divide-border">
+                  {(Object.keys(ZONE_LABEL) as (keyof typeof ZONE_LABEL)[]).map((zone) => (
+                    <li key={zone} className="flex items-center justify-between py-2 text-sm">
+                      <span>{ZONE_LABEL[zone]}</span>
+                      <span className="readout">{shown.report?.zones?.[zone].toFixed(1)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Left and right as seen in the photo. Watch which zone moves over a few weeks.
+                </p>
+              </div>
+            )}
             {nailReadings.length > 0 && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
@@ -562,7 +584,8 @@ function ScanPage() {
                 <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
                 <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
                 <Link
-                  to="/makeup-day"
+                  to="/routine"
+                  search={{ tab: "makeup" }}
                   className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-primary hover:underline"
                 >
                   Full Makeup Day: foundation, removal and recovery

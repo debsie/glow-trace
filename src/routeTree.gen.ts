@@ -27,6 +27,7 @@ import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SkinAnalysisAppRouteImport } from './routes/skin-analysis-app'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as ProClientsRouteImport } from './routes/pro.clients'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
 import { Route as ProClientsIdRouteImport } from './routes/pro.clients.$id'
@@ -125,6 +126,11 @@ const SkinAnalysisAppRoute = SkinAnalysisAppRouteImport.update({
   path: '/skin-analysis-app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProClientsRoute = ProClientsRouteImport.update({
   id: '/pro/clients',
   path: '/pro/clients',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
+  '/welcome': typeof WelcomeRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
+  '/welcome': typeof WelcomeRoute
   '/pro/clients': typeof ProClientsIndexRoute
   '/pro/clients/$id/brief': typeof ProClientsIdBriefRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
+  '/welcome': typeof WelcomeRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/sitemap.xml'
     | '/skin-analysis-app'
+    | '/welcome'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/sitemap.xml'
     | '/skin-analysis-app'
+    | '/welcome'
     | '/pro/clients'
     | '/pro/clients/$id/brief'
     | '/pro/clients/$id/lookbook'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/sitemap.xml'
     | '/skin-analysis-app'
+    | '/welcome'
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
@@ -342,6 +354,7 @@ export interface RootRouteChildren {
   ScanRoute: typeof ScanRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SkinAnalysisAppRoute: typeof SkinAnalysisAppRoute
+  WelcomeRoute: typeof WelcomeRoute
   ProClientsRoute: typeof ProClientsRouteWithChildren
 }
 
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkinAnalysisAppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pro/clients': {
       id: '/pro/clients'
       path: '/pro/clients'
@@ -576,6 +596,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScanRoute: ScanRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SkinAnalysisAppRoute: SkinAnalysisAppRoute,
+  WelcomeRoute: WelcomeRoute,
   ProClientsRoute: ProClientsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

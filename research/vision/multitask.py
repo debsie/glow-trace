@@ -47,18 +47,23 @@ AREA = sys.argv[1] if len(sys.argv) > 1 else "skin"
 QUICK = "--quick" in sys.argv
 IMAGES_DIR = sys.argv[sys.argv.index("--images") + 1] if "--images" in sys.argv else None
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-SIZE = 128
+# Fine detail (nail spots and ridges, hair shine and breakage, scalp flakes) needs more pixels
+# than 128. Pass --size 256 for nails and hair; the app reads the size from the weights file.
+SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 128
 EPOCHS = 2 if QUICK else 80
 STEPS = 4 if QUICK else 50
 WORK = os.environ.get("GLOWTRACE_WORK", "glowtrace_work")
 
 HEADS = {
-    "skin": ["redness", "pigment", "shine", "texture"],
-    "nails": ["yellowing", "spots", "ridges"],
-    "hair": ["shine", "texture"],
+    "skin": ["redness", "pigment", "shine", "texture", "breakouts", "dark_circles"],
+    "nails": ["yellowing", "spots", "ridges", "cuticle"],
+    "hair": ["shine", "texture", "breakage", "flakes"],
 }[AREA]
 
 HAEMOGLOBIN = torch.tensor([0.04, 1.0, 0.85])
+# Dark circles: deoxygenated blood under thin skin plus a little melanin. An approximation of the
+# relative absorption in r, g, b; the head learns the direction of change, not a clinical amount.
+DARK_CIRCLE = torch.tensor([0.55, 0.75, 0.6])
 MELANIN = torch.tensor([0.45, 0.75, 1.0])
 STAIN = torch.tensor([0.05, 0.25, 1.0])
 
@@ -85,7 +90,7 @@ def to_canvas(image):
 
 def load_scin(per_group):
     os.makedirs(WORK, exist_ok=True)
-    cache = os.path.join(WORK, f"scin_{per_group}.npz")
+    cache = os.path.join(WORK, f"scin_{per_group}_{SIZE}.npz")
     if os.path.exists(cache):
         d = np.load(cache)
         return d["image"], d["valid"], d["group"]
@@ -263,6 +268,14 @@ def add_effects(rgb, mask, gen):
         spec = amount(0.0, 0.35) * blobs(n, gen, 3, 4, 20) * mask
         img = img + spec[:, None] * light
         maps["shine"] = spec
+        # Breakouts: small, sharp-edged red bumps with a tiny highlight on top (unlike the broad
+        # redness above). Dark circles: one soft elongated patch of darkening.
+        bump = amount(0.0, 0.5) * blobs(n, gen, 5, 1.0, 3.0) * mask
+        img = from_od(od(img) + bump[:, None] * HAEMOGLOBIN.to(DEVICE)[None, :, None, None])
+        img = img + 0.15 * bump[:, None] * light * (bump[:, None] > 0.6)
+        under = amount(0.0, 0.3) * streaks(n, gen, 1, 12, 5) * mask
+        img = from_od(od(img) + under[:, None] * DARK_CIRCLE.to(DEVICE)[None, :, None, None])
+        maps["breakouts"], maps["dark_circles"] = bump, under
     elif AREA == "nails":
         stain = amount(0.0, 0.5) * mask
         img = from_od(img_od + stain[:, None] * STAIN.to(DEVICE)[None, :, None, None])
@@ -270,14 +283,28 @@ def add_effects(rgb, mask, gen):
         img = img * (1 - spots[:, None]) + 245 * spots[:, None]
         ridge = amount(0.0, 0.08) * mask
         img = img * (1 + ridge[:, None] * ripple(n, gen)[:, None])
-        maps["yellowing"], maps["spots"], maps["ridges"] = stain, spots, ridge
+        # Dry cuticles: a pale, rough band along one edge of the photo's nail area.
+        yy, xx = grid(n)
+        edge = torch.where(rand((n, 1, 1), gen) < 0.5, yy, SIZE - 1 - yy) / SIZE
+        band = torch.exp(-((edge - rand((n, 1, 1), gen, 0.05, 0.3)) ** 2) / (2 * 0.04**2))
+        cut = amount(0.0, 0.5) * band * mask
+        flake = (fine_noise(n, gen) > 0.8).float()
+        img = img * (1 - 0.5 * cut[:, None] * flake[:, None]) + 235 * 0.5 * cut[:, None] * flake[:, None]
+        maps["yellowing"], maps["spots"], maps["ridges"], maps["cuticle"] = stain, spots, ridge, cut
     else:
         img = from_od(img_od)
         rough = amount(0.0, 0.15) * mask
         img = img * (1 + rough[:, None] * fine_noise(n, gen)[:, None])
         spec = amount(0.0, 0.4) * streaks(n, gen, 3, 40, 3) * mask
         img = img + spec[:, None] * light
-        maps["shine"], maps["texture"] = spec, rough
+        # Breakage: short broken fragments (bright frayed tips and dark gaps) instead of long
+        # strands. Flakes: tiny pale specks, as on the scalp or roots.
+        frag = amount(0.0, 0.5) * streaks(n, gen, 12, 4, 1.0) * mask
+        sign = torch.where(fine_noise(n, gen) > 0, 1.0, -0.6)[:, None]
+        img = img * (1 + 0.6 * frag[:, None] * sign)
+        flakes = amount(0.0, 0.7) * blobs(n, gen, 10, 0.6, 1.5) * mask
+        img = img * (1 - flakes[:, None]) + 240 * flakes[:, None]
+        maps["shine"], maps["texture"], maps["breakage"], maps["flakes"] = spec, rough, frag, flakes
     return img, torch.stack([maps[h] for h in HEADS], 1)
 
 
