@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { biomarkerReportSchema } from "./cv/schemas";
-import type { Client, DiagnosticScan, EventLook, InventoryItem } from "./types";
+import type { Client, ScanRecord, EventLook, InventoryItem } from "./types";
 
 /**
  * The "vault": everything a person creates in Glowtrace, saved in their own browser.
@@ -83,7 +83,7 @@ export const parseVault = (input: unknown): Vault | null => {
 };
 
 export type AppData = {
-  scans: DiagnosticScan[];
+  scans: ScanRecord[];
   clients: Client[];
   looks: EventLook[];
   inventory: InventoryItem[];
@@ -92,7 +92,7 @@ export type AppData = {
 /** Which bundled sample photo a scan uses, if any. */
 export type SamplePhotos = Record<"skin" | "hair" | "nails", string>;
 
-const sampleFor = (scan: DiagnosticScan, samples: SamplePhotos) =>
+const sampleFor = (scan: ScanRecord, samples: SamplePhotos) =>
   (Object.keys(samples) as (keyof SamplePhotos)[]).find((key) => samples[key] === scan.image_url) ??
   null;
 

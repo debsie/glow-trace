@@ -3,6 +3,9 @@
  * route rules in vite.config.ts.
  */
 
+/** Cloudflare Turnstile, the bot check on sign-in. Kept here so this file stays free of Vite-only code. */
+export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+
 /** Origins of the Supabase project, for the content security policy (https and websocket). */
 export const supabaseOrigins = (supabaseUrl: string | undefined): string[] => {
   if (!supabaseUrl) return [];
@@ -26,7 +29,9 @@ export const supabaseOrigins = (supabaseUrl: string | undefined): string[] => {
 export const contentSecurityPolicy = (supabaseUrl: string | undefined): string =>
   [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    // Cloudflare Turnstile (bot check on sign-in) is the only third-party script and frame.
+    `script-src 'self' 'unsafe-inline' ${TURNSTILE_ORIGIN}`,
+    `frame-src ${TURNSTILE_ORIGIN}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",

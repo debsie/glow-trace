@@ -22,7 +22,7 @@ import { MOCK_BIOMARKERS } from "@/lib/mock-data";
 import type { BlockedGate } from "@/lib/plans";
 import { scanAllowance, scanGate, scansLeft } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
-import type { DiagnosticScan, ScanCategory } from "@/lib/types";
+import type { ScanRecord, ScanCategory } from "@/lib/types";
 
 import scanSkin from "@/assets/scan-skin.jpg";
 import scanHair from "@/assets/scan-hair.jpg";
@@ -130,7 +130,7 @@ function ScanPage() {
   const [category, setCategory] = useState<ScanCategory>("skin");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<number | null>(null);
-  const [result, setResult] = useState<DiagnosticScan | null>(null);
+  const [result, setResult] = useState<ScanRecord | null>(null);
   const [makeupOpen, setMakeupOpen] = useState(false);
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
 
@@ -195,7 +195,7 @@ function ScanPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Diagnostic Scan"
+        title="Wellness Scan"
         subtitle="Upload a photo and read your skin, hair or nail indicators."
       />
 
@@ -265,6 +265,15 @@ function ScanPage() {
                 are sample values, not your results.
               </p>
             )}
+            {!shown.demo && shown.report?.quality.warning && (
+              <p
+                className="mb-4 rounded-2xl border border-border px-4 py-3 text-sm text-foreground"
+                role="status"
+              >
+                <span className="font-semibold">Check the light. </span>
+                {shown.report.quality.warning}.
+              </p>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-display text-2xl font-semibold">
@@ -322,7 +331,7 @@ function ScanPage() {
             </Link>
             <Link to="/routine" className="contents">
               <GhostButton>
-                Daily Treatment Routine
+                Daily Care Routine
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </GhostButton>
             </Link>
@@ -341,7 +350,7 @@ function ScanPage() {
               <ul className="mt-2 list-inside list-disc text-sm text-muted-foreground">
                 <li>Hydrating barrier cream, 10-minute melt</li>
                 <li>Silicone-free primer on the T-zone</li>
-                <li>Color-correct any lingering erythema before foundation</li>
+                <li>Colour-correct any lingering redness before foundation</li>
               </ul>
             </div>
           )}

@@ -10,7 +10,7 @@ import {
 } from "@/lib/agent/agent";
 import { PRODUCT_PROFILES } from "@/lib/agent/knowledge";
 import { MOCK_CATALOG } from "@/lib/mock-data";
-import type { DiagnosticScan, InventoryItem, ScanReport } from "@/lib/types";
+import type { ScanRecord, InventoryItem, ScanReport } from "@/lib/types";
 
 type Metric = ScanReport["metrics"][number];
 
@@ -26,7 +26,7 @@ const skinScan = (
   id: string,
   date: string,
   values: { erythema: number; texture: number; hydration: number; discoloration: number },
-): DiagnosticScan => ({
+): ScanRecord => ({
   id,
   user_id: "u",
   category: "skin",
@@ -50,7 +50,7 @@ const shelf = (...ids: string[]): InventoryItem[] =>
   ids.map((id, index) => ({ id: `i${index}`, user_id: "u", product_id: id, in_stock: true }));
 
 const older = skinScan("a", "2026-11-01T08:00:00Z", {
-  erythema: 40,
+  erythema: 55,
   texture: 50,
   hydration: 70,
   discoloration: 10,

@@ -15,6 +15,7 @@ import { Route as AffiliatesRouteImport } from './routes/affiliates'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as IngredientsRouteImport } from './routes/ingredients'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MakeupArtistAppRouteImport } from './routes/makeup-artist-app'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -29,7 +30,9 @@ import { Route as ProClientsRouteImport } from './routes/pro.clients'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
 import { Route as ProClientsIdRouteImport } from './routes/pro.clients.$id'
 import { Route as ProClientsIdIndexRouteImport } from './routes/pro.clients.$id.index'
+import { Route as ProClientsIdBriefRouteImport } from './routes/pro.clients.$id.brief'
 import { Route as ProClientsIdLookbookRouteImport } from './routes/pro.clients.$id.lookbook'
+import { Route as ProClientsIdPrepRouteImport } from './routes/pro.clients.$id.prep'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -59,6 +62,11 @@ const AppRoute = AppRouteImport.update({
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IngredientsRoute = IngredientsRouteImport.update({
+  id: '/ingredients',
+  path: '/ingredients',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -131,9 +139,19 @@ const ProClientsIdIndexRoute = ProClientsIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProClientsIdRoute,
 } as any)
+const ProClientsIdBriefRoute = ProClientsIdBriefRouteImport.update({
+  id: '/brief',
+  path: '/brief',
+  getParentRoute: () => ProClientsIdRoute,
+} as any)
 const ProClientsIdLookbookRoute = ProClientsIdLookbookRouteImport.update({
   id: '/lookbook',
   path: '/lookbook',
+  getParentRoute: () => ProClientsIdRoute,
+} as any)
+const ProClientsIdPrepRoute = ProClientsIdPrepRouteImport.update({
+  id: '/prep',
+  path: '/prep',
   getParentRoute: () => ProClientsIdRoute,
 } as any)
 
@@ -144,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
+  '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
@@ -157,7 +176,9 @@ export interface FileRoutesByFullPath {
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
+  '/pro/clients/$id/brief': typeof ProClientsIdBriefRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id/prep': typeof ProClientsIdPrepRoute
   '/pro/clients/$id/': typeof ProClientsIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -167,6 +188,7 @@ export interface FileRoutesByTo {
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
+  '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
@@ -178,7 +200,9 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/pro/clients': typeof ProClientsIndexRoute
+  '/pro/clients/$id/brief': typeof ProClientsIdBriefRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id/prep': typeof ProClientsIdPrepRoute
   '/pro/clients/$id': typeof ProClientsIdIndexRoute
 }
 export interface FileRoutesById {
@@ -189,6 +213,7 @@ export interface FileRoutesById {
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
   '/cookies': typeof CookiesRoute
+  '/ingredients': typeof IngredientsRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/pricing': typeof PricingRoute
@@ -202,7 +227,9 @@ export interface FileRoutesById {
   '/pro/clients': typeof ProClientsRouteWithChildren
   '/pro/clients/$id': typeof ProClientsIdRouteWithChildren
   '/pro/clients/': typeof ProClientsIndexRoute
+  '/pro/clients/$id/brief': typeof ProClientsIdBriefRoute
   '/pro/clients/$id/lookbook': typeof ProClientsIdLookbookRoute
+  '/pro/clients/$id/prep': typeof ProClientsIdPrepRoute
   '/pro/clients/$id/': typeof ProClientsIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,6 +241,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/app'
     | '/cookies'
+    | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
     | '/pricing'
@@ -227,7 +255,9 @@ export interface FileRouteTypes {
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
+    | '/pro/clients/$id/brief'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id/prep'
     | '/pro/clients/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -237,6 +267,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/app'
     | '/cookies'
+    | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
     | '/pricing'
@@ -248,7 +279,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/skin-analysis-app'
     | '/pro/clients'
+    | '/pro/clients/$id/brief'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id/prep'
     | '/pro/clients/$id'
   id:
     | '__root__'
@@ -258,6 +291,7 @@ export interface FileRouteTypes {
     | '/agent'
     | '/app'
     | '/cookies'
+    | '/ingredients'
     | '/login'
     | '/makeup-artist-app'
     | '/pricing'
@@ -271,7 +305,9 @@ export interface FileRouteTypes {
     | '/pro/clients'
     | '/pro/clients/$id'
     | '/pro/clients/'
+    | '/pro/clients/$id/brief'
     | '/pro/clients/$id/lookbook'
+    | '/pro/clients/$id/prep'
     | '/pro/clients/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -282,6 +318,7 @@ export interface RootRouteChildren {
   AgentRoute: typeof AgentRoute
   AppRoute: typeof AppRoute
   CookiesRoute: typeof CookiesRoute
+  IngredientsRoute: typeof IngredientsRoute
   LoginRoute: typeof LoginRoute
   MakeupArtistAppRoute: typeof MakeupArtistAppRoute
   PricingRoute: typeof PricingRoute
@@ -337,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/cookies'
       fullPath: '/cookies'
       preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ingredients': {
+      id: '/ingredients'
+      path: '/ingredients'
+      fullPath: '/ingredients'
+      preLoaderRoute: typeof IngredientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -437,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProClientsIdIndexRouteImport
       parentRoute: typeof ProClientsIdRoute
     }
+    '/pro/clients/$id/brief': {
+      id: '/pro/clients/$id/brief'
+      path: '/brief'
+      fullPath: '/pro/clients/$id/brief'
+      preLoaderRoute: typeof ProClientsIdBriefRouteImport
+      parentRoute: typeof ProClientsIdRoute
+    }
     '/pro/clients/$id/lookbook': {
       id: '/pro/clients/$id/lookbook'
       path: '/lookbook'
@@ -444,16 +495,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProClientsIdLookbookRouteImport
       parentRoute: typeof ProClientsIdRoute
     }
+    '/pro/clients/$id/prep': {
+      id: '/pro/clients/$id/prep'
+      path: '/prep'
+      fullPath: '/pro/clients/$id/prep'
+      preLoaderRoute: typeof ProClientsIdPrepRouteImport
+      parentRoute: typeof ProClientsIdRoute
+    }
   }
 }
 
 interface ProClientsIdRouteChildren {
+  ProClientsIdBriefRoute: typeof ProClientsIdBriefRoute
   ProClientsIdLookbookRoute: typeof ProClientsIdLookbookRoute
+  ProClientsIdPrepRoute: typeof ProClientsIdPrepRoute
   ProClientsIdIndexRoute: typeof ProClientsIdIndexRoute
 }
 
 const ProClientsIdRouteChildren: ProClientsIdRouteChildren = {
+  ProClientsIdBriefRoute: ProClientsIdBriefRoute,
   ProClientsIdLookbookRoute: ProClientsIdLookbookRoute,
+  ProClientsIdPrepRoute: ProClientsIdPrepRoute,
   ProClientsIdIndexRoute: ProClientsIdIndexRoute,
 }
 
@@ -482,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentRoute: AgentRoute,
   AppRoute: AppRoute,
   CookiesRoute: CookiesRoute,
+  IngredientsRoute: IngredientsRoute,
   LoginRoute: LoginRoute,
   MakeupArtistAppRoute: MakeupArtistAppRoute,
   PricingRoute: PricingRoute,

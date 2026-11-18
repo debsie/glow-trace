@@ -17,6 +17,16 @@ describe("Security headers", () => {
     expect(csp).not.toContain("googleapis");
   });
 
+  it("allows Cloudflare Turnstile for scripts and frames, and nothing else third-party", () => {
+    const csp = contentSecurityPolicy(supabase);
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
+    expect(csp).toContain("frame-src https://challenges.cloudflare.com");
+    expect(csp.match(/https:\/\/(?!ysbruktqgqpbkhbshthi)[a-z.]+/g)).toEqual([
+      "https://challenges.cloudflare.com",
+      "https://challenges.cloudflare.com",
+    ]);
+  });
+
   it("allows no other origins when Supabase is not configured or the URL is unsafe", () => {
     expect(supabaseOrigins(undefined)).toEqual([]);
     expect(supabaseOrigins("not a url")).toEqual([]);

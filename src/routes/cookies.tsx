@@ -31,6 +31,12 @@ const ITEMS: Item[] = [
     kept: "Until you sign out or delete your account",
   },
   {
+    name: "Bot check on sign-in",
+    where: "Loaded from Cloudflare (challenges.cloudflare.com), on the sign-in page only",
+    why: "Cloudflare Turnstile checks that a person, not a script, is asking for a sign-in email. Cloudflare may keep its own browser storage for this check. We don't see or store it.",
+    kept: "Set by Cloudflare, only while you use the sign-in page",
+  },
+  {
     name: "Your scans and photos",
     where: 'Browser database (IndexedDB, "glowtrace")',
     why: "Your scan history, photos, shelf, clients and lookbooks. They never leave this device.",
@@ -61,7 +67,7 @@ function CookiesPage() {
       </Link>
       <PageHeader
         title="Cookies and Storage"
-        subtitle="Glowtrace sets no cookies, runs no analytics and loads no trackers or ads."
+        subtitle="Glowtrace sets no cookies, runs no analytics and loads no ads. The only outside script is a bot check on the sign-in page."
       />
 
       <SectionCard>
@@ -69,7 +75,8 @@ function CookiesPage() {
           <Badge tone="success">No cookies</Badge>
           <Badge tone="success">No analytics</Badge>
           <Badge tone="success">No ad trackers</Badge>
-          <Badge tone="success">No third-party fonts or scripts</Badge>
+          <Badge tone="success">No third-party fonts</Badge>
+          <Badge tone="success">One third-party script: the sign-in bot check</Badge>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
           Everything below is strictly necessary for the feature you're using, so the law doesn't

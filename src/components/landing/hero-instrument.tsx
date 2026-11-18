@@ -19,7 +19,7 @@ const SKIN: Sample = {
   image: scanSkin,
   score: 79,
   readings: [
-    { label: "Erythema / Redness", value: 32.9, caption: MORE },
+    { label: "Redness", value: 32.9, caption: MORE },
     { label: "Texture Coarseness", value: 37.6, caption: MORE },
     { label: "Hydration", value: 69.9, caption: BETTER },
     { label: "Discoloration", value: 5.9, caption: MORE },

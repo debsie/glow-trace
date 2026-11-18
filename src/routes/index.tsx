@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Eye, Lock, Pencil, Repeat, Send, SunMedium } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Eye, Lock, Pencil, Repeat, Send } from "lucide-react";
 
 import { HeroInstrument } from "@/components/landing/hero-instrument";
 import { Reveal } from "@/components/motion/reveal";
@@ -11,7 +11,7 @@ import { pageHead, SITE, softwareApplicationSchema } from "@/lib/seo";
 export const Route = createFileRoute("/")({
   head: () =>
     pageHead({
-      title: "Glowtrace — Read Your Skin Like a Lab Report | Skin, Hair & Nail Diagnostics",
+      title: "Glowtrace — Skin, Hair & Nail Wellness Scans for South Africa",
       description: SITE.description,
       path: "/",
       schema: [softwareApplicationSchema()],
@@ -26,7 +26,7 @@ const PROOF = [
 ];
 
 const TICKER = [
-  "Erythema",
+  "Redness",
   "Texture coarseness",
   "Hydration",
   "Discoloration",
@@ -41,10 +41,10 @@ const TICKER = [
 const INDICATORS = [
   {
     area: "Skin",
-    name: "Erythema",
-    reads: "Redness, from the a* axis of CIELab",
+    name: "Redness",
+    reads: "How red the skin tone reads, from the a* axis of CIELab",
     range: "a* 9 → 27",
-    ends: ["pale", "inflamed"],
+    ends: ["pale", "red"],
     fill: 33,
   },
   {
@@ -90,9 +90,9 @@ const STEPS = [
 
 const ARTIST_POINTS = [
   { icon: Repeat, text: "Scan history per client" },
-  { icon: SunMedium, text: "Daylight, flash and candlelight presets" },
-  { icon: Eye, text: "Read-only lookbook, one-tap sign-off" },
+  { icon: Eye, text: "Lookbook with one-tap sign-off" },
   { icon: Lock, text: "A private link for each client" },
+  { icon: CalendarDays, text: "7-day prep plan and printable client brief" },
 ];
 
 const LOOK_STAGES = [
@@ -154,12 +154,12 @@ function LandingPage() {
                   className="pulse-dot h-1.5 w-1.5 rounded-full bg-success"
                   aria-hidden="true"
                 />
-                Private beta · Skin, hair and nail diagnostics
+                Private beta · Skin, hair and nail wellness scans
               </p>
               <h1 className="mt-5 font-display text-5xl leading-[1.02] font-semibold text-foreground sm:text-7xl">
-                Read your skin
+                Know how your skin
                 <br />
-                like a <span className="text-primary">lab report.</span>
+                is doing, <span className="text-primary">from one photo.</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg text-muted-foreground">
                 One photo. Scored on your device. A routine built from what you already own.

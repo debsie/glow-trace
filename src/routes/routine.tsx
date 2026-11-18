@@ -128,7 +128,7 @@ function RoutinePage() {
     return (
       <div className="space-y-4">
         <PageHeader
-          title="Daily Treatment Routine"
+          title="Daily Care Routine"
           subtitle="Run a scan first and your routine builds itself."
         />
         <SectionCard>
@@ -168,7 +168,7 @@ function RoutinePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Daily Treatment Routine"
+        title="Daily Care Routine"
         subtitle={`Built from your latest ${latest.category} scan · ${longDate(latest.created_at)}`}
       />
 

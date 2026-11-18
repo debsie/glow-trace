@@ -99,6 +99,7 @@ contract:
 | ------------------ | --------------------------------------------------------------------------------------- | ----------------------- |
 | Supabase Inc.      | Sign-in, account, beta access and feedback database                                     | United Kingdom (London) |
 | Vercel Inc.        | Website hosting; does not store personal information                                    | [CONFIRM REGION]        |
+| Cloudflare, Inc.   | Bot check (Turnstile) on the sign-in page; sees your IP address and browser signals     | Global network          |
 | [PAYMENT PROVIDER] | Payments                                                                                | [REGION]                |
 | Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                         | United Kingdom (London) |
 | [AI PROVIDER]      | Routine Coach answers (scores and product names only; no photos; not used for training) | [REGION]                |

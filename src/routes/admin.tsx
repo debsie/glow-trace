@@ -237,12 +237,19 @@ function AdminPage() {
   }
 
   const summary = feedbackSummary(data.feedback);
-  const pending = data.requests.filter((request) => request.status === "pending");
-  const decided = data.requests.filter((request) => request.status !== "pending");
   const activeTesters = data.testers.filter((tester) => {
     const status = testerStatus(tester, now);
     return status === "active" || status === "ending-soon";
   });
+  // Someone who already has access (including you) is not waiting on anything.
+  const hasAccess = new Set([
+    ...activeTesters.map((tester) => tester.email.toLowerCase()),
+    ...("email" in access ? [access.email.toLowerCase()] : []),
+  ]);
+  const pending = data.requests.filter(
+    (request) => request.status === "pending" && !hasAccess.has(request.email.toLowerCase()),
+  );
+  const decided = data.requests.filter((request) => request.status !== "pending");
   const ordered = triageOrder(data.feedback).filter((item) =>
     filter === "attention"
       ? item.status === "new"
@@ -271,7 +278,11 @@ function AdminPage() {
     <div className="space-y-6">
       <PageHeader
         title="Beta Dashboard"
-        subtitle={`Requests, testers and feedback for the Glowtrace beta. Average rating ${summary.averageRating ?? "—"} from ${summary.total} responses.`}
+        subtitle={
+          summary.total === 0
+            ? "Requests, testers and feedback for the Glowtrace beta. No feedback yet."
+            : `Requests, testers and feedback for the Glowtrace beta. Average rating ${summary.averageRating} from ${summary.total} ${summary.total === 1 ? "response" : "responses"}.`
+        }
       />
       {isDemo() && (
         <p

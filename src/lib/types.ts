@@ -44,6 +44,7 @@ export type ScanReport = {
     sharpness: number;
     usable: boolean;
     notice?: string | undefined;
+    warning?: string | undefined;
   };
   metrics: {
     key: string;
@@ -54,7 +55,7 @@ export type ScanReport = {
   }[];
 };
 
-export type DiagnosticScan = {
+export type ScanRecord = {
   id: string;
   user_id: string;
   client_id?: string | undefined;

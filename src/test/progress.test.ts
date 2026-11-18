@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compareScans, longDate, scoreChange, seriesFor, shortDate } from "@/lib/progress";
-import type { DiagnosticScan, ScanReport } from "@/lib/types";
+import type { ScanRecord, ScanReport } from "@/lib/types";
 
 const report = (erythema: number, hydration: number): ScanReport => ({
   kernelVersion: "mojocv-v1.1.0-ts-fallback",
@@ -10,7 +10,7 @@ const report = (erythema: number, hydration: number): ScanReport => ({
   metrics: [
     {
       key: "erythema",
-      label: "Erythema / Redness",
+      label: "Redness",
       value: erythema,
       higherMeans: "more",
       description: "",
@@ -29,8 +29,8 @@ const scan = (
   id: string,
   date: string,
   r: ScanReport,
-  extra: Partial<DiagnosticScan> = {},
-): DiagnosticScan => ({
+  extra: Partial<ScanRecord> = {},
+): ScanRecord => ({
   id,
   user_id: "u",
   category: "skin",
@@ -65,7 +65,7 @@ describe("Progress", () => {
     expect(changes).toEqual([
       {
         key: "erythema",
-        label: "Erythema / Redness",
+        label: "Redness",
         before: 40,
         after: 30,
         delta: -10,

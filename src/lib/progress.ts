@@ -1,5 +1,5 @@
 import { gaugesFor, scanScore } from "./beauty";
-import type { DiagnosticScan, ScanCategory } from "./types";
+import type { ScanRecord, ScanCategory } from "./types";
 
 /** Pure progress maths: score series over time and before/after comparisons. */
 
@@ -37,10 +37,7 @@ export const longDate = (iso: string): string => {
 export type ProgressPoint = { id: string; date: string; score: number };
 
 /** Scored scans for one area, oldest first. Unscored ("demo") scans are left out. */
-export const seriesFor = (
-  scans: readonly DiagnosticScan[],
-  category: ScanCategory,
-): ProgressPoint[] =>
+export const seriesFor = (scans: readonly ScanRecord[], category: ScanCategory): ProgressPoint[] =>
   scans
     .filter((scan) => scan.category === category && !scan.demo)
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
@@ -74,7 +71,7 @@ const LEGACY_KEYS: Partial<Record<ScanCategory, Partial<Record<string, string>>>
 
 type Reading = { key: string; label: string; value: number; higherIsBetter: boolean };
 
-const readings = (scan: DiagnosticScan): Reading[] =>
+const readings = (scan: ScanRecord): Reading[] =>
   scan.report && !scan.demo && scan.report.metrics.length > 0
     ? scan.report.metrics.map((metric) => ({
         key: metric.key,
@@ -91,7 +88,7 @@ const readings = (scan: DiagnosticScan): Reading[] =>
       }));
 
 /** Indicator-by-indicator change between two scans of the same area. */
-export const compareScans = (before: DiagnosticScan, after: DiagnosticScan): MetricChange[] => {
+export const compareScans = (before: ScanRecord, after: ScanRecord): MetricChange[] => {
   const earlier = new Map(readings(before).map((reading) => [reading.key, reading]));
   return readings(after).flatMap((reading) => {
     const previous = earlier.get(reading.key);

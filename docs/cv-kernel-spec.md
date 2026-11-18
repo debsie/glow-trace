@@ -145,3 +145,16 @@ segmentation, so background pixels affect texture, density and spot scores, and 
 shifts colour readings. Before marketing any indicator as accurate, calibrate against a
 labelled set of photos across skin tones, lighting and devices, and re-check that results
 are consistent across skin tones.
+
+## v1.2 (`mojocv-v1.2.0-ts-fallback`): colour-cast warning
+
+- New optional `quality.warning`. No indicator formula or constant moved, so scores match v1.1.
+- `highlightCast(planes)`: mean Lab a\*, b\* of the brightest 5% of pixels (white-patch
+  assumption: highlights reflect the light source).
+- If `hypot(a*, b*) > 22` the report carries a warning naming the cast: green when a\* < -8,
+  otherwise warm (b\* > 0) or cool. Not raised when the photo is already unusable.
+- The scan screen shows the warning above a scored result; the scan is still saved.
+- `src/test/robustness.test.ts` re-scores synthetic skin patches under exposure, white-balance
+  and blur changes and fails if an indicator moves more than its stated tolerance. Those
+  tolerances are the honest limit of what a reading can claim: a change smaller than the
+  tolerance between two scans is noise, not progress.

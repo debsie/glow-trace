@@ -13,7 +13,7 @@ type Result = { ok: true } | { ok: false; reason: string };
 type Auth = {
   access: AccessState;
   /** Send a one-time sign-in link to this email. */
-  sendEmailLink: (email: string, next?: string) => Promise<Result>;
+  sendEmailLink: (email: string, next?: string, captchaToken?: string) => Promise<Result>;
   signInWithGoogle: (next?: string) => Promise<Result>;
   signOut: () => Promise<void>;
   /** True for admin accounts (checked by the database; demo mode is always admin). */
@@ -30,9 +30,11 @@ const redirectUrl = (next?: string) =>
   `${window.location.origin}/login?next=${encodeURIComponent(safeNext(next))}`;
 
 const friendly = (message: string | undefined): string =>
-  message && /rate|too many/i.test(message)
-    ? "Too many attempts. Wait a minute and try again."
-    : "Something went wrong. Check your connection and try again.";
+  message && /captcha/i.test(message)
+    ? "We couldn't confirm you're human. Reload the page and try again."
+    : message && /rate|too many/i.test(message)
+      ? "Too many attempts. Wait a minute and try again."
+      : "Something went wrong. Check your connection and try again.";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [access, setAccess] = useState<AccessState>(
@@ -95,17 +97,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [resolve]);
 
-  const sendEmailLink = useCallback(async (input: string, next?: string): Promise<Result> => {
-    const supabase = getSupabase();
-    if (!supabase) return { ok: false, reason: "Sign-in isn't switched on yet." };
-    const checked = checkEmail(input);
-    if (!checked.ok) return checked;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: checked.email,
-      options: { emailRedirectTo: redirectUrl(next), shouldCreateUser: true },
-    });
-    return error ? { ok: false, reason: friendly(error.message) } : { ok: true };
-  }, []);
+  const sendEmailLink = useCallback(
+    async (input: string, next?: string, captchaToken?: string): Promise<Result> => {
+      const supabase = getSupabase();
+      if (!supabase) return { ok: false, reason: "Sign-in isn't switched on yet." };
+      const checked = checkEmail(input);
+      if (!checked.ok) return checked;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: checked.email,
+        options: {
+          emailRedirectTo: redirectUrl(next),
+          shouldCreateUser: true,
+          ...(captchaToken ? { captchaToken } : {}),
+        },
+      });
+      return error ? { ok: false, reason: friendly(error.message) } : { ok: true };
+    },
+    [],
+  );
 
   const signInWithGoogle = useCallback(async (next?: string): Promise<Result> => {
     const supabase = getSupabase();

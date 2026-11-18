@@ -152,6 +152,28 @@ export const specularRatio = (planes: Planes): number => {
   return bright / planes.count;
 };
 
+/**
+ * Colour of the light, read from the brightest 5% of pixels (the white-patch assumption:
+ * highlights reflect the light source). Returns mean Lab a*, b* of that band. Daylight is
+ * near 0,0; tungsten pushes b* up (warm), shade or LEDs push it down (cool), and some
+ * fluorescent tubes push a* negative (green).
+ */
+export const highlightCast = (planes: Planes): { a: number; b: number } => {
+  if (planes.count === 0) return { a: 0, b: 0 };
+  const sorted = Float32Array.from(planes.luma).sort();
+  const threshold = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] ?? 0;
+  let a = 0;
+  let b = 0;
+  let n = 0;
+  for (let index = 0; index < planes.count; index += 1) {
+    if ((planes.luma[index] ?? 0) < threshold) continue;
+    a += planes.labA[index] ?? 0;
+    b += planes.labB[index] ?? 0;
+    n += 1;
+  }
+  return n === 0 ? { a: 0, b: 0 } : { a: a / n, b: b / n };
+};
+
 /** Lift of the brightest 1% over the typical pixel, on a 0-1 scale: how strongly highlights stand out. */
 export const highlightContrast = (planes: Planes): number => {
   if (planes.count === 0) return 0;
