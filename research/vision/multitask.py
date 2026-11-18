@@ -317,6 +317,29 @@ def masked_mean(values, mask):
     return (values * mask[:, None]).flatten(2).sum(2) / mask.flatten(1).sum(1).clamp(min=1)[:, None]
 
 
+# ---------------------------------------------------------------- skin-tone groups
+
+TONE_NAMES = ["lighter (ITA > 41)", "light-medium (28-41)", "medium-tan (10-28)", "deep (<= 10)"]
+
+
+def tone_groups(images, valid):
+    """Skin-tone band per photo from ITA (atan((L* - 50) / b*)) of its skin-coloured pixels.
+    Used to balance training and check fairness for skin and nails. 1 when too little skin."""
+    out = []
+    for start in range(0, len(images), 64):
+        rgb = images[start : start + 64]
+        L, a, b = lab(rgb)
+        hue = torch.rad2deg(torch.atan2(b, a))
+        skin = (L > 20) & (L < 95) & (a > 2) & (hue > 10) & (hue < 80) & (valid[start : start + 64] > 0)
+        for i in range(rgb.shape[0]):
+            if skin[i].sum() < 200:
+                out.append(1)
+                continue
+            ita = torch.rad2deg(torch.atan((L[i][skin[i]].median() - 50) / b[i][skin[i]].median().clamp(min=1e-3)))
+            out.append(0 if ita > 41 else 1 if ita > 28 else 2 if ita > 10 else 3)
+    return torch.tensor(out, device=images.device)
+
+
 # ---------------------------------------------------------------- train and evaluate
 
 
@@ -324,16 +347,32 @@ def main():
     torch.manual_seed(0)
     if AREA == "skin":
         images_np, valid_np, groups_np = load_scin(40 if QUICK else 150)
+        if IMAGES_DIR:
+            # Extra skin datasets; their tone group is measured from the photo below.
+            more = load_folder(IMAGES_DIR, 200 if QUICK else 8000)
+            images_np = np.concatenate([images_np, more[0]])
+            valid_np = np.concatenate([valid_np, more[1]])
+            groups_np = np.concatenate([groups_np, np.full(len(more[0]), -1)])
     else:
         if not IMAGES_DIR:
             raise SystemExit("Hair and nails need --images DIR (see research/vision/README.md)")
-        images_np, valid_np, groups_np = load_folder(IMAGES_DIR, 200 if QUICK else 5000)
+        images_np, valid_np, groups_np = load_folder(IMAGES_DIR, 200 if QUICK else 8000)
+        groups_np = np.full(len(images_np), -1)
     order = np.random.default_rng(0).permutation(len(images_np))
     split = int(0.8 * len(order))
     train_ids, test_ids = order[:split], order[split:]
     images = torch.tensor(images_np, dtype=torch.float32).permute(0, 3, 1, 2).to(DEVICE)
     valid = torch.tensor(valid_np, dtype=torch.float32).to(DEVICE)
     groups = torch.tensor(groups_np).to(DEVICE)
+    fair = AREA in ("skin", "nails")
+    if fair:
+        # SCIN photos keep their human-graded Monk group; every other photo is measured (ITA).
+        measured = tone_groups(images, valid)
+        groups = torch.where(groups < 0, measured, groups)
+    else:
+        groups = torch.zeros_like(groups)
+    counts = [int((groups == k).sum()) for k in range(4)]
+    print("photos per skin-tone band:", dict(zip(TONE_NAMES, counts)) if fair else "n/a (hair)")
     model = UNet(len(HEADS)).to(DEVICE)
     print(f"{AREA}: {len(images_np)} photos, heads {HEADS}, {sum(p.numel() for p in model.parameters())} parameters, {DEVICE}")
     optimiser = torch.optim.Adam(model.parameters(), lr=2e-3)
@@ -344,14 +383,20 @@ def main():
     for epoch in range(EPOCHS):
         total = 0.0
         for _ in range(STEPS):
-            idx = train_t[torch.randint(len(train_t), (32,), device=DEVICE, generator=gen)]
-            if AREA == "skin":
-                deep = train_t[groups[train_t] == 3]
-                idx = torch.cat([idx, deep[torch.randint(len(deep), (8,), device=DEVICE, generator=gen)]])
+            if fair:
+                # Equal photos from every skin-tone band in every batch, however uneven the data.
+                parts = []
+                for k in range(4):
+                    pool = train_t[groups[train_t] == k]
+                    if len(pool) > 0:
+                        parts.append(pool[torch.randint(len(pool), (10,), device=DEVICE, generator=gen)])
+                idx = torch.cat(parts)
+            else:
+                idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
             xa, xb, targets, mask = make_batch(images[idx], valid[idx], gen)
             diff = model(xb) - model(xa)
             loss = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean()
-            if AREA == "skin":
+            if fair:
                 sample = train_t[torch.randint(len(train_t), (64,), device=DEVICE, generator=gen)]
                 m = area_mask(images[sample], valid[sample])
                 level = masked_mean(model(network_input(images[sample], m)), m)
@@ -366,17 +411,19 @@ def main():
         print(f"epoch {epoch + 1}/{EPOCHS} loss {total / STEPS:.4f}", flush=True)
 
     model.eval()
-    report = {"area": AREA, "heads": {}}
+    report = {"area": AREA, "photos": len(images_np), "photos_per_tone_band": counts if fair else None, "heads": {}}
     with torch.no_grad():
         egen = torch.Generator(device=DEVICE).manual_seed(99)
         reps = torch.tensor(test_ids, device=DEVICE).repeat_interleave(8)
-        diffs, truths = [], []
+        diffs, truths, bands = [], [], []
         for start in range(0, len(reps), 64):
             idx = reps[start : start + 64]
             xa, xb, targets, mask = make_batch(images[idx], valid[idx], egen)
             diffs.append(masked_mean(model(xb) - model(xa), mask))
             truths.append(masked_mean(targets, mask))
+            bands.append(groups[idx])
         diff, truth = torch.cat(diffs).cpu().numpy(), torch.cat(truths).cpu().numpy()
+        band = torch.cat(bands).cpu().numpy()
         for k, head in enumerate(HEADS):
             d, t = diff[:, k], truth[:, k]
             slope = float(np.polyfit(t, d, 1)[0]) if t.std() > 0 else float("nan")
@@ -386,6 +433,11 @@ def main():
             report["heads"][head] = {
                 "corr_with_true_amount": round(float(np.corrcoef(d, t)[0, 1]), 3),
                 "noise_when_absent_in_own_units": round(float(np.std(d[alone]) / abs(slope)), 4) if alone.any() else None,
+                # Same check per skin-tone band: a fair model has similar numbers in every band.
+                "corr_by_tone_band": [
+                    round(float(np.corrcoef(d[band == g], t[band == g])[0, 1]), 3) if (band == g).sum() > 5 and t[band == g].std() > 0 else None
+                    for g in range(4)
+                ] if fair else None,
                 "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], truth[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
             }
     print(json.dumps(report, indent=2))
