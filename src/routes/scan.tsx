@@ -63,7 +63,8 @@ const UploadZone = ({
   previewUrl: string | null;
   onFile: (file: File) => void;
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const fallback = CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin;
@@ -98,26 +99,47 @@ const UploadZone = ({
           </span>
           <p className="font-display text-lg font-semibold">Drop a {category} photo here</p>
           <p className="text-sm text-muted-foreground">
-            Or use your camera roll. Your photo is analysed on this device and never uploaded.
+            Take one now or choose one from your gallery. Your photo is analysed on this device and
+            never uploaded.
           </p>
         </div>
       )}
+      {/* Camera: front camera for skin (a selfie), back camera for hair and nails. */}
       <input
-        ref={inputRef}
+        ref={cameraRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        capture={category === "skin" ? "user" : "environment"}
         className="sr-only"
-        aria-label={`Upload a ${category} photo`}
+        tabIndex={-1}
+        aria-label={`Take a ${category} photo`}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) onFile(file);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-label={`Choose a ${category} photo from your gallery`}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onFile(file);
+          event.target.value = "";
         }}
       />
       <div className="flex flex-wrap justify-center gap-2 p-4">
-        <GhostButton onClick={() => inputRef.current?.click()}>
+        <GhostButton onClick={() => cameraRef.current?.click()}>
+          <Camera className="h-5 w-5" aria-hidden="true" />
+          {previewUrl ? "Take another photo" : "Take a photo"}
+        </GhostButton>
+        <GhostButton onClick={() => galleryRef.current?.click()}>
           <ImageIcon className="h-5 w-5" aria-hidden="true" />
-          {previewUrl ? "Choose another photo" : "Browse files"}
+          {previewUrl ? "Choose another" : "Choose from gallery"}
         </GhostButton>
       </div>
     </div>

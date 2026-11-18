@@ -52,10 +52,10 @@ const WATCH_BELOW = 65;
 const TREND_NOISE = 2;
 /**
  * Redness reads from colour, so ordinary changes in the colour of the light move it. Measured
- * in src/test/robustness.test.ts: a 4% warm or cool shift moves it up to 14 points. A smaller
- * change between two scans is the light, not the skin, so it reads as steady.
+ * in src/test/robustness.test.ts: with kernel v1.3 a 4% warm or cool shift moves it up to 5
+ * points. A smaller change between two scans is the light, not the skin, so it reads as steady.
  */
-const NOISE_BY_CONCERN: Partial<Record<keyof typeof CONCERNS, number>> = { redness: 15 };
+const NOISE_BY_CONCERN: Partial<Record<keyof typeof CONCERNS, number>> = { redness: 6 };
 const AREAS: ScanCategory[] = ["skin", "hair", "nails"];
 const SEVERITY_WEIGHT: Record<Severity, number> = { focus: 3, watch: 1.5, good: 0 };
 

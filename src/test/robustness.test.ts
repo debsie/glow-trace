@@ -91,9 +91,9 @@ const TRANSFORMS: Record<string, (image: PixelBuffer) => PixelBuffer> = {
 
 /** Largest honest movement, in indicator points (0-100), under each everyday change. */
 const TOLERANCE: Record<string, number> = {
-  // Measured: a 4% warm or cool shift moves redness up to 14 points. src/lib/agent/agent.ts
-  // reads any smaller change between scans as steady (NOISE_BY_CONCERN), so keep them equal.
-  erythema: 15,
+  // Kernel v1.3 (tone-adjusted redness): a 4% warm or cool shift moves redness up to 5 points
+  // (v1.2 moved 14). src/lib/agent/agent.ts reads smaller changes as steady (NOISE_BY_CONCERN).
+  erythema: 6,
   hydration: 12,
   discoloration: 8,
   texture: 25,
@@ -132,6 +132,15 @@ describe("Robustness under everyday light changes", () => {
       });
     }
   }
+});
+
+describe("Skin-tone fairness", () => {
+  it("reads light, medium and deep skin with the same flush about the same", () => {
+    const values = Object.values(TONES).map(
+      (base) => readings(skinPatch(base)).get("erythema") ?? 0,
+    );
+    expect(Math.max(...values) - Math.min(...values)).toBeLessThanOrEqual(5);
+  });
 });
 
 describe("Focus dependence", () => {

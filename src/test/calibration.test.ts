@@ -13,7 +13,7 @@ import type { CalibrationRow } from "@/lib/calibration";
 import type { BiomarkerReport } from "@/lib/cv/types";
 
 const report = (overrides: Partial<BiomarkerReport> = {}): BiomarkerReport => ({
-  kernelVersion: "mojocv-v1.2.0-ts-fallback",
+  kernelVersion: "mojocv-v1.3.0-ts-fallback",
   category: "skin",
   quality: { width: 256, height: 256, sharpness: 40, usable: true },
   metrics: [

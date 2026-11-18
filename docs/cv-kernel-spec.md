@@ -158,3 +158,27 @@ are consistent across skin tones.
   and blur changes and fails if an indicator moves more than its stated tolerance. Those
   tolerances are the honest limit of what a reading can claim: a change smaller than the
   tolerance between two scans is noise, not progress.
+
+## v1.3 (`mojocv-v1.3.0-ts-fallback`): tone-adjusted redness
+
+Why: run against 160 close-up photos from Google's SCIN dataset (`scripts/scin-report.ts`),
+v1.2 redness read 0 on most real photos. It averaged a\* over the whole frame, so background and
+phone colour pulled it below the old floor (a\* 9). Raw skin a\* also rises with skin tone (Monk
+1-2 median 9.6, Monk 5-6 median 14.4), so a plain a\* score would call medium skin "red".
+
+Formula:
+
+- Skin pixels: L\* 20-95, a\* > 2, hue angle atan2(b\*, a\*) between 10° and 80°. If under 10% of
+  the photo qualifies, use every pixel.
+- `residual = median_skin_a − (3.21 + 0.539 × median_skin_b)`. The line is a least-squares fit of
+  a\* on b\* across 159 SCIN photos spanning Monk 1-10.
+- `redness = clamp((residual + 4.6) / 14 × 100)`. Residual p10 ≈ −6, median ≈ −0.5, p90 ≈ +6, so a
+  typical photo reads about 30.
+
+Results on the SCIN sample (median redness): Monk 1-2: 35.1, 3-4: 29.6, 5-6: 27.0, 7-10: 28.3.
+Under a 4% warm or cool light shift redness now moves at most 5 points (v1.2: 14); the agent's
+redness noise floor is 6. Other indicators are unchanged.
+
+Limits: SCIN has no redness labels, so this fixes fairness and range, not accuracy. Condition
+labels ("usually red" conditions) did not separate clearly, which is expected for small affected
+areas in varied photos.

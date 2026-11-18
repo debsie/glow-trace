@@ -30,7 +30,7 @@ Vitest, Supabase (sign-in and beta only), bun.
   audit log and opt-in calibration numbers (scores and ratings, never photos) live in Supabase.
   Adults only (18+).
 - Calibration (`docs/calibration-plan.md`): never claim clinical accuracy. Claims are repeatability
-  and direction of change. Redness trend noise is 15 points (`NOISE_BY_CONCERN`), measured in
+  and direction of change. Redness trend noise is 6 points (`NOISE_BY_CONCERN`), measured in
   `robustness.test.ts`.
 
 ## Design system ("clinical atelier")
