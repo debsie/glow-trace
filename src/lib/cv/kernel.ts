@@ -71,7 +71,7 @@ export const analyzeBiomarkers = (
     category === "skin"
       ? analyzeSkin(area, image)
       : category === "hair"
-        ? analyzeHair(area)
+        ? analyzeHair(area, image, areaMask)
         : analyzeNails(area);
   const tone = category === "skin" ? skinTone(area) : null;
   return { kernelVersion: KERNEL_VERSION, category, quality, metrics, ...(tone ? { tone } : {}) };

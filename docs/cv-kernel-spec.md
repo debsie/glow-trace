@@ -293,3 +293,19 @@ real selfie: unfiltered 0.663, half resolution 0.631, soft focus 0.666; skin-onl
 30% 0.469, 60% 0.287, 90% 0.111. Below `FILTER_RATIO` = 0.45 the report gets `quality.filtered`,
 a warning asking for a retake without filters, and is kept out of trends. Provisional: re-check
 the threshold on more faces and phones before relying on it.
+
+## v2.3 (`mojocv-v2.3.0-ts`): trained hair texture
+
+Hair "Porosity / Texture" now comes from a physics-supervised U-Net (`hair-model.ts`, weights
+`hair-weights.json`, packed by `research/vision/export_web.py`). It was trained on 2,867 real hair
+photos with known strand roughness added under random light, exposure, blur and noise. Held-out:
+correlation with the true amount 0.932, noise when absent 0.0057, leak from other effects 0.098.
+The photo is fitted into 128 x 128 (area average), the texture map is averaged over the hair mask
+(or the whole photo), and mapped to 0-100 with `TEXTURE_ZERO = -0.12`, `TEXTURE_SPAN = 0.24`
+(provisional, set from one reference photo). Falls back to the v1.1 formula when the mask holds
+fewer than 16 canvas pixels. Exposure changes of ±15% move the signal by < 0.02. The forward pass
+matches the Python network to 4 decimals (`src/test/hair-model.test.ts`).
+
+Not shipped from the same run: hair shine (r = 0.19, leak 0.25), nail spots (r = 0.15) and nail
+ridges (r = 0.01). Nail yellowing passed (r = 0.79, even across all four tone bands, leak -0.02)
+but its weights file has not arrived yet.

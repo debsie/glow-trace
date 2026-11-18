@@ -10,3 +10,4 @@ routeTree.gen.ts
 .vercel
 public/mediapipe
 src/lib/cv/redness-weights.json
+src/lib/cv/hair-weights.json

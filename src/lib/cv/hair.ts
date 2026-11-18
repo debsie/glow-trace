@@ -1,6 +1,7 @@
 import type { Planes } from "./image";
 import { gradientEnergy, highlightContrast, localMeanLumaStdDev, score } from "./image";
-import type { BiomarkerMetric } from "./types";
+import { hairTextureSignal } from "./hair-model";
+import type { BiomarkerMetric, PixelBuffer } from "./types";
 
 // Calibration v1.1: strands are fine detail by nature. Sleek hair reads ≈ 15-25 gradient
 // energy at 256 px; frizzy or porous hair ≈ 35-40.
@@ -11,10 +12,26 @@ const SHINE_WEIGHT = 140;
 // ≈ 10-20, visibly patchy ≈ 40+.
 const DENSITY_WEIGHT = 2;
 
-export const porosity = (planes: Planes): BiomarkerMetric => ({
+// Kernel v2.3: the trained texture model's roughness (training units) mapped to 0-100. A sleek
+// reference photo reads ≈ -0.09 (score ≈ 11); the most roughness training added (+0.15) reads
+// ≈ +0.02 (score ≈ 57). Provisional span; trends compare same-kernel scans only.
+const TEXTURE_ZERO = -0.12;
+const TEXTURE_SPAN = 0.24;
+
+const textureScore = (planes: Planes, image: PixelBuffer | null, mask: Uint8Array | null) => {
+  const signal = image ? hairTextureSignal(image, mask) : null;
+  if (signal === null) return score((gradientEnergy(planes) / POROSITY_SPAN) * 100);
+  return score(((signal - TEXTURE_ZERO) / TEXTURE_SPAN) * 100);
+};
+
+export const porosity = (
+  planes: Planes,
+  image: PixelBuffer | null = null,
+  mask: Uint8Array | null = null,
+): BiomarkerMetric => ({
   key: "porosity",
   label: "Porosity / Texture",
-  value: score((gradientEnergy(planes) / POROSITY_SPAN) * 100),
+  value: textureScore(planes, image, mask),
   higherMeans: "more",
   description: "How rough and open the strands look.",
 });
@@ -35,8 +52,8 @@ export const densityVariance = (planes: Planes): BiomarkerMetric => ({
   description: "How patchy the coverage looks.",
 });
 
-export const analyzeHair = (planes: Planes): BiomarkerMetric[] => [
-  porosity(planes),
-  shine(planes),
-  densityVariance(planes),
-];
+export const analyzeHair = (
+  planes: Planes,
+  image: PixelBuffer | null = null,
+  mask: Uint8Array | null = null,
+): BiomarkerMetric[] => [porosity(planes, image, mask), shine(planes), densityVariance(planes)];
