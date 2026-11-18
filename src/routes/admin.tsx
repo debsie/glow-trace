@@ -272,7 +272,7 @@ function AdminPage() {
           role="note"
         >
           <span className="font-semibold text-accent">Sample data. </span>
-          Connect Lovable Cloud to see your real testers and feedback. Changes here reset on reload.
+          Connect Supabase to see your real testers and feedback. Changes here reset on reload.
         </p>
       )}
 

@@ -16,7 +16,7 @@ alter table public.user_roles enable row level security;
 
 create policy "Read own roles" on public.user_roles
   for select to authenticated using (user_id = auth.uid());
--- No insert/update policies: make yourself admin from the dashboard (see docs/beta-setup.md).
+-- No insert/update policies: make yourself admin in the SQL editor (see docs/deploy.md).
 
 create or replace function public.is_admin()
 returns boolean

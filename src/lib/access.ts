@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 
 export type AccessState =
-  /** No Lovable Cloud configured: the app runs as a local demo. */
+  /** No Supabase configured: the app runs as a local demo. */
   | { kind: "demo" }
   /** Still reading the session or the access check. */
   | { kind: "checking" }

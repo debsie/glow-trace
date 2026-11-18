@@ -11,7 +11,7 @@ import { addFeedbackToStore, demoStore, grantInStore } from "@/lib/beta-demo";
 import { getSupabase } from "./supabase/client";
 
 /**
- * Beta administration and feedback, against Lovable Cloud when it is connected and the
+ * Beta administration and feedback, against Supabase when it is configured and the
  * in-memory sample store otherwise. Every write is also enforced by row-level security and
  * the admin_* database functions; the app never decides who is an admin.
  */

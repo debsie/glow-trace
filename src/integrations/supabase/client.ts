@@ -2,8 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Lovable Cloud (Supabase) client. Lovable sets these two variables when Cloud is enabled;
- * both are public by design (the publishable key only allows what row-level security allows).
+ * Supabase client. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (in .env.local for
+ * development, and in the Vercel project's environment variables for production); both are
+ * public by design (the publishable key only allows what row-level security allows).
  * Without them the app runs in demo mode: no sign-in, one sample profile.
  */
 const url: unknown = import.meta.env["VITE_SUPABASE_URL"];

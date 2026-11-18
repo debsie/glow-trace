@@ -52,7 +52,7 @@ function LoginPage() {
         {access.kind === "demo" ? (
           <div className="surface space-y-3 p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Sign-in switches on once Lovable Cloud is connected. Until then the app runs as a demo
+              Sign-in switches on once the database is connected. Until then the app runs as a demo
               on this device.
             </p>
             <Link to="/app" className={`${BUTTON_PRIMARY} w-full`}>
