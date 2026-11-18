@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ import scanHair from "@/assets/scan-hair.jpg";
 import scanNails from "@/assets/scan-nails.jpg";
 
 export const Route = createFileRoute("/scan")({
+  validateSearch: z.object({ area: z.enum(["skin", "hair", "nails"]).optional().catch(undefined) }),
   head: () =>
     pageHead({
       title: "Skin, Hair & Nail Check-In — Glowtrace",
@@ -161,7 +163,8 @@ const UploadZone = ({
 
 function ScanPage() {
   const { scans, addScan, tier, usage, rewards } = useAppState();
-  const [category, setCategory] = useState<ScanCategory>("skin");
+  const { area } = Route.useSearch();
+  const [category, setCategory] = useState<ScanCategory>(area ?? "skin");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
   // site's content security policy (connect-src) blocks in production.
@@ -562,7 +565,8 @@ function ScanPage() {
                 <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
                 <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
                 <Link
-                  to="/makeup-day"
+                  to="/routine"
+                  search={{ tab: "makeup" }}
                   className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-primary hover:underline"
                 >
                   Full Makeup Day: foundation, removal and recovery

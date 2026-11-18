@@ -1,140 +1,181 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, FlaskConical, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Bookmark, BookmarkCheck, Check, ChevronDown, Copy, Send, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { UpgradeCard } from "@/components/billing/upgrade-card";
-import {
-  Badge,
-  GhostButton,
-  PageHeader,
-  PrimaryButton,
-  ProBadge,
-  SectionCard,
-} from "@/components/ui/bits";
+import { MakeupDayPanel } from "@/components/makeup/makeup-day-panel";
+import { Badge, PageHeader, ProBadge, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { activeNeeds, matchShelf } from "@/lib/beauty";
 import { longDate } from "@/lib/progress";
 import type { BlockedGate, RoutineMode } from "@/lib/plans";
 import { PLANS, routineModeGate } from "@/lib/plans";
-import { ROUTINE_MODES, routineModeSpec } from "@/lib/routines";
+import { routineModeSpec } from "@/lib/routines";
 import { pageHead } from "@/lib/seo";
+import { listAsText, loadList, saveList, toggleItem } from "@/lib/shopping-list";
+import type { ListItem } from "@/lib/shopping-list";
+
+const TABS = ["am", "makeup", "pm", "reset"] as const;
+type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/routine")({
+  validateSearch: z.object({ tab: z.enum(TABS).optional().catch(undefined) }),
   head: () =>
     pageHead({
       title: "Daily Skincare Routine From Your Own Shelf — Glowtrace",
       description:
-        "Morning, evening, pre-makeup and barrier-reset routines built from your latest check-in and the products you already own, with DIY options when something's missing.",
+        "Morning, makeup day, evening and reset routines built from your latest check-in and the products you already own, with at-home options when something's missing.",
       path: "/routine",
     }),
   component: RoutinePage,
 });
 
-/* A missing product gets two honest paths: buy it, or make it at home. */
-const MissingProductCard = ({
+/** In the order of a day: wake up, maybe makeup, wind down; reset is for rough patches. */
+const TAB_LABELS: Record<Tab, { label: string; hint: string }> = {
+  am: { label: "Morning", hint: "Wake up and protect" },
+  makeup: { label: "Makeup day", hint: "Prep, wear, take it off" },
+  pm: { label: "Evening", hint: "Wind down and repair" },
+  reset: { label: "Reset", hint: "When skin feels upset" },
+};
+
+const NeedRow = ({
   need,
-  productName,
+  product,
   brand,
   ingredients,
+  onShelf,
+  saved,
+  onSave,
   diyName,
   diyRecipe,
 }: {
   need: string;
-  productName: string;
+  product: string;
   brand: string;
   ingredients: string;
-  diyName: string;
-  diyRecipe: string;
+  onShelf: boolean;
+  saved: boolean;
+  onSave: () => void;
+  diyName: string | null;
+  diyRecipe: string | null;
 }) => {
-  const [tab, setTab] = useState<"buy" | "diy">("buy");
+  const [diyOpen, setDiyOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-warning/40 bg-warning/5 p-5">
+    <li className="py-4">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
-        <div>
-          <p className="font-display font-semibold text-warning">Missing Product</p>
-          <p className="text-sm text-muted-foreground">{need}</p>
+        <span
+          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+            onShelf ? "bg-success/15 text-success" : "bg-secondary text-muted-foreground"
+          }`}
+          aria-hidden="true"
+        >
+          {onShelf ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-lg font-semibold">{need}</p>
+          {onShelf ? (
+            <p className="text-sm text-muted-foreground">
+              You've already got this covered with{" "}
+              <span className="text-foreground">{product}</span>.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Nothing on your shelf does this yet. We'd reach for{" "}
+                <span className="font-semibold text-foreground">{product}</span> by {brand}.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">What's in it: {ingredients}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  aria-pressed={saved}
+                  onClick={onSave}
+                  className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                    saved
+                      ? "border-transparent bg-secondary text-foreground"
+                      : "border-border bg-card text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {saved ? (
+                    <BookmarkCheck className="h-4 w-4 text-accent" aria-hidden="true" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {saved ? "On your list" : "Save to my list"}
+                </button>
+                {diyName && diyRecipe && (
+                  <button
+                    type="button"
+                    aria-expanded={diyOpen}
+                    onClick={() => setDiyOpen((open) => !open)}
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                  >
+                    Or make it at home
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${diyOpen ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                )}
+              </div>
+              {diyOpen && diyName && diyRecipe && (
+                <div className="mt-3 rounded-xl border border-border p-4">
+                  <p className="font-semibold">{diyName}</p>
+                  <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+                    {diyRecipe.split("\n").map((line) => (
+                      <li key={line}>{line.replace(/^\d+\.\s*/, "")}</li>
+                    ))}
+                  </ol>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Try a little on your inner arm first and stop if it stings.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-      <div
-        className="mt-4 grid grid-cols-2 gap-2"
-        role="tablist"
-        aria-label={`Resolve missing product for ${need}`}
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "buy"}
-          onClick={() => setTab("buy")}
-          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-semibold transition-colors ${
-            tab === "buy"
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-border bg-card text-muted-foreground"
-          }`}
-        >
-          <ShoppingBag className="mr-1 inline h-4 w-4" aria-hidden="true" /> Buy Recommended
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "diy"}
-          onClick={() => setTab("diy")}
-          className={`min-h-[50px] rounded-2xl border px-3 text-sm font-semibold transition-colors ${
-            tab === "diy"
-              ? "border-accent bg-accent/15 text-accent"
-              : "border-border bg-card text-muted-foreground"
-          }`}
-        >
-          <FlaskConical className="mr-1 inline h-4 w-4" aria-hidden="true" /> DIY Alternative
-        </button>
-      </div>
-      {tab === "buy" ? (
-        <div className="mt-4">
-          <p className="font-display text-lg font-semibold">{productName}</p>
-          <p className="text-sm text-muted-foreground">{brand}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{ingredients}</p>
-          <PrimaryButton
-            className="mt-3"
-            onClick={() => toast.success(`${productName} added to your cart.`)}
-          >
-            Add to cart
-          </PrimaryButton>
-        </div>
-      ) : (
-        <div className="mt-4">
-          <p className="font-display text-lg font-semibold text-accent">{diyName}</p>
-          <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-            {diyRecipe.split("\n").map((line) => (
-              <li key={line}>{line.replace(/^\d+\.\s*/, "")}</li>
-            ))}
-          </ol>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Patch-test first; stop if irritation occurs.
-          </p>
-        </div>
-      )}
-    </div>
+    </li>
   );
 };
 
 function RoutinePage() {
+  const { tab: tabFromLink } = Route.useSearch();
   const { scans, inventory, catalog, tier, shelfCount, toggleShelfProduct } = useAppState();
-  const [mode, setMode] = useState<RoutineMode>("am");
+  const [tab, setTab] = useState<Tab>(tabFromLink ?? "am");
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
   const [shelfOpen, setShelfOpen] = useState(false);
+  const [list, setList] = useState<ListItem[]>([]);
+  useEffect(() => setList(loadList()), []);
+  useEffect(() => {
+    if (tabFromLink) setTab(tabFromLink);
+  }, [tabFromLink]);
+
   const latest = [...scans].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const latestSkin = scans
+    .filter((scan) => scan.category === "skin" && !scan.demo && scan.report)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+
   if (!latest) {
     return (
-      <div className="space-y-4">
-        <PageHeader
-          title="Daily Care Routine"
-          subtitle="Run a scan first and your routine builds itself."
-        />
+      <div className="space-y-6">
+        <PageHeader title="Your routine" subtitle="One scan and we'll build it around you." />
         <SectionCard>
           <p className="text-muted-foreground">
-            No scans yet — head to the Scan tab to analyze skin, hair or nails.
+            Nothing to build from yet. Take a quick scan and your routine shows up here.
           </p>
+          <Link
+            to="/scan"
+            className="mt-4 inline-flex min-h-[50px] items-center rounded-lg bg-primary px-6 font-semibold text-primary-foreground"
+          >
+            Take my first scan
+          </Link>
         </SectionCard>
       </div>
     );
@@ -147,49 +188,78 @@ function RoutinePage() {
   );
   const shelfCap = PLANS[tier].limits.shelfProducts;
   const shelfCandidates = catalog.filter((product) => !product.is_diy);
-  // A downgrade mid-session falls back to a routine the plan still includes.
-  const activeMode = routineModeSpec(routineModeGate(tier, mode).allowed ? mode : "am");
 
-  const pickMode = (next: RoutineMode) => {
-    const gate = routineModeGate(tier, next);
-    if (!gate.allowed) {
-      setBlocked(gate);
-      return;
+  const pick = (next: Tab) => {
+    if (next !== "makeup") {
+      const gate = routineModeGate(tier, next as RoutineMode);
+      if (!gate.allowed) {
+        setBlocked(gate);
+        return;
+      }
     }
     setBlocked(null);
-    setMode(next);
+    setTab(next);
   };
 
-  const toggleProduct = (productId: string) => {
-    const gate = toggleShelfProduct(productId);
-    setBlocked(gate.allowed ? null : gate);
+  const toggleSaved = (item: Omit<ListItem, "addedAt">) => {
+    const next = toggleItem(list, { ...item, addedAt: new Date().toISOString() });
+    setList(next);
+    saveList(next);
   };
+
+  const share = async () => {
+    const text = listAsText(list);
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+    } catch {
+      // Cancelled or unsupported: fall back to WhatsApp.
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(listAsText(list));
+      toast.success("Copied. Paste it wherever you keep your lists.");
+    } catch {
+      toast("Couldn't copy here. Try Share instead.");
+    }
+  };
+
+  const steps = tab === "makeup" ? null : routineModeSpec(tab as RoutineMode);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
-        title="Daily Care Routine"
-        subtitle={`Built from your latest ${latest.category} scan · ${longDate(latest.created_at)}`}
+        title="Your routine"
+        subtitle={`Built around your ${latest.category} scan from ${longDate(latest.created_at)}.`}
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Routine">
-        {ROUTINE_MODES.map((spec) => {
-          const locked = !routineModeGate(tier, spec.id).allowed;
-          const selected = activeMode.id === spec.id;
+      <div role="tablist" aria-label="Routine" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {TABS.map((id) => {
+          const selected = tab === id;
+          const locked = id !== "makeup" && !routineModeGate(tier, id as RoutineMode).allowed;
           return (
             <button
-              key={spec.id}
+              key={id}
               type="button"
-              aria-pressed={selected}
-              onClick={() => pickMode(spec.id)}
-              className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl border px-2 text-sm font-bold transition-colors ${
+              role="tab"
+              aria-selected={selected}
+              onClick={() => pick(id)}
+              className={`flex min-h-[64px] flex-col items-start justify-center rounded-2xl border px-4 text-left transition-colors ${
                 selected
-                  ? "bg-primary border-transparent text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+                  ? "border-foreground/20 bg-secondary"
+                  : "border-border bg-card hover:bg-secondary/60"
               }`}
             >
-              {spec.label}
-              {locked && <ProBadge />}
+              <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                {TAB_LABELS[id].label}
+                {locked && <ProBadge />}
+              </span>
+              <span className="text-xs text-muted-foreground">{TAB_LABELS[id].hint}</span>
             </button>
           );
         })}
@@ -197,25 +267,115 @@ function RoutinePage() {
 
       {blocked && <UpgradeCard gate={blocked} onDismiss={() => setBlocked(null)} />}
 
-      <SectionCard title={`${activeMode.label} routine`}>
-        <p className="text-sm text-muted-foreground">{activeMode.summary}</p>
-        <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-foreground">
-          {activeMode.steps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-      </SectionCard>
+      {tab === "makeup" ? (
+        <MakeupDayPanel report={latestSkin?.report ?? null} tier={tier} />
+      ) : (
+        steps && (
+          <SectionCard>
+            <p className="text-sm text-muted-foreground">{steps.summary}</p>
+            <ol className="mt-4 space-y-3">
+              {steps.steps.map((step, index) => (
+                <li key={step} className="flex gap-4">
+                  <span className="readout w-6 shrink-0 pt-0.5 text-sm text-primary">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-foreground">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </SectionCard>
+        )
+      )}
+
+      <section aria-labelledby="asks" className="space-y-2">
+        <h2 id="asks" className="font-display text-2xl font-semibold">
+          What your {latest.category} is asking for
+        </h2>
+        {matches.length === 0 ? (
+          <p className="text-muted-foreground">
+            Honestly, not much right now. Keep up the basics: cleanse, hydrate, sunscreen.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {matches.map((match) => (
+              <NeedRow
+                key={match.need.id}
+                need={match.need.label}
+                product={match.product.name}
+                brand={match.product.brand}
+                ingredients={match.product.ingredients}
+                onShelf={match.inStock}
+                saved={list.some((item) => item.productId === match.product.id)}
+                onSave={() =>
+                  toggleSaved({
+                    productId: match.product.id,
+                    name: match.product.name,
+                    brand: match.product.brand,
+                    forNeed: match.need.label,
+                  })
+                }
+                diyName={match.diy?.name ?? null}
+                diyRecipe={match.diy?.recipe_instructions ?? null}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {list.length > 0 && (
+        <SectionCard title="Your shopping list">
+          <p className="text-sm text-muted-foreground">
+            Take it to the shop, or send it to yourself. Prices from local stores are coming soon.
+          </p>
+          <ul className="mt-3 divide-y divide-border">
+            {list.map((item) => (
+              <li key={item.productId} className="flex min-h-[56px] items-center gap-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{item.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {item.brand} · for {item.forNeed.toLowerCase()}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${item.name} from your list`}
+                  onClick={() => toggleSaved(item)}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void share()}
+              className="inline-flex min-h-[50px] items-center gap-2 rounded-lg border border-border bg-secondary px-5 font-semibold"
+            >
+              <Send className="h-4 w-4" aria-hidden="true" /> Share list
+            </button>
+            <button
+              type="button"
+              onClick={() => void copy()}
+              className="inline-flex min-h-[50px] items-center gap-2 rounded-lg px-5 font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <Copy className="h-4 w-4" aria-hidden="true" /> Copy
+            </button>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard
-        title={`On your shelf · ${shelfCount} of ${shelfCap}`}
+        title={`What's on your shelf · ${shelfCount} of ${shelfCap}`}
         action={
           <button
             type="button"
             aria-expanded={shelfOpen}
             onClick={() => setShelfOpen((open) => !open)}
-            className="inline-flex min-h-[50px] items-center rounded-lg px-4 text-sm font-semibold text-primary hover:underline"
+            className="inline-flex min-h-[44px] items-center rounded-lg px-3 text-sm font-semibold text-primary hover:underline"
           >
-            {shelfOpen ? "Done" : "Edit shelf"}
+            {shelfOpen ? "Done" : "Update"}
           </button>
         }
       >
@@ -230,89 +390,36 @@ function RoutinePage() {
                   <button
                     type="button"
                     aria-pressed={onShelf}
-                    onClick={() => toggleProduct(product.id)}
-                    className="flex min-h-[56px] w-full items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 px-4 text-left"
+                    onClick={() => {
+                      const gate = toggleShelfProduct(product.id);
+                      setBlocked(gate.allowed ? null : gate);
+                    }}
+                    className="flex min-h-[56px] w-full items-center justify-between gap-3 rounded-2xl border border-border px-4 text-left hover:bg-secondary/60"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-foreground">
-                        {product.name}
-                      </span>
+                      <span className="block truncate text-sm font-semibold">{product.name}</span>
                       <span className="block truncate text-xs text-muted-foreground">
                         {product.brand}
                       </span>
                     </span>
                     <Badge tone={onShelf ? "success" : "outline"}>
-                      {onShelf ? "On shelf" : "Add"}
+                      {onShelf ? "I have this" : "Add"}
                     </Badge>
                   </button>
                 </li>
               );
             })}
           </ul>
+        ) : inStockProducts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Tell us what you already own and we'll build around it before suggesting anything new.
+          </p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {inStockProducts.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Nothing on your shelf yet — tap Edit shelf to add what you own.
-              </p>
-            )}
-            {inStockProducts.map((product) => (
-              <Badge key={product.id} tone="success">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                {product.name}
-              </Badge>
-            ))}
-          </div>
+          <p className="text-sm text-foreground">
+            {inStockProducts.map((product) => product.name).join(" · ")}
+          </p>
         )}
       </SectionCard>
-
-      <div className="space-y-4">
-        <h2 className="label-tracking text-xs font-bold text-muted-foreground uppercase">
-          Matched to your latest check-in
-        </h2>
-        {matches.map((match) =>
-          match.inStock ? (
-            <SectionCard key={match.need.id}>
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 shrink-0 text-success" aria-hidden="true" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-display font-semibold">{match.need.label}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {match.product.name} · {match.product.brand}
-                  </p>
-                </div>
-                <Badge tone="success">On your shelf</Badge>
-              </div>
-            </SectionCard>
-          ) : (
-            <MissingProductCard
-              key={match.need.id}
-              need={match.need.label}
-              productName={match.product.name}
-              brand={match.product.brand}
-              ingredients={match.product.ingredients}
-              diyName={match.diy?.name ?? "DIY remedy"}
-              diyRecipe={
-                match.diy?.recipe_instructions ??
-                "Combine gentle kitchen ingredients and patch-test first."
-              }
-            />
-          ),
-        )}
-        {matches.length === 0 && (
-          <SectionCard>
-            <p className="text-muted-foreground">
-              Your biomarkers look balanced — a gentle cleanse, hydrate and protect day.
-            </p>
-            <GhostButton
-              className="mt-3"
-              onClick={() => toast("Maintenance mode: SPF and hydration only.")}
-            >
-              View maintenance plan
-            </GhostButton>
-          </SectionCard>
-        )}
-      </div>
     </div>
   );
 }
