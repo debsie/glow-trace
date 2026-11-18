@@ -39,3 +39,8 @@ dist-ssr
 
 # Vercel build output and local link
 .vercel
+
+# Python
+__pycache__/
+*.pyc
+*.npz
