@@ -40,13 +40,14 @@ const qualityNotice = (
 };
 
 /**
- * `faceMask` (skin only): 1 for face skin found by the face guide, 0 for eyes, brows, lips, hair
- * and background. Quality is always judged on the whole photo; indicators on the mask.
+ * `areaMask`: 1 for the pixels to read. Skin: face skin from the face guide (no eyes, brows, lips,
+ * hair or background). Hair: hair from the hair guide. Quality is always judged on the whole
+ * photo; indicators only on the mask.
  */
 export const analyzeBiomarkers = (
   category: ScanCategory,
   image: PixelBuffer,
-  faceMask: Uint8Array | null = null,
+  areaMask: Uint8Array | null = null,
 ): BiomarkerReport => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
@@ -60,17 +61,19 @@ export const analyzeBiomarkers = (
   };
   const warning = notice ? undefined : castWarning(highlightCast(planes));
   if (warning) quality.warning = warning;
-  if (faceMask && category === "skin") quality.faceGuide = true;
+  if (areaMask && category === "skin") quality.faceGuide = true;
+  if (areaMask && category === "hair") quality.hairGuide = true;
   if (!quality.usable) {
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }
+  const area = areaMask ? toPlanes(image, areaMask) : planes;
   const metrics =
     category === "skin"
-      ? analyzeSkin(faceMask ? toPlanes(image, faceMask) : planes, image)
+      ? analyzeSkin(area, image)
       : category === "hair"
-        ? analyzeHair(planes)
-        : analyzeNails(planes);
-  const tone = category === "skin" ? skinTone(faceMask ? toPlanes(image, faceMask) : planes) : null;
+        ? analyzeHair(area)
+        : analyzeNails(area);
+  const tone = category === "skin" ? skinTone(area) : null;
   return { kernelVersion: KERNEL_VERSION, category, quality, metrics, ...(tone ? { tone } : {}) };
 };
 
@@ -118,4 +121,14 @@ export const reportToBiomarkers = (report: BiomarkerReport): Biomarkers => {
     porosity: 0,
     discoloration: v("yellowness"),
   };
+};
+
+/**
+ * For the live camera: the same quality gate as a scan, on a small preview frame, so the
+ * shutter only enables when the photo would be scored. Undefined means good to go.
+ */
+export const frameHint = (image: PixelBuffer): string | undefined => {
+  const planes = toPlanes(image);
+  const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
+  return qualityNotice(image.width, sharpness, meanLuma(planes));
 };

@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/bits";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
+import { GuidedSession } from "@/components/scan/guided-session";
+import type { SessionResult } from "@/components/scan/guided-session";
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
@@ -170,6 +172,11 @@ function ScanPage() {
   const [result, setResult] = useState<ScanRecord | null>(null);
   const [makeupOpen, setMakeupOpen] = useState(false);
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
+  // Guided scans are the main path; uploading a photo stays available.
+  const [guided, setGuided] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [nailReadings, setNailReadings] = useState<SessionResult["nails"]>([]);
+  const [sessionNotes, setSessionNotes] = useState<string[]>([]);
 
   const allowance = scanAllowance(tier, rewards.bonusScans);
   const left = scansLeft(tier, usage.scans, rewards.bonusScans);
@@ -233,6 +240,51 @@ function ScanPage() {
     else toast(report?.quality.notice ?? failure ?? "Photo couldn't be scored");
   };
 
+  const startGuided = () => {
+    const gate = scanGate(tier, usage.scans, rewards.bonusScans);
+    if (!gate.allowed) {
+      setBlocked(gate);
+      return;
+    }
+    setBlocked(null);
+    setResult(null);
+    setGuided(true);
+  };
+
+  const saveSession = async (session: SessionResult) => {
+    setGuided(false);
+    setFaceResult(null);
+    const report = session.report ? parseBiomarkerReport(session.report) : null;
+    const photo = session.photo
+      ? await makeThumbnail(session.photo).catch(() => undefined)
+      : undefined;
+    const scored = report !== null && report.metrics.length > 0;
+    const scan = addScan({
+      category,
+      biomarkers: scored && report ? reportToBiomarkers(report) : MOCK_BIOMARKERS[category],
+      image_url: CATEGORY_TABS.find((tab) => tab.id === category)?.fallbackImage ?? scanSkin,
+      ...(report ? { report } : {}),
+      ...(scored ? {} : { demo: true }),
+      ...(photo ? { photo } : {}),
+    });
+    if ("allowed" in scan) {
+      if (!scan.allowed) setBlocked(scan);
+      return;
+    }
+    setNailReadings(session.nails);
+    setSessionNotes(session.notes);
+    setResult(scan);
+    window.setTimeout(
+      () =>
+        document
+          .getElementById("scan-result")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
+    if (scored) toast.success("Scan complete. Indicators scored.");
+    else toast("The photos couldn't be scored. Try again in daylight.");
+  };
+
   const shown = result ?? null;
 
   return (
@@ -254,6 +306,9 @@ function ScanPage() {
               setResult(null);
               setPreviewUrl(null);
               setPhotoFile(null);
+              setGuided(false);
+              setNailReadings([]);
+              setSessionNotes([]);
             }}
             className={`min-h-[50px] rounded-2xl border text-base font-semibold transition-colors ${
               category === tab.id
@@ -266,48 +321,93 @@ function ScanPage() {
         ))}
       </div>
 
-      <UploadZone
-        category={category}
-        previewUrl={previewUrl}
-        onFile={(file) => {
-          if (previewUrl) URL.revokeObjectURL(previewUrl);
-          setPreviewUrl(URL.createObjectURL(file));
-          setPhotoFile(file);
-          setResult(null);
-        }}
-      />
-
-      {category === "skin" && (
-        <label className="surface flex min-h-[50px] items-start gap-3 p-4 text-sm">
-          <input
-            type="checkbox"
-            checked={faceGuide}
-            onChange={(event) => {
-              setFaceGuideState(event.target.checked);
-              setFaceGuide(event.target.checked);
-            }}
-            className="mt-0.5 h-5 w-5 shrink-0"
-          />
-          <span>
-            <span className="font-semibold text-foreground">Face guide</span>
-            <span className="block text-muted-foreground">
-              Reads only the skin of your face, skipping eyes, brows, lips, hair and background, for
-              steadier results. Runs on this device. Downloads about {FACE_GUIDE_DOWNLOAD_MB} MB the
-              first time, so use Wi-Fi.
-            </span>
-          </span>
-        </label>
+      {guided ? (
+        <GuidedSession
+          key={category}
+          category={category}
+          onCancel={() => setGuided(false)}
+          onDone={(session) => void saveSession(session)}
+        />
+      ) : (
+        !showUpload && (
+          <SectionCard>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="max-w-md">
+                <p className="font-display text-xl font-semibold">Guided {category} scan</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {category === "skin"
+                    ? "One photo, with a short guide and a live check that the light and focus are right."
+                    : category === "nails"
+                      ? "Two photos. Glowtrace finds each nail and reads it on its own."
+                      : "Three photos: lengths, parting and ends, each with a short guide."}
+                </p>
+              </div>
+              <PrimaryButton onClick={startGuided}>Start guided scan</PrimaryButton>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowUpload(true)}
+              className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-primary hover:underline"
+            >
+              Or upload a photo you already have
+            </button>
+          </SectionCard>
+        )
       )}
 
       {blocked && <UpgradeCard gate={blocked} showInvite onDismiss={() => setBlocked(null)} />}
 
-      <PrimaryButton onClick={runAnalysis} disabled={step !== null} className="w-full">
-        <Droplets className="h-5 w-5" aria-hidden="true" />
-        {step !== null ? ANALYSIS_STEPS[step] : "Run analysis"}
-      </PrimaryButton>
-      <p aria-live="polite" className="sr-only">
-        {step !== null ? ANALYSIS_STEPS[step] : "Ready to analyze."}
-      </p>
+      {showUpload && !guided && (
+        <>
+          <UploadZone
+            category={category}
+            previewUrl={previewUrl}
+            onFile={(file) => {
+              if (previewUrl) URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(URL.createObjectURL(file));
+              setPhotoFile(file);
+              setResult(null);
+            }}
+          />
+
+          {category === "skin" && (
+            <label className="surface flex min-h-[50px] items-start gap-3 p-4 text-sm">
+              <input
+                type="checkbox"
+                checked={faceGuide}
+                onChange={(event) => {
+                  setFaceGuideState(event.target.checked);
+                  setFaceGuide(event.target.checked);
+                }}
+                className="mt-0.5 h-5 w-5 shrink-0"
+              />
+              <span>
+                <span className="font-semibold text-foreground">Face guide</span>
+                <span className="block text-muted-foreground">
+                  Reads only the skin of your face, skipping eyes, brows, lips, hair and background,
+                  for steadier results. Runs on this device. Downloads about{" "}
+                  {FACE_GUIDE_DOWNLOAD_MB} MB the first time, so use Wi-Fi.
+                </span>
+              </span>
+            </label>
+          )}
+
+          <PrimaryButton onClick={runAnalysis} disabled={step !== null} className="w-full">
+            <Droplets className="h-5 w-5" aria-hidden="true" />
+            {step !== null ? ANALYSIS_STEPS[step] : "Run analysis"}
+          </PrimaryButton>
+          <p aria-live="polite" className="sr-only">
+            {step !== null ? ANALYSIS_STEPS[step] : "Ready to analyze."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowUpload(false)}
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-primary hover:underline"
+          >
+            Use the guided scan instead
+          </button>
+        </>
+      )}
       <p className="text-center text-sm text-muted-foreground">
         {allowance === null
           ? "Unlimited check-ins on your plan."
@@ -320,107 +420,142 @@ function ScanPage() {
       </p>
 
       {shown && (
-        <SectionCard title={`${category} analysis`}>
-          <div aria-live="polite">
-            {shown.demo && (
-              <p
-                className="mb-4 rounded-2xl border border-warning px-4 py-3 text-sm text-foreground"
-                role="status"
-              >
-                <span className="font-semibold text-warning">Not scored. </span>
-                {shown.report?.quality.notice ?? "We couldn't read that photo"}. The values below
-                are sample values, not your results.
-              </p>
-            )}
-            {!shown.demo && faceResult && (
-              <p className="mb-4 text-sm text-muted-foreground" role="status">
-                {faceResult === "used"
-                  ? "Face guide on: only face skin was read."
-                  : "Face guide found no face, so the whole photo was read."}
-              </p>
-            )}
-            {!shown.demo && shown.report?.quality.warning && (
-              <p
-                className="mb-4 rounded-2xl border border-border px-4 py-3 text-sm text-foreground"
-                role="status"
-              >
-                <span className="font-semibold">Check the light. </span>
-                {shown.report.quality.warning}.
-              </p>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-display text-2xl font-semibold">
-                  {scanScore(shown)}
-                  <span className="text-base text-muted-foreground"> / 100</span>
+        <div id="scan-result" className="scroll-mt-4">
+          <SectionCard title={`${category} analysis`}>
+            <div aria-live="polite">
+              {shown.demo && (
+                <p
+                  className="mb-4 rounded-2xl border border-warning px-4 py-3 text-sm text-foreground"
+                  role="status"
+                >
+                  <span className="font-semibold text-warning">Not scored. </span>
+                  {shown.report?.quality.notice ?? "We couldn't read that photo"}. The values below
+                  are sample values, not your results.
                 </p>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  <Badge tone={scanScore(shown) >= 65 ? "success" : "warning"}>
-                    {scoreVerdict(scanScore(shown))}
-                  </Badge>
-                  {shown.report && !shown.demo && (
-                    <Badge tone="accent">MojoCV v1 · on-device</Badge>
-                  )}
+              )}
+              {!shown.demo && faceResult && (
+                <p className="mb-4 text-sm text-muted-foreground" role="status">
+                  {faceResult === "used"
+                    ? "Face guide on: only face skin was read."
+                    : "Face guide found no face, so the whole photo was read."}
+                </p>
+              )}
+              {sessionNotes.map((note) => (
+                <p key={note} className="mb-2 text-sm text-muted-foreground" role="status">
+                  {note}
+                </p>
+              ))}
+              {!shown.demo && shown.report?.quality.warning && (
+                <p
+                  className="mb-4 rounded-2xl border border-border px-4 py-3 text-sm text-foreground"
+                  role="status"
+                >
+                  <span className="font-semibold">Check the light. </span>
+                  {shown.report.quality.warning}.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-display text-2xl font-semibold">
+                    {scanScore(shown)}
+                    <span className="text-base text-muted-foreground"> / 100</span>
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    <Badge tone={scanScore(shown) >= 65 ? "success" : "warning"}>
+                      {scoreVerdict(scanScore(shown))}
+                    </Badge>
+                    {shown.report && !shown.demo && (
+                      <Badge tone="accent">On-device · {shown.report.kernelVersion}</Badge>
+                    )}
+                  </div>
                 </div>
+                <img
+                  src={shown.image_url}
+                  alt={`Analyzed ${category} photo`}
+                  width={72}
+                  height={72}
+                  loading="lazy"
+                  className="h-18 w-18 rounded-2xl object-cover"
+                  style={{ height: 72, width: 72 }}
+                />
               </div>
-              <img
-                src={shown.image_url}
-                alt={`Analyzed ${category} photo`}
-                width={72}
-                height={72}
-                loading="lazy"
-                className="h-18 w-18 rounded-2xl object-cover"
-                style={{ height: 72, width: 72 }}
-              />
+              <div className="mt-4 space-y-4">
+                {shown.report && !shown.demo
+                  ? shown.report.metrics.map((metric) => (
+                      <Gauge
+                        key={metric.key}
+                        label={metric.label}
+                        value={metric.value}
+                        caption={`${metric.higherMeans === "better" ? "Higher is better." : "Higher means more."} ${metric.description}`}
+                      />
+                    ))
+                  : gaugesFor(category, shown.biomarkers).map((gauge) => (
+                      <Gauge
+                        key={gauge.key}
+                        label={gauge.label}
+                        value={gauge.value}
+                        caption={gauge.caption}
+                      />
+                    ))}
+              </div>
             </div>
-            <div className="mt-4 space-y-4">
-              {shown.report && !shown.demo
-                ? shown.report.metrics.map((metric) => (
-                    <Gauge
-                      key={metric.key}
-                      label={metric.label}
-                      value={metric.value}
-                      caption={`${metric.higherMeans === "better" ? "Higher is better." : "Higher means more."} ${metric.description}`}
-                    />
-                  ))
-                : gaugesFor(category, shown.biomarkers).map((gauge) => (
-                    <Gauge
-                      key={gauge.key}
-                      label={gauge.label}
-                      value={gauge.value}
-                      caption={gauge.caption}
-                    />
+            {nailReadings.length > 0 && (
+              <div className="mt-5">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  Each nail
+                </p>
+                <ul className="mt-2 divide-y divide-border">
+                  {nailReadings.map((nail) => (
+                    <li
+                      key={nail.finger}
+                      className="flex min-h-[50px] flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                    >
+                      <span className="font-semibold capitalize">{nail.finger}</span>
+                      <span className="flex flex-wrap gap-3 text-muted-foreground">
+                        {nail.report.metrics.map((metric) => (
+                          <span key={metric.key}>
+                            {metric.label}{" "}
+                            <span className="readout text-foreground">
+                              {metric.value.toFixed(1)}
+                            </span>
+                          </span>
+                        ))}
+                        {!nail.report.quality.usable && <span>not readable</span>}
+                      </span>
+                    </li>
                   ))}
+                </ul>
+              </div>
+            )}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/agent" className="contents">
+                <GhostButton>
+                  Ask Your Agent
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </GhostButton>
+              </Link>
+              <Link to="/progress" className="contents">
+                <GhostButton>Compare Past Scans</GhostButton>
+              </Link>
+              <Link to="/routine" className="contents">
+                <GhostButton>
+                  Daily Care Routine
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </GhostButton>
+              </Link>
+              <GhostButton onClick={() => setMakeupOpen((open) => !open)}>
+                Makeup Base &amp; Prep
+              </GhostButton>
             </div>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link to="/agent" className="contents">
-              <GhostButton>
-                Ask Your Agent
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </GhostButton>
-            </Link>
-            <Link to="/progress" className="contents">
-              <GhostButton>Compare Past Scans</GhostButton>
-            </Link>
-            <Link to="/routine" className="contents">
-              <GhostButton>
-                Daily Care Routine
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </GhostButton>
-            </Link>
-            <GhostButton onClick={() => setMakeupOpen((open) => !open)}>
-              Makeup Base &amp; Prep
-            </GhostButton>
-          </div>
 
-          {makeupOpen && (
-            <div className="mt-4 rounded-2xl border border-border p-4">
-              <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
-              <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
-            </div>
-          )}
-        </SectionCard>
+            {makeupOpen && (
+              <div className="mt-4 rounded-2xl border border-border p-4">
+                <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
+                <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
+              </div>
+            )}
+          </SectionCard>
+        </div>
       )}
 
       {shown && !shown.demo && shown.report && <CalibrationCard report={shown.report} />}

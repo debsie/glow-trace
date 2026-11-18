@@ -116,7 +116,8 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
       const comparable = history.filter(
         (scan) =>
           scan.report?.kernelVersion === latest.report?.kernelVersion &&
-          Boolean(scan.report?.quality.faceGuide) === Boolean(latest.report?.quality.faceGuide),
+          Boolean(scan.report?.quality.faceGuide) === Boolean(latest.report?.quality.faceGuide) &&
+          Boolean(scan.report?.quality.hairGuide) === Boolean(latest.report?.quality.hairGuide),
       );
       const series = comparable.flatMap((scan) => {
         const value = reading(scan, spec);

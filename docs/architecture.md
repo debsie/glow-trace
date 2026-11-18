@@ -25,25 +25,26 @@ shell, the access gate placement and navigation.
 
 ## Logic (`src/lib/`, pure and tested in `src/test/`)
 
-| Area                               | Files                                                                                     | Tests                                         |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Photo analysis (MojoCV)            | `cv/kernel.ts`, `cv/image.ts`, `cv/skin.ts`, `cv/hair.ts`, `cv/nails.ts`, `cv/schemas.ts` | `cv-kernel.test.ts`                           |
-| Care agent                         | `agent/knowledge.ts` (rules, product profiles), `agent/agent.ts`                          | `agent.test.ts`                               |
-| Plans and limits (ZAR)             | `plans.ts`                                                                                | `plans.test.ts`                               |
-| Referral and partner rules         | `referrals.ts`                                                                            | `referrals.test.ts`                           |
-| Beta access, feedback, audit text  | `beta.ts`, demo data `beta-demo.ts`                                                       | `beta.test.ts`                                |
-| Access gate rules                  | `access.ts`                                                                               | `access.test.ts`                              |
-| On-device storage                  | `vault.ts` (schema, transforms), `vault-store.ts` (IndexedDB), `storage.ts` (plan/usage)  | `vault.test.ts`, `plans.test.ts`              |
-| Progress and dates                 | `progress.ts` (`shortDate`, `longDate`)                                                   | `progress.test.ts`                            |
-| SEO metadata and JSON-LD           | `seo.ts`                                                                                  | —                                             |
-| Security headers                   | `security-headers.ts`                                                                     | `security-headers.test.ts`                    |
-| Routines and care maths            | `routines.ts`, `beauty.ts`                                                                | `glowtrace-core.test.ts`                      |
-| Ingredient checks, event prep plan | `ingredients.ts`, `prep-plan.ts` (briefs: `pro.clients.$id.brief.tsx`)                    | `ingredients-prep.test.ts`                    |
-| Redness model (kernel v2)          | `cv/redness-model.ts`, `cv/redness-weights.json`, training in `research/redness/`         | `redness-model.test.ts`, `robustness.test.ts` |
-| Face guide (on-device)             | `cv/face-guide.ts` (MediaPipe), `cv/face-mask.ts`, `scripts/copy-mediapipe.ts`            | `face-mask.test.ts`                           |
-| Makeup base and prep               | `makeup.ts`, `components/makeup/makeup-prep-panel.tsx` (scan page, client brief)          | `makeup.test.ts`                              |
-| Trend certainty (Kalman)           | `trend.ts`, used by `agent/agent.ts`                                                      | `trend.test.ts`, `agent.test.ts`              |
-| Calibration sharing                | `calibration.ts`, `integrations/calibration-api.ts`, admin Calibration tab                | `calibration.test.ts`                         |
+| Area                                | Files                                                                                                        | Tests                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Photo analysis (MojoCV)             | `cv/kernel.ts`, `cv/image.ts`, `cv/skin.ts`, `cv/hair.ts`, `cv/nails.ts`, `cv/schemas.ts`                    | `cv-kernel.test.ts`                           |
+| Care agent                          | `agent/knowledge.ts` (rules, product profiles), `agent/agent.ts`                                             | `agent.test.ts`                               |
+| Plans and limits (ZAR)              | `plans.ts`                                                                                                   | `plans.test.ts`                               |
+| Referral and partner rules          | `referrals.ts`                                                                                               | `referrals.test.ts`                           |
+| Beta access, feedback, audit text   | `beta.ts`, demo data `beta-demo.ts`                                                                          | `beta.test.ts`                                |
+| Access gate rules                   | `access.ts`                                                                                                  | `access.test.ts`                              |
+| On-device storage                   | `vault.ts` (schema, transforms), `vault-store.ts` (IndexedDB), `storage.ts` (plan/usage)                     | `vault.test.ts`, `plans.test.ts`              |
+| Progress and dates                  | `progress.ts` (`shortDate`, `longDate`)                                                                      | `progress.test.ts`                            |
+| SEO metadata and JSON-LD            | `seo.ts`                                                                                                     | —                                             |
+| Security headers                    | `security-headers.ts`                                                                                        | `security-headers.test.ts`                    |
+| Routines and care maths             | `routines.ts`, `beauty.ts`                                                                                   | `glowtrace-core.test.ts`                      |
+| Ingredient checks, event prep plan  | `ingredients.ts`, `prep-plan.ts` (briefs: `pro.clients.$id.brief.tsx`)                                       | `ingredients-prep.test.ts`                    |
+| Redness model (kernel v2)           | `cv/redness-model.ts`, `cv/redness-weights.json`, training in `research/redness/`                            | `redness-model.test.ts`, `robustness.test.ts` |
+| On-device guides (face, hand, hair) | `cv/guides.ts` (MediaPipe), `cv/face-mask.ts`, `cv/nail-tiles.ts`, `scripts/copy-mediapipe.ts`               | `face-mask.test.ts`, `guided-scan.test.ts`    |
+| Guided scans and onboarding         | `scan-session.ts`, `cv/analyse-session.ts`, `components/scan/` (guided-session, guided-camera, motion-guide) | `guided-scan.test.ts`                         |
+| Makeup base and prep                | `makeup.ts`, `components/makeup/makeup-prep-panel.tsx` (scan page, client brief)                             | `makeup.test.ts`                              |
+| Trend certainty (Kalman)            | `trend.ts`, used by `agent/agent.ts`                                                                         | `trend.test.ts`, `agent.test.ts`              |
+| Calibration sharing                 | `calibration.ts`, `integrations/calibration-api.ts`, admin Calibration tab                                   | `calibration.test.ts`                         |
 
 ## State and services
 

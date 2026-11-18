@@ -1,7 +1,7 @@
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v2.1.0-ts";
+export const KERNEL_VERSION = "mojocv-v2.2.0-ts";
 
 export type { ScanCategory };
 
@@ -31,6 +31,8 @@ export type ImageQuality = {
   warning?: string | undefined;
   /** True when the face guide limited the skin indicators to face skin. */
   faceGuide?: boolean | undefined;
+  /** True when the hair guide limited the hair indicators to hair pixels. */
+  hairGuide?: boolean | undefined;
 };
 
 export type BiomarkerReport = {

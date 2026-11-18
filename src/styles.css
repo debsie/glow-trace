@@ -366,3 +366,297 @@ details[open] > .details-body {
     stroke-dashoffset: 0;
   }
 }
+
+/* ---------- Scan motion guides (components/scan/motion-guide.tsx) ---------- */
+/* Animated parts turn and scale about their own box; static parts keep SVG coordinates. */
+.mg-scene .mg-swing,
+.mg-scene .mg-turn,
+.mg-scene .mg-phone-hover,
+.mg-scene .mg-phone-close,
+.mg-scene [class^="mg-spread-"] {
+  transform-box: fill-box;
+}
+.mg-scene .mg-phone-rise,
+.mg-scene .mg-phone-drop,
+.mg-scene .mg-phone-side,
+.mg-scene .mg-phone-hover,
+.mg-scene .mg-phone-close,
+.mg-scene .mg-frame,
+.mg-scene .mg-scan,
+.mg-scene .mg-light,
+.mg-scene .mg-pulse,
+.mg-scene .mg-swing,
+.mg-scene .mg-turn,
+.mg-scene .mg-part,
+.mg-scene .mg-count,
+.mg-scene .mg-pinch,
+.mg-scene [class^="mg-spread-"] {
+  animation-duration: 4.8s;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+}
+.mg-phone-rise {
+  animation-name: mg-rise;
+}
+.mg-phone-drop {
+  animation-name: mg-drop;
+}
+.mg-phone-side {
+  animation-name: mg-side;
+}
+.mg-phone-hover {
+  animation-name: mg-hover;
+}
+.mg-phone-close {
+  animation-name: mg-close;
+}
+.mg-frame {
+  animation-name: mg-frame;
+}
+.mg-scan {
+  animation-name: mg-scan;
+}
+.mg-light,
+.mg-pulse {
+  animation-name: mg-glow;
+}
+.mg-swing {
+  animation-name: mg-swing;
+}
+.mg-turn {
+  animation-name: mg-turn;
+}
+.mg-part {
+  animation-name: mg-part;
+}
+.mg-count {
+  animation-name: mg-count;
+}
+.mg-pinch {
+  animation-name: mg-pinch;
+}
+.mg-spread-0 {
+  animation-name: mg-spread-left;
+}
+.mg-spread-1 {
+  animation-name: mg-spread-left-small;
+}
+.mg-spread-2 {
+  animation-name: mg-spread-right-small;
+}
+.mg-spread-3 {
+  animation-name: mg-spread-right;
+}
+@keyframes mg-rise {
+  0%,
+  10% {
+    transform: translateY(70px);
+    opacity: 0;
+  }
+  35%,
+  85% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+@keyframes mg-drop {
+  0%,
+  10% {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+  40%,
+  85% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-side {
+  0%,
+  10% {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  40%,
+  85% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-hover {
+  0%,
+  10% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  40%,
+  85% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-close {
+  0%,
+  15% {
+    transform: translateX(30px) scale(0.85);
+    opacity: 0;
+  }
+  45%,
+  85% {
+    transform: translateX(-30px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-frame {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  50%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-scan {
+  0%,
+  45% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(62px);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes mg-swing {
+  0%,
+  15% {
+    transform: rotate(-38deg);
+  }
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes mg-turn {
+  0%,
+  15% {
+    transform: scaleX(1);
+  }
+  45%,
+  100% {
+    transform: scaleX(0.75);
+  }
+}
+@keyframes mg-part {
+  0%,
+  20% {
+    stroke-dashoffset: 100;
+  }
+  50%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes mg-count {
+  0%,
+  55% {
+    opacity: 0;
+  }
+  65%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mg-pinch {
+  0%,
+  10% {
+    transform: translate(-30px, -20px);
+  }
+  45%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes mg-spread-left {
+  0%,
+  15% {
+    transform: rotate(10deg);
+  }
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes mg-spread-left-small {
+  0%,
+  15% {
+    transform: rotate(4deg);
+  }
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes mg-spread-right-small {
+  0%,
+  15% {
+    transform: rotate(-4deg);
+  }
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes mg-spread-right {
+  0%,
+  15% {
+    transform: rotate(-10deg);
+  }
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-scene * {
+    animation: none !important;
+  }
+}

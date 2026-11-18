@@ -125,6 +125,14 @@ export const mean = (values: Float32Array): number => {
 
 export const meanLuma = (planes: Planes): number => mean(planes.luma);
 
+/** Values of a plane inside the mask (all values without one). */
+export const inside = (planes: Planes, values: Float32Array): Float32Array =>
+  planes.mask ? values.filter((_, index) => planes.mask?.[index] === 1) : values;
+
+/** Mean of a plane over the mask. */
+export const maskedMean = (planes: Planes, values: Float32Array): number =>
+  mean(inside(planes, values));
+
 /** Mean of |Δx| + |Δy| of luma between neighbours (0-510). Flat ≈ 0; fine texture is high. */
 export const gradientEnergy = (planes: Planes): number => {
   const { width, height, luma: values } = planes;
@@ -189,8 +197,9 @@ export const highlightCast = (planes: Planes): { a: number; b: number } => {
 
 /** Lift of the brightest 1% over the typical pixel, on a 0-1 scale: how strongly highlights stand out. */
 export const highlightContrast = (planes: Planes): number => {
-  if (planes.count === 0) return 0;
-  const sorted = Float32Array.from(planes.luma).sort();
+  const values = inside(planes, planes.luma);
+  if (values.length === 0) return 0;
+  const sorted = Float32Array.from(values).sort();
   const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))] ?? 0;
   return Math.max(0, at(0.99) - at(0.5)) / 255;
 };
@@ -218,10 +227,16 @@ const blockMeans = (planes: Planes, block: number, stride: number): number[] => 
   for (let top = 0; top + block <= height; top += stride) {
     for (let left = 0; left + block <= width; left += stride) {
       let sum = 0;
+      let n = 0;
       for (let y = top; y < top + block; y += 1) {
-        for (let x = left; x < left + block; x += 1) sum += values[y * width + x] ?? 0;
+        for (let x = left; x < left + block; x += 1) {
+          if (!inMask(planes, y * width + x)) continue;
+          sum += values[y * width + x] ?? 0;
+          n += 1;
+        }
       }
-      result.push(sum / (block * block));
+      // With a mask, use only blocks that are mostly inside it.
+      if (n >= block * block * 0.75) result.push(sum / n);
     }
   }
   return result;
@@ -271,12 +286,14 @@ const median = (values: Float32Array): number => {
 
 /** Share of pixels more than `threshold` ΔE76 away from the median Lab colour. */
 export const outlierFraction = (planes: Planes, threshold = 28): number => {
-  if (planes.count === 0) return 0;
-  const mL = median(planes.labL);
-  const mA = median(planes.labA);
-  const mB = median(planes.labB);
+  const total = planes.mask ? planes.mask.reduce((sum, value) => sum + value, 0) : planes.count;
+  if (total === 0) return 0;
+  const mL = median(inside(planes, planes.labL));
+  const mA = median(inside(planes, planes.labA));
+  const mB = median(inside(planes, planes.labB));
   let outliers = 0;
   for (let index = 0; index < planes.count; index += 1) {
+    if (!inMask(planes, index)) continue;
     const distance = Math.hypot(
       (planes.labL[index] ?? 0) - mL,
       (planes.labA[index] ?? 0) - mA,
@@ -284,7 +301,7 @@ export const outlierFraction = (planes: Planes, threshold = 28): number => {
     );
     if (distance > threshold) outliers += 1;
   }
-  return outliers / planes.count;
+  return outliers / total;
 };
 
 /* ---------- Decoding (browser only) ---------- */

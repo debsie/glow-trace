@@ -266,3 +266,20 @@ mask when the guide is on) of ITA° = atan((L\* − 50) / b\*) and hue angle ata
 al. 1991), undertone (hue split around the SCIN median: under 48° cool, over 60° warm), finish,
 primer, correctors and prep. The scan page and MUA client briefs show it. Undertone is marked
 unsure when the scan warned about coloured light.
+
+## v2.2 (`mojocv-v2.2.0-ts`): guided scans for nails and hair
+
+- **Masks for every area.** `analyzeBiomarkers(category, image, areaMask)` reads hair indicators
+  inside a hair mask (MediaPipe hair segmenter, about 0.8 MB) and records `quality.hairGuide`.
+  Masked helpers: `highlightContrast`, block means (blocks at least 75% inside),
+  `outlierFraction`, and nail yellowness via `maskedMean`. Trends compare only scans with the same
+  guide settings.
+- **Per-nail tiles.** MediaPipe Hand Landmarker (about 7.8 MB) finds the hand on a 1280 px copy of
+  the photo. `nail-tiles.ts` places each nail 30% back from the fingertip towards the last joint,
+  1.15 times the last bone long, and crops a 128 px tile; each tile is scored on its own.
+- **Sessions** (`scan-session.ts`): skin one shot; nails a flat hand (four fingers) and the thumb;
+  hair lengths (shine, porosity), parting or crown (density) and ends (porosity). Each indicator is
+  the mean over the shots trusted for it and every tile within them.
+- **Live camera check**: `frameHint` runs the same quality gate on a 160 px preview twice a
+  second; the shutter waits until a photo would score (or, after five seconds, offers "Take photo
+  anyway").
