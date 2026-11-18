@@ -88,14 +88,16 @@ export const foundationFor = (report: ScanReport | null, profile: MakeupProfile)
     why = "Your skin reads balanced, so a light water-based formula looks most like skin.";
   }
 
-  const finish: Foundation["finish"] =
-    oil >= 70
+  // Dry skin decides first: matte formulas cling to dry patches, whatever the weather.
+  const finish: Foundation["finish"] = dry
+    ? profile.climate === "humid"
+      ? "Satin"
+      : "Dewy"
+    : oil >= 70
       ? "Matte"
       : oil >= 55 || profile.climate === "humid"
         ? "Soft matte"
-        : dry
-          ? "Dewy"
-          : "Satin";
+        : "Satin";
 
   const wanted = { sheer: 0, light: 1, medium: 2, full: 3 }[profile.coverage];
   const needed = evenness >= 50 ? 2 : evenness >= 30 ? 1 : 0;
@@ -164,12 +166,13 @@ export const makeupDay = (report: ScanReport | null, profile: MakeupProfile): Ma
     before: {
       prep: report ? makeupPrep(report) : null,
       foundation: foundationFor(report, profile),
-      setting:
-        oil >= 65 || profile.climate === "humid"
+      setting: foundationFor(report, profile).base.startsWith("Hydrating")
+        ? profile.climate === "humid"
+          ? "A hydrating setting spray, and blotting papers instead of powder through the day."
+          : "A hydrating setting spray instead of powder."
+        : oil >= 65 || profile.climate === "humid"
           ? "Translucent powder on the T-zone, then a setting spray."
-          : profile.feel === "dry"
-            ? "A hydrating setting spray instead of powder."
-            : "A light dusting of powder only where you shine.",
+          : "A light dusting of powder only where you shine.",
     },
     after: removalSteps(report, profile),
     recovery: recoverySteps(report, profile),

@@ -45,6 +45,14 @@ describe("Foundation", () => {
     expect(foundationFor(report(calm), DEFAULT_PROFILE).finish).toBe("Satin");
   });
 
+  it("never suggests matte or powder for dry skin, even in humid weather", () => {
+    const humidDry = { ...DEFAULT_PROFILE, feel: "dry" as const, climate: "humid" as const };
+    expect(foundationFor(report(calm), humidDry).finish).toBe("Satin");
+    const day = makeupDay(report(calm), humidDry);
+    expect(day.before.setting).not.toMatch(/powder on/);
+    expect(day.before.setting).toMatch(/blotting papers/);
+  });
+
   it("raises coverage only as far as uneven tone needs, or the person wants", () => {
     expect(foundationFor(report(calm), { ...DEFAULT_PROFILE, coverage: "sheer" }).coverage).toBe(
       "Sheer",
