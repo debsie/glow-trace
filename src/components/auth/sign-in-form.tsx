@@ -1,8 +1,10 @@
 import { Mail } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { Turnstile } from "@/components/auth/turnstile";
 import { BUTTON_GHOST, PrimaryButton } from "@/components/ui/bits";
 import { useAuth } from "@/context/auth";
+import { captchaEnabled } from "@/lib/captcha";
 
 const GoogleMark = () => (
   // Google's "G" in its own brand colours, as Google's sign-in guidelines require.
@@ -32,6 +34,16 @@ export const SignInForm = ({ next }: { next?: string }) => {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Bot check: a one-time token per attempt. The widget is remounted for each new one.
+  const [useCaptcha, setUseCaptcha] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [widget, setWidget] = useState(0);
+  useEffect(
+    () =>
+      setUseCaptcha(captchaEnabled(import.meta.env["VITE_SUPABASE_URL"], window.location.hostname)),
+    [],
+  );
+  const waiting = useCaptcha && token === null;
 
   if (state === "sent") {
     return (
@@ -78,12 +90,15 @@ export const SignInForm = ({ next }: { next?: string }) => {
           event.preventDefault();
           setError(null);
           setState("sending");
-          void sendEmailLink(email, next).then((result) => {
+          void sendEmailLink(email, next, token ?? undefined).then((result) => {
             if (result.ok) setState("sent");
             else {
               setState("idle");
               setError(result.reason);
             }
+            // A token works once, so get a fresh one for the next try.
+            setToken(null);
+            setWidget((current) => current + 1);
           });
         }}
       >
@@ -100,9 +115,14 @@ export const SignInForm = ({ next }: { next?: string }) => {
             className="mt-1 min-h-[50px] w-full rounded-2xl border border-input bg-background px-4 text-base text-foreground placeholder:text-muted-foreground"
           />
         </label>
-        <PrimaryButton type="submit" className="w-full" disabled={state === "sending"}>
+        {useCaptcha && <Turnstile key={widget} onToken={setToken} />}
+        <PrimaryButton type="submit" className="w-full" disabled={state === "sending" || waiting}>
           <Mail className="h-5 w-5" aria-hidden="true" />
-          {state === "sending" ? "Sending…" : "Email Me a Sign-In Link"}
+          {state === "sending"
+            ? "Sending…"
+            : waiting
+              ? "Checking you're human…"
+              : "Email Me a Sign-In Link"}
         </PrimaryButton>
       </form>
 
