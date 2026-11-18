@@ -58,9 +58,27 @@ or hydration. Candidates to review: Google's SCIN (consumer-contributed photos w
 self-reported and dermatologist-estimated skin type), Fitzpatrick17k, PAD-UFES-20. Record the
 licence and our decision here before use.
 
-| Dataset             | Licence checked on | Allowed use | Decision |
-| ------------------- | ------------------ | ----------- | -------- |
-| (none reviewed yet) |                    |             |          |
+| Dataset        | Licence checked on                               | Allowed use                                                                                                                              | Decision                                                                                                                                   |
+| -------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Google SCIN    | 2026-11-18 (licence text read, not legal advice) | SCIN Data Use License: worldwide, royalty-free grant to reproduce and adapt; attribution when shared; re-identifying people is forbidden | **Use** for internal stability and skin-tone checks. Photos are downloaded one at a time, scored, deleted; only aggregate numbers are kept |
+| Fitzpatrick17k | 2026-11-18                                       | CC BY-NC-SA 3.0 (NonCommercial, ShareAlike)                                                                                              | **Do not use**: Glowtrace is a paid product                                                                                                |
+| PAD-UFES-20    | Not confirmed (page failed to load)              | Unknown                                                                                                                                  | Do not use until checked                                                                                                                   |
+
+## First SCIN run (2026-11-18, 160 close-up photos, 40 per skin-tone group)
+
+Run `bun scripts/scin-report.ts <folder with scin_cases.csv and scin_labels.csv> 40`.
+
+- v1.2 redness read 0 on most photos, and raw skin colour rose with skin tone. Fixed in kernel
+  v1.3 (tone-adjusted redness, see `docs/cv-kernel-spec.md`). Medians now 27-35 across all
+  groups.
+- Scored: 93% of the lightest group, 100% of the others. Rejected: 2 too dark, 1 blurred. No sign
+  that deeper skin is rejected more often.
+- Light warning: 5-33% depending on group; the 33% for Monk 5-6 is worth watching.
+- Hydration reads high (71-79) on almost every photo and barely varies: treat it as "how dry or
+  supple the skin looks" until it is checked against a device.
+
+Attribution: SCIN dataset, Google Research, used under the SCIN Data Use License
+(https://github.com/google-research-datasets/scin).
 
 ## Recruiting
 
