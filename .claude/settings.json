@@ -17,7 +17,6 @@
       "Bash(git commit --amend:*)",
       "Read(./.env)",
       "Read(./.env.*)",
-      "Read(./node_modules/**)",
       "Read(./.output/**)",
       "Read(./.vercel/**)",
       "Read(./dist/**)",
