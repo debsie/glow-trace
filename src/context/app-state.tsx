@@ -136,7 +136,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [hydrated, setHydrated] = useState(false);
 
   // Signed-in beta members see their own name and id; demo mode keeps the sample profile.
-  const { access } = useAuth();
+  const { access, isAdmin } = useAuth();
   const me = useMemo(
     () =>
       access.kind === "member"
@@ -193,7 +193,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     if (hydrated) saveAccount(account);
   }, [account, hydrated]);
 
-  const tier = account.tier;
+  // Admins always get the top tier so they can test every feature. UI only: no payments exist yet.
+  const tier: SubscriptionTier = isAdmin ? "studio" : account.tier;
   const usage = useMemo(() => currentUsage(account.usage, new Date()), [account.usage]);
   const activeClients = useMemo(() => clients.filter((client) => !client.archived), [clients]);
   const shelfCount = inventory.filter((item) => item.in_stock).length;
