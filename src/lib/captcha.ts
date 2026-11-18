@@ -5,7 +5,7 @@ import { TURNSTILE_ORIGIN } from "./security-headers";
  * names the widget. The secret key lives in Supabase (Authentication, Attack Protection).
  */
 export const TURNSTILE_SITE_KEY: string =
-  import.meta.env["VITE_TURNSTILE_SITE_KEY"] ?? "0x4AAAAAAAGG_CI_7855MB04Z";
+  import.meta.env["VITE_TURNSTILE_SITE_KEY"] ?? "0x4AAAAAAGG_CI_7855MB04Z";
 
 export const TURNSTILE_SCRIPT = `${TURNSTILE_ORIGIN}/turnstile/v0/api.js?render=explicit`;
 
