@@ -2,7 +2,7 @@ import type { Biomarkers } from "../types";
 import { analyzeHair } from "./hair";
 import { clamp100, gradientEnergy, highlightCast, meanLuma, round1, toPlanes } from "./image";
 import { analyzeNails } from "./nails";
-import { analyzeSkin } from "./skin";
+import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
 import { KERNEL_VERSION } from "./types";
 
@@ -70,7 +70,8 @@ export const analyzeBiomarkers = (
       : category === "hair"
         ? analyzeHair(planes)
         : analyzeNails(planes);
-  return { kernelVersion: KERNEL_VERSION, category, quality, metrics };
+  const tone = category === "skin" ? skinTone(faceMask ? toPlanes(image, faceMask) : planes) : null;
+  return { kernelVersion: KERNEL_VERSION, category, quality, metrics, ...(tone ? { tone } : {}) };
 };
 
 /** Overall 0-100 score for a report: higher is healthier. Null when nothing was scored. */

@@ -257,3 +257,12 @@ found, results are identical to v2.0. Landmarks are never stored. The browser ne
 
 Not yet calibrated: texture and hydration constants were set on whole-area photos, so masked
 readings sit lower (no hair or background edges). Compare scans taken with the same setting.
+
+### Tone readouts for makeup (added in v2.1, indicators unchanged)
+
+Skin reports carry `tone: { ita, hueAngle }`: medians over skin-coloured pixels (inside the face
+mask when the guide is on) of ITA° = atan((L\* − 50) / b\*) and hue angle atan2(b\*, a\*).
+`src/lib/makeup.ts` turns them, with the indicators, into shade depth (ITA bands of Chardon et
+al. 1991), undertone (hue split around the SCIN median: under 48° cool, over 60° warm), finish,
+primer, correctors and prep. The scan page and MUA client briefs show it. Undertone is marked
+unsure when the scan warned about coloured light.

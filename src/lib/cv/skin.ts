@@ -60,6 +60,29 @@ export const discoloration = (planes: Planes): BiomarkerMetric => ({
   description: "How patchy the colour is.",
 });
 
+/** Median ITA° and hue angle of skin-coloured pixels (inside the mask). Null when too few. */
+export const skinTone = (planes: Planes): { ita: number; hueAngle: number } | null => {
+  const ita: number[] = [];
+  const hue: number[] = [];
+  for (let index = 0; index < planes.count; index += 1) {
+    if (planes.mask && planes.mask[index] !== 1) continue;
+    const L = planes.labL[index] ?? 0;
+    const a = planes.labA[index] ?? 0;
+    const b = planes.labB[index] ?? 0;
+    const angle = (Math.atan2(b, a) * 180) / Math.PI;
+    if (!(L > 20 && L < 95 && a > 2 && angle > 10 && angle < 80)) continue;
+    ita.push((Math.atan((L - 50) / b) * 180) / Math.PI);
+    hue.push(angle);
+  }
+  if (ita.length < planes.count * 0.05 || ita.length < 50) return null;
+  const median = (values: number[]) => {
+    const sorted = [...values].sort((x, y) => x - y);
+    return sorted[Math.floor(sorted.length / 2)] ?? 0;
+  };
+  const round1 = (value: number) => Math.round(value * 10) / 10;
+  return { ita: round1(median(ita)), hueAngle: round1(median(hue)) };
+};
+
 export const analyzeSkin = (planes: Planes, image: PixelBuffer): BiomarkerMetric[] => [
   erythema(image, planes.mask),
   skinTexture(planes),

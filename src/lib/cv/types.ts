@@ -38,7 +38,15 @@ export type BiomarkerReport = {
   category: ScanCategory;
   quality: ImageQuality;
   metrics: BiomarkerMetric[];
+  /** Skin colour readouts for makeup matching (skin scans only). */
+  tone?: SkinTone | undefined;
 };
+
+/**
+ * ITA° (individual typology angle, atan((L* - 50) / b*)) measures depth: higher is lighter.
+ * Hue angle (atan2(b*, a*)) measures undertone: higher is more golden, lower more pink.
+ */
+export type SkinTone = { ita: number; hueAngle: number };
 
 /** Minimal pixel buffer: the shape of the DOM's ImageData, so tests can build one without a DOM. */
 export type PixelBuffer = { width: number; height: number; data: Uint8ClampedArray };

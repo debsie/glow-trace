@@ -47,6 +47,7 @@ export type ScanReport = {
     warning?: string | undefined;
     faceGuide?: boolean | undefined;
   };
+  tone?: { ita: number; hueAngle: number } | undefined;
   metrics: {
     key: string;
     label: string;

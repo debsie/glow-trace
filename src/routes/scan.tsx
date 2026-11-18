@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/bits";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
+import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
 import {
@@ -414,17 +415,9 @@ function ScanPage() {
           </div>
 
           {makeupOpen && (
-            <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4">
-              <p className="font-display font-semibold text-accent">Makeup Base &amp; Prep</p>
-              <p className="mt-1 text-sm text-foreground">
-                Base: <strong>Neutral Cool — Satin Finish</strong>, buildable medium coverage over a
-                hydrated, primed barrier.
-              </p>
-              <ul className="mt-2 list-inside list-disc text-sm text-muted-foreground">
-                <li>Hydrating barrier cream, 10-minute melt</li>
-                <li>Silicone-free primer on the T-zone</li>
-                <li>Colour-correct any lingering redness before foundation</li>
-              </ul>
+            <div className="mt-4 rounded-2xl border border-border p-4">
+              <p className="mb-3 font-display font-semibold">Makeup Base &amp; Prep</p>
+              <MakeupPrepPanel report={shown.demo ? undefined : shown.report} />
             </div>
           )}
         </SectionCard>

@@ -25,6 +25,7 @@ export const biomarkerReportSchema = z.object({
   category: z.enum(["skin", "hair", "nails"]),
   quality: imageQualitySchema,
   metrics: z.array(biomarkerMetricSchema),
+  tone: z.object({ ita: z.number().min(-90).max(90), hueAngle: z.number() }).optional(),
 });
 
 export class InvalidReportError extends Error {

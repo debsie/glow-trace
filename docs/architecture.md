@@ -40,6 +40,8 @@ shell, the access gate placement and navigation.
 | Routines and care maths            | `routines.ts`, `beauty.ts`                                                                | `glowtrace-core.test.ts`                      |
 | Ingredient checks, event prep plan | `ingredients.ts`, `prep-plan.ts` (briefs: `pro.clients.$id.brief.tsx`)                    | `ingredients-prep.test.ts`                    |
 | Redness model (kernel v2)          | `cv/redness-model.ts`, `cv/redness-weights.json`, training in `research/redness/`         | `redness-model.test.ts`, `robustness.test.ts` |
+| Face guide (on-device)             | `cv/face-guide.ts` (MediaPipe), `cv/face-mask.ts`, `scripts/copy-mediapipe.ts`            | `face-mask.test.ts`                           |
+| Makeup base and prep               | `makeup.ts`, `components/makeup/makeup-prep-panel.tsx` (scan page, client brief)          | `makeup.test.ts`                              |
 | Trend certainty (Kalman)           | `trend.ts`, used by `agent/agent.ts`                                                      | `trend.test.ts`, `agent.test.ts`              |
 | Calibration sharing                | `calibration.ts`, `integrations/calibration-api.ts`, admin Calibration tab                | `calibration.test.ts`                         |
 

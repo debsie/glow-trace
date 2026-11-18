@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
 import { PageHeader, PrimaryButton } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { findingsFor } from "@/lib/agent/agent";
@@ -15,7 +16,11 @@ function ClientBrief() {
   const client = clients.find((item) => item.id === id);
   if (!client) return <PageHeader title="Client not found" />;
 
-  const findings = findingsFor(scans.filter((scan) => scan.client_id === client.id));
+  const clientScans = scans.filter((scan) => scan.client_id === client.id);
+  const findings = findingsFor(clientScans);
+  const latestSkin = clientScans
+    .filter((scan) => scan.category === "skin" && !scan.demo)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   const look = looks.find((item) => item.client_id === client.id);
   const attention = findings.filter((finding) => finding.severity !== "good");
 
@@ -67,6 +72,13 @@ function ClientBrief() {
               ))}
             </ul>
           )}
+        </section>
+
+        <section>
+          <h2 className="font-display text-lg font-semibold">Base match and prep</h2>
+          <div className="mt-1">
+            <MakeupPrepPanel report={latestSkin?.report} />
+          </div>
         </section>
 
         {attention.length > 0 && (
