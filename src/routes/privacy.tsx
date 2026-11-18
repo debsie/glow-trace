@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, HardDrive, ShieldCheck, Trash2 } from "lucide-react";
+import { Download, HardDrive, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ import {
   SectionCard,
 } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { useAuth } from "@/context/auth";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/privacy")({
@@ -52,6 +53,8 @@ const downloadJson = (data: unknown, filename: string) => {
 function PrivacyPage() {
   const { scans, clients, looks, shelfCount, storageStatus, exportData, deleteAllData } =
     useAppState();
+  const { access, signOut, deleteAccount } = useAuth();
+  const member = access.kind === "member" || access.kind === "waitlisted";
   const [busy, setBusy] = useState<"export" | "delete" | null>(null);
 
   const rows = [
@@ -83,8 +86,20 @@ function PrivacyPage() {
   const onDelete = async () => {
     setBusy("delete");
     try {
+      // Account first: if that fails, nothing is lost and the person can try again.
+      if (member) {
+        const result = await deleteAccount();
+        if (!result.ok) {
+          toast.error(result.reason);
+          return;
+        }
+      }
       await deleteAllData();
-      toast.success("Everything on this device has been deleted.");
+      toast.success(
+        member
+          ? "Your account and everything on this device have been deleted."
+          : "Everything on this device has been deleted.",
+      );
     } catch {
       toast.error(
         "Couldn't delete everything. Try again, or clear this site's data in your browser.",
@@ -152,6 +167,24 @@ function PrivacyPage() {
         </p>
       </SectionCard>
 
+      {member && (
+        <SectionCard title="Your account">
+          <dl className="divide-y divide-border">
+            <div className="flex min-h-[48px] items-center justify-between gap-4">
+              <dt className="text-sm text-muted-foreground">Signed in as</dt>
+              <dd className="text-sm font-semibold text-foreground">{access.email}</dd>
+            </div>
+            <div className="flex min-h-[48px] items-center justify-between gap-4">
+              <dt className="text-sm text-muted-foreground">Stored in your account</dt>
+              <dd className="text-sm text-foreground">Email and name only</dd>
+            </div>
+          </dl>
+          <button type="button" onClick={() => void signOut()} className={`${BUTTON_GHOST} mt-4`}>
+            <LogOut className="h-5 w-5" aria-hidden="true" /> Sign Out
+          </button>
+        </SectionCard>
+      )}
+
       <SectionCard title="Download my data">
         <p className="text-sm text-muted-foreground">
           One file with every scan and its scores, your photos, shelf, clients and lookbooks. Keep
@@ -165,8 +198,9 @@ function PrivacyPage() {
 
       <SectionCard title="Delete everything">
         <p className="text-sm text-muted-foreground">
-          Erases every scan, photo, client, lookbook and setting on this device. This can't be
-          undone, so download a copy first if you want one.
+          Erases every scan, photo, client, lookbook and setting on this device
+          {member ? ", and deletes your Glowtrace account" : ""}. This can't be undone, so download
+          a copy first if you want one.
         </p>
         <AlertDialog>
           <AlertDialogTrigger asChild>
