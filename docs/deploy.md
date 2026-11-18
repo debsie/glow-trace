@@ -15,7 +15,7 @@ Without Supabase settings the app still runs, in demo mode.
    testers: **Johannesburg** if offered, otherwise **London** or **Frankfurt** (EU hosting suits
    the privacy policy; see `docs/legal/privacy.md`).
 2. Apply the migrations in `supabase/migrations/`, **oldest first**:
-   `20261117120000_beta_access.sql`, then `20261118090000_beta_admin.sql`. Either paste each into
+   `20261117120000_beta_access.sql`, `20261118090000_beta_admin.sql`, then `20261118120000_lock_function_grants.sql`. Either paste each into
    **SQL Editor** and run it, or with the Supabase CLI: `supabase link` then `supabase db push`.
 3. **Authentication → Sign In / Providers**
    - **Email:** on (magic link). Turn off "Confirm email" only if you want to; links work
@@ -97,6 +97,24 @@ The server build targets Vercel. For a plain Node server instead:
 NITRO_PRESET=node-server bun run build
 node .output/server/index.mjs
 ```
+
+## Security built in
+
+- **Security headers on every response** (`src/lib/security-headers.ts`, applied by Nitro in
+  `vite.config.ts`): a content security policy that lets pages load only Glowtrace's own files
+  and talk only to Glowtrace and your Supabase project; HTTPS forced for two years; no framing;
+  no MIME sniffing; strict referrers; camera allowed only for Glowtrace, microphone, location and
+  payment APIs off. The policy is built from `VITE_SUPABASE_URL` at build time, so redeploy after
+  changing it.
+- **No third parties in the browser:** fonts are bundled with the site, there is no analytics
+  and no tracking. Nothing to consent to, so no cookie banner is needed; `/cookies` lists
+  exactly what is stored and why.
+- **Database:** row-level security on every table; admin actions only through functions that
+  check the admin role; functions closed to signed-out visitors
+  (`20261118120000_lock_function_grants.sql`). Run **Advisors → Security** in Supabase after any
+  schema change.
+- **Where data lives:** Supabase in London (UK GDPR, which POPIA section 72 accepts as adequate
+  protection). The website server holds no personal data.
 
 ## What is and isn't stored
 

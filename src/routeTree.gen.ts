@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AffiliatesRouteImport } from './routes/affiliates'
 import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -51,6 +52,11 @@ const AgentRoute = AgentRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/affiliates': typeof AffiliatesRoute
   '/agent': typeof AgentRoute
   '/app': typeof AppRoute
+  '/cookies': typeof CookiesRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/cookies'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/cookies'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/affiliates'
     | '/agent'
     | '/app'
+    | '/cookies'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -245,6 +257,7 @@ export interface RootRouteChildren {
   AffiliatesRoute: typeof AffiliatesRoute
   AgentRoute: typeof AgentRoute
   AppRoute: typeof AppRoute
+  CookiesRoute: typeof CookiesRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -421,6 +441,7 @@ const rootRouteChildren: RootRouteChildren = {
   AffiliatesRoute: AffiliatesRoute,
   AgentRoute: AgentRoute,
   AppRoute: AppRoute,
+  CookiesRoute: CookiesRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
