@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, HardDrive, LogOut, ShieldCheck, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { deleteMyContributions, myContributionCount } from "@/integrations/calibration-api";
 import { toast } from "sonner";
 
 import {
@@ -49,6 +51,43 @@ const downloadJson = (data: unknown, filename: string) => {
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+
+/** Numbers shared to help check the analysis (never photos): how many, and a way to erase them. */
+function SharedNumbers() {
+  const [count, setCount] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    void myContributionCount().then((result) => setCount(result.ok ? result.data : null));
+  }, []);
+  if (count === null || count === 0) return null;
+  return (
+    <SectionCard title="Shared for testing">
+      <p className="text-sm text-muted-foreground">
+        You have shared the scores and ratings from {count} {count === 1 ? "scan" : "scans"} to help
+        check the analysis. No photos were shared. Deleting them here removes them from our database
+        for good.
+      </p>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          void deleteMyContributions().then((result) => {
+            setBusy(false);
+            if (result.ok) {
+              setCount(0);
+              toast.success("What you shared has been deleted.");
+            } else toast.error(result.reason);
+          });
+        }}
+        className={`${BUTTON_GHOST} mt-4 border-destructive text-destructive`}
+      >
+        <Trash2 className="h-5 w-5" aria-hidden="true" />
+        {busy ? "Deleting…" : "Delete What I Shared"}
+      </button>
+    </SectionCard>
+  );
+}
 
 function PrivacyPage() {
   const { scans, clients, looks, shelfCount, storageStatus, exportData, deleteAllData } =
@@ -195,6 +234,8 @@ function PrivacyPage() {
           {busy === "export" ? "Preparing…" : "Download My Data"}
         </PrimaryButton>
       </SectionCard>
+
+      {access.kind === "member" && <SharedNumbers />}
 
       <SectionCard title="Delete everything">
         <p className="text-sm text-muted-foreground">

@@ -5,6 +5,7 @@ import {
   Check,
   CheckCheck,
   Clock,
+  FlaskConical,
   Heart,
   Mail,
   MessageSquareText,
@@ -18,7 +19,10 @@ import { toast } from "sonner";
 
 import { Badge, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
 import { useAuth } from "@/context/auth";
+import { CalibrationPanel } from "@/components/calibration/calibration-panel";
 import type { AdminData } from "@/integrations/beta-api";
+import { loadContributions } from "@/integrations/calibration-api";
+import type { CalibrationRow } from "@/lib/calibration";
 import type { AuditEntry } from "@/lib/beta";
 import {
   declineRequest,
@@ -58,7 +62,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Tab = "feedback" | "requests" | "testers" | "grant" | "audit";
+type Tab = "feedback" | "requests" | "testers" | "grant" | "calibration" | "audit";
 
 const SENTIMENT: Record<
   Sentiment,
@@ -186,15 +190,21 @@ function AdminPage() {
   const [grantEmail, setGrantEmail] = useState("");
   const [grantDays, setGrantDays] = useState<AccessDuration>(30);
   const [audit, setAudit] = useState<AuditEntry[] | null>(null);
+  const [samples, setSamples] = useState<CalibrationRow[]>([]);
   const now = new Date();
 
   const reload = useCallback(async () => {
-    const [result, auditResult] = await Promise.all([loadAdminData(), loadAuditLog()]);
+    const [result, auditResult, sampleResult] = await Promise.all([
+      loadAdminData(),
+      loadAuditLog(),
+      loadContributions(),
+    ]);
     if (result.ok) {
       setData(result.data);
       setError(null);
     } else setError(result.reason);
     setAudit(auditResult.ok ? auditResult.data : []);
+    setSamples(sampleResult.ok ? sampleResult.data : []);
   }, []);
 
   useEffect(() => {
@@ -271,6 +281,7 @@ function AdminPage() {
     { id: "requests", label: "Requests", icon: Clock, count: pending.length },
     { id: "testers", label: "Testers", icon: Users },
     { id: "grant", label: "Grant access", icon: UserPlus },
+    { id: "calibration", label: "Calibration", icon: FlaskConical, count: samples.length },
     { id: "audit", label: "Audit log", icon: ScrollText },
   ];
 
@@ -546,6 +557,8 @@ function AdminPage() {
             )}
           </SectionCard>
         )}
+
+        {tab === "calibration" && <CalibrationPanel rows={samples} />}
 
         {tab === "grant" && (
           <SectionCard title="Grant access by email">

@@ -12,6 +12,7 @@ import {
   SectionCard,
 } from "@/components/ui/bits";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
+import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
 import { loadImageData, makeThumbnail } from "@/lib/cv/image";
@@ -129,6 +130,9 @@ function ScanPage() {
   const { scans, addScan, tier, usage, rewards } = useAppState();
   const [category, setCategory] = useState<ScanCategory>("skin");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
+  // site's content security policy (connect-src) blocks in production.
+  const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   const [step, setStep] = useState<number | null>(null);
   const [result, setResult] = useState<ScanRecord | null>(null);
   const [makeupOpen, setMakeupOpen] = useState(false);
@@ -158,12 +162,12 @@ function ScanPage() {
     let failure: string | null = null;
     let photo: Blob | undefined;
     try {
-      const pixels = await loadImageData(imageUrl);
+      const pixels = await loadImageData(photoFile ?? imageUrl);
       setStep(1);
       // Validate before the report enters app state, as with any other payload.
       report = parseBiomarkerReport(analyzeBiomarkers(category, pixels));
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
-      if (previewUrl) photo = await makeThumbnail(previewUrl).catch(() => undefined);
+      if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
     } catch {
       failure = "We couldn't read that photo — try a JPEG or PNG";
     }
@@ -210,6 +214,7 @@ function ScanPage() {
               setCategory(tab.id);
               setResult(null);
               setPreviewUrl(null);
+              setPhotoFile(null);
             }}
             className={`min-h-[50px] rounded-2xl border text-base font-semibold transition-colors ${
               category === tab.id
@@ -228,6 +233,7 @@ function ScanPage() {
         onFile={(file) => {
           if (previewUrl) URL.revokeObjectURL(previewUrl);
           setPreviewUrl(URL.createObjectURL(file));
+          setPhotoFile(file);
           setResult(null);
         }}
       />
@@ -356,6 +362,8 @@ function ScanPage() {
           )}
         </SectionCard>
       )}
+
+      {shown && !shown.demo && shown.report && <CalibrationCard report={shown.report} />}
     </div>
   );
 }

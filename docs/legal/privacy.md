@@ -36,18 +36,19 @@ Contact your artist first; we will help them respond.
 
 ## 2. What we collect, and what stays on your device
 
-| Information                                                                     | Where it lives                                                                                          | Why                                        |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Photos you scan                                                                 | **Your device only**, unless you turn on encrypted photo backup                                         | To compute your indicators                 |
-| Indicators and scores, shelf, routines, notes                                   | Your device. If you turn on sync: our servers, encrypted with a key we do not hold [CONFIRM once built] | To show your results and history           |
-| Email address                                                                   | Our servers                                                                                             | To sign you in and send service messages   |
-| Plan, billing status, invoices                                                  | Our servers and our payment provider                                                                    | To provide and bill your plan              |
-| Card or bank details                                                            | **The payment provider only.** We never see full card numbers                                           | To take payment                            |
-| Invite and partner codes used, and resulting rewards                            | Our servers                                                                                             | To run the referral and partner programmes |
-| Partner banking and tax details                                                 | Our servers                                                                                             | To pay commission and meet tax law         |
-| Routine Coach questions, with your scores and product names                     | Sent to our AI provider only when you ask the Coach a question                                          | To answer you                              |
-| Basic technical data: device type, app version, error reports, IP address       | Our servers, short retention                                                                            | Security and fixing faults                 |
-| Client details kept by an artist (name, contact, skin notes, scores, lookbooks) | The artist's account                                                                                    | For the artist's work with that client     |
+| Information                                                                                                                                                                        | Where it lives                                                                                          | Why                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Photos you scan                                                                                                                                                                    | **Your device only**, unless you turn on encrypted photo backup                                         | To compute your indicators                                        |
+| Indicators and scores, shelf, routines, notes                                                                                                                                      | Your device. If you turn on sync: our servers, encrypted with a key we do not hold [CONFIRM once built] | To show your results and history                                  |
+| Email address                                                                                                                                                                      | Our servers                                                                                             | To sign you in and send service messages                          |
+| Plan, billing status, invoices                                                                                                                                                     | Our servers and our payment provider                                                                    | To provide and bill your plan                                     |
+| Card or bank details                                                                                                                                                               | **The payment provider only.** We never see full card numbers                                           | To take payment                                                   |
+| Invite and partner codes used, and resulting rewards                                                                                                                               | Our servers                                                                                             | To run the referral and partner programmes                        |
+| Partner banking and tax details                                                                                                                                                    | Our servers                                                                                             | To pay commission and meet tax law                                |
+| Routine Coach questions, with your scores and product names                                                                                                                        | Sent to our AI provider only when you ask the Coach a question                                          | To answer you                                                     |
+| Numbers you choose to share to test the analysis: scores, your 1 to 5 ratings, the light you chose, photo sharpness, and optionally your self-assessed skin type (never the photo) | Our servers                                                                                             | To check that the analysis is accurate and fair across skin tones |
+| Basic technical data: device type, app version, error reports, IP address                                                                                                          | Our servers, short retention                                                                            | Security and fixing faults                                        |
+| Client details kept by an artist (name, contact, skin notes, scores, lookbooks)                                                                                                    | The artist's account                                                                                    | For the artist's work with that client                            |
 
 We do **not** collect: precise location, contacts, advertising identifiers, or face
 templates that identify you. We do not use face recognition.
@@ -72,6 +73,7 @@ Data Act). We handle it as sensitive everywhere:
 | --------------------------------------------------------------------------- | ------------------------------------------------- |
 | Provide the app, your account and your plan                                 | Performance of our contract with you              |
 | Sync, photo backup, Routine Coach, anything involving sensitive information | Your explicit consent                             |
+| Sharing scores and ratings to test the analysis                             | Your explicit consent, given each time you share  |
 | Take payment, keep invoices, pay partners                                   | Contract; legal obligation (tax and accounting)   |
 | Keep the service secure, prevent fraud and abuse                            | Legitimate interests                              |
 | Service emails (receipts, renewal reminders, changes to terms)              | Contract; legal obligation                        |
@@ -117,13 +119,14 @@ steps under Australian Privacy Principle 8.
 
 ## 7. How long we keep information
 
-| Information             | Kept for                                                         |
-| ----------------------- | ---------------------------------------------------------------- |
-| Data on your device     | Until you delete it or remove the app                            |
-| Account and synced data | Until you delete your account, then removed within 30 days       |
-| Billing and tax records | 5 years, as South African tax and company law requires [CONFIRM] |
-| Error and security logs | Up to 90 days                                                    |
-| Artist client records   | Until the artist deletes the client or closes their account      |
+| Information                             | Kept for                                                           |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| Data on your device                     | Until you delete it or remove the app                              |
+| Account and synced data                 | Until you delete your account, then removed within 30 days         |
+| Billing and tax records                 | 5 years, as South African tax and company law requires [CONFIRM]   |
+| Error and security logs                 | Up to 90 days                                                      |
+| Numbers you shared to test the analysis | Until you delete them on the Your Data page or delete your account |
+| Artist client records                   | Until the artist deletes the client or closes their account        |
 
 ## 8. How we protect it
 
