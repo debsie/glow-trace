@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -19,6 +19,7 @@ import { HairLengthCard } from "@/components/scan/hair-length-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
+import { usePhotoIntake } from "@/hooks/use-photo-intake";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
 import {
@@ -181,6 +182,20 @@ function ScanPage() {
   // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
   // site's content security policy (connect-src) blocks in production.
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
+  const [intakeProblem, setIntakeProblem] = useState<string | null>(null);
+  const takePhoto = useCallback(
+    (file: File) => {
+      setPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return URL.createObjectURL(file);
+      });
+      setPhotoFile(file);
+      setResult(null);
+      setIntakeProblem(null);
+    },
+
+    [],
+  );
   // Optional face guide: reads face skin only. Off until the person turns it on (18 MB, once).
   const [faceGuide, setFaceGuideState] = useState(false);
   const [faceResult, setFaceResult] = useState<"used" | "none" | null>(null);
@@ -191,6 +206,7 @@ function ScanPage() {
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
   // Guided scans are the main path; uploading a photo stays available.
   const [guided, setGuided] = useState(false);
+  const dragging = usePhotoIntake(takePhoto, setIntakeProblem, !guided);
   const [showUpload, setShowUpload] = useState(false);
   const [nailReadings, setNailReadings] = useState<SessionResult["nails"]>([]);
   const [sessionNotes, setSessionNotes] = useState<string[]>([]);
@@ -402,16 +418,28 @@ function ScanPage() {
 
       {showUpload && !guided && (
         <>
-          <UploadZone
-            category={category}
-            previewUrl={previewUrl}
-            onFile={(file) => {
-              if (previewUrl) URL.revokeObjectURL(previewUrl);
-              setPreviewUrl(URL.createObjectURL(file));
-              setPhotoFile(file);
-              setResult(null);
-            }}
-          />
+          <UploadZone category={category} previewUrl={previewUrl} onFile={takePhoto} />
+          {intakeProblem && (
+            <p className="mt-3 text-sm text-foreground" role="status">
+              {intakeProblem}
+            </p>
+          )}
+          <p className="mt-3 hidden text-xs text-muted-foreground sm:block">
+            Tip: drop a photo anywhere on this page, or copy one and press Ctrl+V (Cmd+V on a Mac).
+          </p>
+          {dragging && (
+            <div
+              className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-background/90 p-6"
+              aria-hidden="true"
+            >
+              <div className="rounded-xl border-2 border-dashed border-primary px-10 py-12 text-center">
+                <p className="font-display text-2xl font-semibold">Drop your {category} photo</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Read on this device. Never uploaded.
+                </p>
+              </div>
+            </div>
+          )}
 
           {category === "skin" && (
             <label className="surface flex min-h-[50px] items-start gap-3 p-4 text-sm">
