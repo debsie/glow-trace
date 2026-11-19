@@ -8,7 +8,10 @@ import { analyseShot } from "@/lib/cv/analyse-session";
 import type { NailReading, ShotAnalysis } from "@/lib/cv/analyse-session";
 import { GUIDE_DOWNLOAD_MB } from "@/lib/cv/guides";
 import type { BiomarkerReport } from "@/lib/cv/types";
-import { combineShots, SESSIONS } from "@/lib/scan-session";
+import type { Detections } from "@/lib/cv/detections";
+import type { LengthBand } from "@/lib/hair-length";
+import { combineShots, SESSIONS, shotsForHair } from "@/lib/scan-session";
+import type { HairToday } from "@/lib/scan-session";
 import type { ScanCategory } from "@/lib/types";
 
 const SEEN_KEY = (area: ScanCategory) => `glowtrace.guided.${area}`;
@@ -36,9 +39,20 @@ export type SessionResult = {
   photo: Blob | undefined;
   nails: NailReading[];
   notes: string[];
+  /** Each photo with what the guides found, for the result overlay (in memory only). */
+  views: { title: string; photo: Blob; detections: Detections }[];
+  /** Hair only: where the hair ends and whether it was stretched or natural. */
+  hairLength?: { position: number; band: LengthBand; state: "stretched" | "natural" };
 };
 
+const HAIR_TODAY: { id: HairToday; label: string; hint: string }[] = [
+  { id: "stretched", label: "Out, stretched", hint: "Blow-dried, straightened or stretched" },
+  { id: "natural", label: "Out, natural", hint: "Wash-and-go, curls or coils as they dry" },
+  { id: "protective", label: "In a protective style", hint: "Braids, a wig, weave or locs" },
+];
+
 type Stage =
+  | { kind: "today" }
   | { kind: "intro" }
   | { kind: "guide"; index: number }
   | { kind: "camera"; index: number }
@@ -54,17 +68,22 @@ export const GuidedSession = ({
   onDone: (result: SessionResult) => void;
   onCancel: () => void;
 }) => {
-  const shots = SESSIONS[category];
-  const [stage, setStage] = useState<Stage>({ kind: "intro" });
+  const [hairToday, setHairToday] = useState<HairToday>("stretched");
+  const shots = category === "hair" ? shotsForHair(hairToday) : SESSIONS[category];
+  const [stage, setStage] = useState<Stage>({ kind: category === "hair" ? "today" : "intro" });
   const [photos, setPhotos] = useState<Blob[]>([]);
 
-  useEffect(() => {
+  const seen = () => {
     try {
-      if (window.localStorage.getItem(SEEN_KEY(category)) === "yes")
-        setStage({ kind: "guide", index: 0 });
+      return window.localStorage.getItem(SEEN_KEY(category)) === "yes";
     } catch {
-      // Show the introduction.
+      return false;
     }
+  };
+
+  useEffect(() => {
+    if (category !== "hair" && seen()) setStage({ kind: "guide", index: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   const finish = async (all: Blob[]) => {
@@ -84,13 +103,77 @@ export const GuidedSession = ({
         });
       }
     }
+    const length = analyses.find((analysis) => analysis.length)?.length;
+    const notes = analyses.flatMap((analysis) => (analysis.note ? [analysis.note] : []));
+    if (category === "hair" && hairToday === "protective") {
+      notes.unshift(
+        "Your hair is resting in a protective style, so only your scalp was read. Lengths, ends and length pick up again when it's out.",
+      );
+    }
+    const views = analyses.flatMap((analysis, index) => {
+      const photo = all[index];
+      const shot = shots.find((item) => item.id === analysis.shotId);
+      return analysis.detections && photo && shot
+        ? [{ title: shot.title, photo, detections: analysis.detections }]
+        : [];
+    });
     onDone({
+      views,
       report: combineShots(category, shots, analyses),
       photo: all[0],
       nails: analyses.flatMap((analysis) => analysis.nails),
-      notes: analyses.flatMap((analysis) => (analysis.note ? [analysis.note] : [])),
+      notes,
+      ...(length && hairToday !== "protective"
+        ? { hairLength: { ...length, state: hairToday } }
+        : {}),
     });
   };
+
+  if (stage.kind === "today") {
+    return (
+      <SectionCard>
+        <div className="space-y-5">
+          <div>
+            <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+              Before we start
+            </p>
+            <h2 className="mt-2 font-display text-3xl font-semibold">How's your hair today?</h2>
+            <p className="mt-2 max-w-xl text-muted-foreground">
+              Curls and coils shrink, and styles cover the lengths. Telling us keeps every
+              comparison fair: stretched against stretched, natural against natural.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Hair today">
+            {HAIR_TODAY.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={hairToday === option.id}
+                onClick={() => setHairToday(option.id)}
+                className={`min-h-[50px] rounded-2xl border px-4 py-3 text-left ${
+                  hairToday === option.id
+                    ? "border-primary bg-secondary"
+                    : "border-border hover:bg-secondary"
+                }`}
+              >
+                <span className="block font-semibold">{option.label}</span>
+                <span className="block text-sm text-muted-foreground">{option.hint}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton
+              onClick={() => setStage(seen() ? { kind: "guide", index: 0 } : { kind: "intro" })}
+            >
+              Continue <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            </PrimaryButton>
+            <GhostButton onClick={onCancel}>Not now</GhostButton>
+          </div>
+        </div>
+      </SectionCard>
+    );
+  }
 
   if (stage.kind === "intro") {
     const intro = INTRO[category];
@@ -173,7 +256,13 @@ export const GuidedSession = ({
             <PrimaryButton onClick={() => setStage({ kind: "camera", index: stage.index })}>
               Open camera <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </PrimaryButton>
-            <GhostButton onClick={onCancel}>Cancel</GhostButton>
+            {shot.id === "length" ? (
+              <GhostButton onClick={() => void finish(photos.slice(0, stage.index))}>
+                Skip length today
+              </GhostButton>
+            ) : (
+              <GhostButton onClick={onCancel}>Cancel</GhostButton>
+            )}
           </div>
         </div>
       </SectionCard>

@@ -32,9 +32,10 @@ import {
 import type { Gate, Usage } from "@/lib/plans";
 import { clientGate, currentUsage, scanGate, shelfGate } from "@/lib/plans";
 import type { RedeemResult, ReferralRewards, ReferralStats } from "@/lib/referrals";
-import { makeReferralCode, redeemCode, referralRewards } from "@/lib/referrals";
+import { makeReferralCode, redeemCode, referralRewards, streakBonusScans } from "@/lib/referrals";
 import type { AccountState } from "@/lib/storage";
 import { useAuth } from "@/context/auth";
+import { weeklyStreak } from "@/lib/engagement";
 import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
 import type { SamplePhotos } from "@/lib/vault";
 import { buildExport, fromVault, parseVault, toVault } from "@/lib/vault";
@@ -204,7 +205,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   );
   // Real invite counts arrive with accounts; until then nobody has joined through this device.
   const referralStats = useMemo<ReferralStats>(() => ({ joinedThisMonth: 0, subscribed: 0 }), []);
-  const rewards = useMemo(() => referralRewards(referralStats), [referralStats]);
+  // Referral bonus plus the weekly-streak bonus (referrals.ts holds both rules).
+  const rewards = useMemo(() => {
+    const base = referralRewards(referralStats);
+    return {
+      ...base,
+      bonusScans: base.bonusScans + streakBonusScans(weeklyStreak(scans, new Date())),
+    };
+  }, [referralStats, scans]);
 
   const setTier = useCallback((next: SubscriptionTier) => {
     setAccount((current) => ({ ...current, tier: next }));

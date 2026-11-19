@@ -1,5 +1,15 @@
-import { faceFeatureMask, faceSkinMask } from "./face-mask";
+import {
+  faceAreaMasks,
+  faceAreaPolygons,
+  faceFeatureMask,
+  faceOutline,
+  faceSkinMask,
+} from "./face-mask";
+import type { DetectionShape } from "./detections";
+import type { FaceAreas } from "./face-mask";
 import type { FaceRegions } from "./face-mask";
+import { hairEndRow, lengthPosition } from "../hair-length";
+import type { BodyMarks } from "../hair-length";
 import { nailBoxes } from "./nail-tiles";
 import type { Point, TileBox } from "./nail-tiles";
 import type { SubjectMeasure } from "./subject-check";
@@ -18,7 +28,8 @@ const RUNTIME_MB = 15;
 export const GUIDE_DOWNLOAD_MB = {
   skin: RUNTIME_MB + 4,
   nails: RUNTIME_MB + 8,
-  hair: RUNTIME_MB + 1,
+  // Hair segmenter plus the pose model for the length photo.
+  hair: RUNTIME_MB + 7,
 };
 
 type Vision = typeof import("@mediapipe/tasks-vision");
@@ -89,6 +100,59 @@ const hairModel = once(async () => {
   });
 });
 
+const poseModel = once(async () => {
+  const { lib, files } = await loadVision();
+  return lib.PoseLandmarker.createFromOptions(files, {
+    baseOptions: { modelAssetPath: "/mediapipe/pose_landmarker_lite.task", delegate: "CPU" },
+    runningMode: "IMAGE",
+    numPoses: 1,
+  });
+});
+
+/**
+ * Hair length from a front photo, hair forward: body marks from the pose model (ears, mouth, shoulders,
+ * hips) and where the hair ends down the middle of the back. Null when either is missing.
+ */
+export const measureHairLength = async (
+  detectOn: ImageData,
+): Promise<{ position: number; marks: BodyMarks; end: number } | null> => {
+  try {
+    const pose = (await poseModel()).detect(detectOn).landmarks[0];
+    if (!pose) return null;
+    const y = (...indices: number[]) => {
+      const points = indices.flatMap((i) => (pose[i] ? [pose[i]] : []));
+      return points.length ? points.reduce((sum, p) => sum + p.y, 0) / points.length : NaN;
+    };
+    const x = (...indices: number[]) => {
+      const points = indices.flatMap((i) => (pose[i] ? [pose[i]] : []));
+      return points.length ? points.reduce((sum, p) => sum + p.x, 0) / points.length : NaN;
+    };
+    // Pose points: 7 and 8 ears, 9 and 10 mouth corners, 11 and 12 shoulders, 23 and 24 hips.
+    const ear = y(7, 8);
+    const mouth = y(9, 10);
+    const shoulders = y(11, 12);
+    const marks: BodyMarks = {
+      ear,
+      chin: mouth + (shoulders - mouth) * 0.35,
+      shoulders,
+      hips: y(23, 24),
+    };
+    const segment = (await hairModel()).segment(detectOn).categoryMask;
+    if (!segment) return null;
+    const mask = segment.getAsUint8Array().map((value) => (value > 0 ? 1 : 0));
+    // Hair brought forward falls over either shoulder: search the whole shoulder width, with a
+    // lower share because each side is only part of that width.
+    const span = Math.abs((pose[11]?.x ?? 0) - (pose[12]?.x ?? 0));
+    const end = hairEndRow(mask, segment.width, segment.height, x(11, 12), 0.08, span * 0.75);
+    segment.close();
+    if (end === null) return null;
+    const position = lengthPosition(end, marks);
+    return position === null ? null : { position, marks, end };
+  } catch {
+    return null;
+  }
+};
+
 /** Face skin mask at width x height, from a larger copy of the photo. Null if no usable face. */
 export const findFaceMask = async (
   detectOn: ImageData,
@@ -109,6 +173,10 @@ export type FoundFace = {
   skinAt: (width: number, height: number) => Uint8Array | null;
   /** Eyes, brows and lips at the given size. */
   featuresAt: (width: number, height: number) => Uint8Array;
+  /** Nose, under-eyes and cheek reference patches at the given size. */
+  areasAt: (width: number, height: number) => FaceAreas | null;
+  /** Outlines for the result overlay (0-1 of the photo). */
+  shapes: (width: number, height: number) => DetectionShape[];
 };
 
 /** One detection, masks at any size: the analysis size and the larger filter-check size. */
@@ -120,6 +188,20 @@ export const findFace = async (detectOn: ImageData): Promise<FoundFace | null> =
     return {
       skinAt: (width, height) => faceSkinMask(face, regions, width, height),
       featuresAt: (width, height) => faceFeatureMask(face, regions, width, height),
+      areasAt: (width, height) => faceAreaMasks(face, width, height),
+      shapes: (width, height) => {
+        const areas = faceAreaPolygons(face, width, height);
+        return [
+          { kind: "outline", points: faceOutline(face, regions), role: "area" },
+          ...(areas
+            ? ([
+                { kind: "outline", points: areas.nose, role: "detail", label: "Nose" },
+                { kind: "outline", points: areas.underEyeRight, role: "detail" },
+                { kind: "outline", points: areas.underEyeLeft, role: "detail", label: "Under-eye" },
+              ] as const)
+            : []),
+        ];
+      },
     };
   } catch {
     return null;

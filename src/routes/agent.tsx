@@ -19,7 +19,9 @@ import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { Badge, BUTTON_PRIMARY, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import type { Finding, Intent, Severity, Suggestion, Trend } from "@/lib/agent/agent";
+import { cloudConfigured } from "@/integrations/supabase/client";
 import { answer, briefing, intentFor, QUICK_QUESTIONS } from "@/lib/agent/agent";
+import { askCoach } from "@/lib/coach-client";
 import type { BlockedGate } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
 import type { ScanCategory } from "@/lib/types";
@@ -168,7 +170,10 @@ const ProductCard = ({
 };
 
 function AgentPage() {
-  const { scans, catalog, inventory, toggleShelfProduct } = useAppState();
+  const { scans, catalog, inventory, toggleShelfProduct, tier } = useAppState();
+  // Pro and Studio: typed questions go to the written coach (server checks the plan too).
+  const coach = tier !== "free" && cloudConfigured;
+  const [thinking, setThinking] = useState(false);
   const brief = useMemo(() => briefing(scans, catalog, inventory), [scans, catalog, inventory]);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
@@ -191,6 +196,42 @@ function AgentPage() {
       ...current,
       { id, from: "you", paragraphs: [question], productIds: [] },
       { id: id + 1, from: "agent", ...reply },
+    ]);
+  };
+
+  const askWritten = async (question: string) => {
+    const id = nextId.current;
+    nextId.current += 2;
+    setTurns((current) => [
+      ...current,
+      { id, from: "you", paragraphs: [question], productIds: [] },
+    ]);
+    setThinking(true);
+    const reply = await askCoach({
+      question,
+      findings: brief.findings,
+      shelf: inventory.filter((item) => item.in_stock).map((item) => productName(item.product_id)),
+      routine: [],
+    });
+    setThinking(false);
+    setTurns((current) => [
+      ...current,
+      {
+        id: id + 1,
+        from: "agent",
+        paragraphs:
+          "answer" in reply
+            ? [
+                ...reply.answer.split(/\n{2,}/).filter(Boolean),
+                ...(reply.remaining <= 3
+                  ? [
+                      `${reply.remaining} written ${reply.remaining === 1 ? "question" : "questions"} left today.`,
+                    ]
+                  : []),
+              ]
+            : [reply.error],
+        productIds: [],
+      },
     ]);
   };
 
@@ -277,6 +318,9 @@ function AgentPage() {
                   )}
                 </div>
               ))}
+              {thinking && (
+                <p className="text-sm text-muted-foreground">Glowtrace is writing your answer.</p>
+              )}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {QUICK_QUESTIONS.map((question) => (
@@ -295,8 +339,9 @@ function AgentPage() {
               onSubmit={(event) => {
                 event.preventDefault();
                 const text = draft.trim();
-                if (!text) return;
-                ask(text, intentFor(text));
+                if (!text || thinking) return;
+                if (coach) void askWritten(text);
+                else ask(text, intentFor(text));
                 setDraft("");
               }}
             >
@@ -305,7 +350,8 @@ function AgentPage() {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="e.g. Can I use my BHA with retinal?"
                 aria-label="Ask your agent"
-                maxLength={200}
+                maxLength={coach ? 500 : 200}
+                disabled={thinking}
                 className="min-h-[50px] min-w-0 flex-1 rounded-2xl border border-input bg-background px-4 text-base text-foreground placeholder:text-muted-foreground"
               />
               <button
@@ -317,8 +363,9 @@ function AgentPage() {
               </button>
             </form>
             <p className="mt-3 text-xs text-muted-foreground">
-              Answers come from fixed care rules applied to your own results. Nothing you type
-              leaves this device.
+              {coach
+                ? "Typed questions are answered by Glowtrace's written coach: it sees your scores, trends and shelf, never your photos. The quick questions above stay on this device."
+                : "Answers come from fixed care rules applied to your own results. Nothing you type leaves this device. Pro and Studio add a written coach for questions in your own words."}
             </p>
           </SectionCard>
         </div>

@@ -23,6 +23,19 @@ export const REFERRAL_PROGRAM = {
   maxFreeMonths: 12,
 } as const;
 
+/* ---------- Streak rewards: for every user ---------- */
+
+export const STREAK_PROGRAM = {
+  /** A week counts when at least one real scan was taken in it (Monday to Sunday, local time). */
+  rewardAtWeeks: 4,
+  /** Bonus check-ins in the month the streak reaches `rewardAtWeeks` or more. */
+  bonusScans: 2,
+} as const;
+
+/** Bonus check-ins earned this month from a weekly streak. */
+export const streakBonusScans = (weeklyStreak: number): number =>
+  weeklyStreak >= STREAK_PROGRAM.rewardAtWeeks ? STREAK_PROGRAM.bonusScans : 0;
+
 export type ReferralStats = {
   /** Friends who signed up with your code this month. */
   joinedThisMonth: number;

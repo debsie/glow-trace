@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { ArrowRight, Camera, Droplets, ImageIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -15,9 +15,12 @@ import {
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { CheerCard } from "@/components/agent/cheer-card";
+import { DetectionView } from "@/components/scan/detection-view";
+import { HairLengthCard } from "@/components/scan/hair-length-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
+import { usePhotoIntake } from "@/hooks/use-photo-intake";
 import { useAppState } from "@/context/app-state";
 import { gaugesFor, scanScore, scoreVerdict } from "@/lib/beauty";
 import {
@@ -33,6 +36,8 @@ import { hairTextureSignalFast } from "@/lib/cv/hair-model";
 import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
+import type { DetectionShape, Detections } from "@/lib/cv/detections";
+import type { FaceAreas } from "@/lib/cv/face-mask";
 import type { BiomarkerReport } from "@/lib/cv/types";
 import { ZONE_LABEL } from "@/lib/cv/zones";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
@@ -44,6 +49,12 @@ import type { ScanRecord, ScanCategory } from "@/lib/types";
 import scanSkin from "@/assets/scan-skin.jpg";
 import scanHair from "@/assets/scan-hair.jpg";
 import scanNails from "@/assets/scan-nails.jpg";
+
+const SKIN_TYPE_LABEL = {
+  oily: "Oily all over",
+  combination: "Combination (shiny T-zone)",
+  balanced: "Balanced",
+} as const;
 
 export const Route = createFileRoute("/scan")({
   validateSearch: z.object({ area: z.enum(["skin", "hair", "nails"]).optional().catch(undefined) }),
@@ -173,6 +184,30 @@ function ScanPage() {
   // The chosen photo itself. Reading it directly avoids fetch() on a blob: link, which the
   // site's content security policy (connect-src) blocks in production.
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
+  const [intakeProblem, setIntakeProblem] = useState<string | null>(null);
+  const [views, setViews] = useState<{ title: string; url: string; detections: Detections }[]>([]);
+  const showViews = (next: { title: string; photo: Blob; detections: Detections }[]) =>
+    setViews((current) => {
+      current.forEach((view) => URL.revokeObjectURL(view.url));
+      return next.map((view) => ({
+        title: view.title,
+        url: URL.createObjectURL(view.photo),
+        detections: view.detections,
+      }));
+    });
+  const takePhoto = useCallback(
+    (file: File) => {
+      setPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return URL.createObjectURL(file);
+      });
+      setPhotoFile(file);
+      setResult(null);
+      setIntakeProblem(null);
+    },
+
+    [],
+  );
   // Optional face guide: reads face skin only. Off until the person turns it on (18 MB, once).
   const [faceGuide, setFaceGuideState] = useState(false);
   const [faceResult, setFaceResult] = useState<"used" | "none" | null>(null);
@@ -183,6 +218,7 @@ function ScanPage() {
   const [blocked, setBlocked] = useState<BlockedGate | null>(null);
   // Guided scans are the main path; uploading a photo stays available.
   const [guided, setGuided] = useState(false);
+  const dragging = usePhotoIntake(takePhoto, setIntakeProblem, !guided);
   const [showUpload, setShowUpload] = useState(false);
   const [nailReadings, setNailReadings] = useState<SessionResult["nails"]>([]);
   const [sessionNotes, setSessionNotes] = useState<string[]>([]);
@@ -216,10 +252,14 @@ function ScanPage() {
       // Validate before the report enters app state, as with any other payload.
       let skin: Uint8Array | null = null;
       let check: FilterCheck | null = null;
+      let faceAreas: FaceAreas | null = null;
+      let faceShapes: DetectionShape[] | null = null;
       if (category === "skin" && faceGuide && photoFile) {
         const larger = await loadImageData(photoFile, PHOTO_DIM);
         const face = await findFace(larger);
         skin = face?.skinAt(pixels.width, pixels.height) ?? null;
+        faceAreas = face?.areasAt(pixels.width, pixels.height) ?? null;
+        faceShapes = face ? face.shapes(larger.width, larger.height) : null;
         const largeSkin = face?.skinAt(larger.width, larger.height) ?? null;
         if (face && largeSkin)
           check = filterCheck(larger, largeSkin, face.featuresAt(larger.width, larger.height));
@@ -235,13 +275,28 @@ function ScanPage() {
               ? { hairTexture: await hairTextureSignalFast(pixels, null) }
               : category === "nails"
                 ? { nailYellowing: await nailYellowingSignalFast(pixels) }
-                : {},
+                : { faceAreas },
           ),
           check,
         ),
       );
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
+      showViews(
+        photoFile && faceShapes
+          ? [
+              {
+                title: "Face",
+                photo: photoFile,
+                detections: {
+                  caption:
+                    "Only the skin inside the outline was read: no eyes, brows, lips or background.",
+                  shapes: faceShapes,
+                },
+              },
+            ]
+          : [],
+      );
     } catch {
       failure = "We couldn't read that photo — try a JPEG or PNG";
     }
@@ -282,7 +337,12 @@ function ScanPage() {
   const saveSession = async (session: SessionResult) => {
     setGuided(false);
     setFaceResult(null);
-    const report = session.report ? parseBiomarkerReport(session.report) : null;
+    const report = session.report
+      ? parseBiomarkerReport({
+          ...session.report,
+          ...(session.hairLength ? { hairLength: session.hairLength } : {}),
+        })
+      : null;
     const photo = session.photo
       ? await makeThumbnail(session.photo).catch(() => undefined)
       : undefined;
@@ -300,6 +360,7 @@ function ScanPage() {
       return;
     }
     setNailReadings(session.nails);
+    showViews(session.views);
     setSessionNotes(session.notes);
     setResult(scan);
     window.setTimeout(
@@ -387,16 +448,28 @@ function ScanPage() {
 
       {showUpload && !guided && (
         <>
-          <UploadZone
-            category={category}
-            previewUrl={previewUrl}
-            onFile={(file) => {
-              if (previewUrl) URL.revokeObjectURL(previewUrl);
-              setPreviewUrl(URL.createObjectURL(file));
-              setPhotoFile(file);
-              setResult(null);
-            }}
-          />
+          <UploadZone category={category} previewUrl={previewUrl} onFile={takePhoto} />
+          {intakeProblem && (
+            <p className="mt-3 text-sm text-foreground" role="status">
+              {intakeProblem}
+            </p>
+          )}
+          <p className="mt-3 hidden text-xs text-muted-foreground sm:block">
+            Tip: drop a photo anywhere on this page, or copy one and press Ctrl+V (Cmd+V on a Mac).
+          </p>
+          {dragging && (
+            <div
+              className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-background/90 p-6"
+              aria-hidden="true"
+            >
+              <div className="rounded-xl border-2 border-dashed border-primary px-10 py-12 text-center">
+                <p className="font-display text-2xl font-semibold">Drop your {category} photo</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Read on this device. Never uploaded.
+                </p>
+              </div>
+            </div>
+          )}
 
           {category === "skin" && (
             <label className="surface flex min-h-[50px] items-start gap-3 p-4 text-sm">
@@ -527,7 +600,55 @@ function ScanPage() {
                     ))}
               </div>
             </div>
+            {views.length > 0 && !shown.demo && (
+              <section aria-label="What Glowtrace looked at" className="mt-5 space-y-3">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  What Glowtrace looked at
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {views.map((view) => (
+                    <DetectionView
+                      key={view.url}
+                      src={view.url}
+                      detections={view.detections}
+                      alt={`Your ${view.title.toLowerCase()} photo with what was read outlined`}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
             {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
+            {shown.report?.hairLength && !shown.demo && (
+              <HairLengthCard scans={scans} current={shown} className="mt-5" />
+            )}
+            {shown.report?.face && !shown.demo && (
+              <div className="mt-5">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  Up close
+                </p>
+                <ul className="mt-2 divide-y divide-border">
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Redness on the nose</span>
+                    <span className="readout">{shown.report.face.noseRedness.toFixed(1)}</span>
+                  </li>
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Dark circles, against your own cheek</span>
+                    <span className="readout">{shown.report.face.darkCircles.toFixed(1)}</span>
+                  </li>
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Skin type today</span>
+                    <span className="font-semibold">
+                      {SKIN_TYPE_LABEL[shown.report.face.skinType]}
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Dark circles compare the skin under your eyes with your own cheek, so every skin
+                  tone is read the same way. Skin type comes from shine on your nose against your
+                  cheeks, and can change with the weather.
+                </p>
+              </div>
+            )}
             {shown.report?.zones && !shown.demo && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">

@@ -116,3 +116,114 @@ export const faceFeatureMask = (
   }
   return mask;
 };
+
+/**
+ * Small face areas from face-mesh points (MediaPipe's 468-point canonical mesh): the nose, the
+ * skin just under each eye (0.1-0.35 eye widths below the lid) and the cheekbone just below it
+ * (0.55-0.75) as the person's own reference. The lower cheek is not used: it sits in the face's
+ * own shadow, so it measured shape, not colour. Mesh
+ * points used: 168 between the eyes, 2 under the nose, 98 and 327 the sides of the nose, 33 and
+ * 133 the corners of the right eye (as the person sees it), 263 and 362 the left eye, 145 and 374
+ * the middle of each lower lid.
+ */
+export type FaceAreas = {
+  nose: Uint8Array;
+  underEyeRight: Uint8Array;
+  underEyeLeft: Uint8Array;
+  cheekRight: Uint8Array;
+  cheekLeft: Uint8Array;
+};
+
+const lerp = (a: Point, b: Point, t: number): Point => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+});
+
+export type FacePolygons = Record<keyof FaceAreas, Point[]>;
+
+/** The same areas as outlines, 0-1 of the photo (for the result overlay and the masks). */
+export const faceAreaPolygons = (
+  landmarks: readonly Point[],
+  width: number,
+  height: number,
+): FacePolygons | null => {
+  const p = (index: number): Point | null => {
+    const point = landmarks[index];
+    return point ? { x: point.x * width, y: point.y * height } : null;
+  };
+  const [bridge, base, alaR, alaL, outR, inR, outL, inL, lidR, lidL] = [
+    168, 2, 98, 327, 33, 133, 263, 362, 145, 374,
+  ].map(p);
+  if (!bridge || !base || !alaR || !alaL || !outR || !inR || !outL || !inL || !lidR || !lidL) {
+    return null;
+  }
+  // "Down" along the face, so tilted faces still work. Geometry in pixels, so distances are true
+  // on any aspect ratio, then returned as 0-1.
+  const length = Math.hypot(base.x - bridge.x, base.y - bridge.y) || 1;
+  const down = { x: (base.x - bridge.x) / length, y: (base.y - bridge.y) / length };
+  const shift = (point: Point, by: number): Point => ({
+    x: point.x + down.x * by,
+    y: point.y + down.y * by,
+  });
+  const unit = (polygon: Point[]) =>
+    polygon.map((point) => ({ x: point.x / width, y: point.y / height }));
+  // A band below an eye, from `from` to `to` eye-widths below the lower lid's middle.
+  const band = (outer: Point, inner: Point, lid: Point, from: number, to: number) => {
+    const eye = Math.hypot(outer.x - inner.x, outer.y - inner.y);
+    const o = shift(lerp(outer, inner, 0.15), lid.y - (outer.y + inner.y) / 2);
+    const i = shift(lerp(outer, inner, 0.85), lid.y - (outer.y + inner.y) / 2);
+    return unit([
+      shift(o, eye * from),
+      shift(i, eye * from),
+      shift(i, eye * to),
+      shift(o, eye * to),
+    ]);
+  };
+  return {
+    nose: unit([
+      bridge,
+      lerp(bridge, inL, 0.35),
+      alaL,
+      lerp(alaL, base, 0.5),
+      base,
+      lerp(alaR, base, 0.5),
+      alaR,
+      lerp(bridge, inR, 0.35),
+    ]),
+    underEyeRight: band(outR, inR, lidR, 0.1, 0.35),
+    underEyeLeft: band(outL, inL, lidL, 0.1, 0.35),
+    cheekRight: band(outR, inR, lidR, 0.55, 0.75),
+    cheekLeft: band(outL, inL, lidL, 0.55, 0.75),
+  };
+};
+
+export const faceAreaMasks = (
+  landmarks: readonly Point[],
+  width: number,
+  height: number,
+): FaceAreas | null => {
+  const polygons = faceAreaPolygons(landmarks, width, height);
+  if (!polygons) return null;
+  const fill = (polygon: Point[]) => {
+    const mask = new Uint8Array(width * height);
+    fillPolygon(mask, width, height, polygon, 1);
+    return mask;
+  };
+  return {
+    nose: fill(polygons.nose),
+    underEyeRight: fill(polygons.underEyeRight),
+    underEyeLeft: fill(polygons.underEyeLeft),
+    cheekRight: fill(polygons.cheekRight),
+    cheekLeft: fill(polygons.cheekLeft),
+  };
+};
+
+/** The face outline (0-1), slightly inset as for the skin mask. */
+export const faceOutline = (landmarks: readonly Point[], regions: FaceRegions): Point[] =>
+  scalePolygon(
+    loopFromConnections(regions.oval).flatMap((index) => {
+      const point = landmarks[index];
+      return point ? [point] : [];
+    }),
+    0.92,
+  );

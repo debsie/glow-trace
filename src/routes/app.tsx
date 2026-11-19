@@ -17,6 +17,7 @@ import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
 import { CheerCard } from "@/components/agent/cheer-card";
+import { StreakCard } from "@/components/engagement/streak-card";
 import { briefing } from "@/lib/agent/agent";
 import { scanScore } from "@/lib/beauty";
 import { shortDate } from "@/lib/progress";
@@ -120,6 +121,8 @@ function Dashboard() {
       </Link>
 
       {recent[0] && <CheerCard scans={scans} area={recent[0].category} />}
+
+      <StreakCard scans={scans} />
 
       <section aria-label="Quick actions" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {actions.map((action) => (

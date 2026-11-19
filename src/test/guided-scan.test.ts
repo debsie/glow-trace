@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { cropTile, nailBoxes } from "@/lib/cv/nail-tiles";
 import type { BiomarkerReport } from "@/lib/cv/types";
-import { combineShots, SESSIONS } from "@/lib/scan-session";
+import { combineShots, SESSIONS, shotsForHair } from "@/lib/scan-session";
 
 /** A flat hand, fingers up: joints at y 0.5, tips at y 0.4, spaced across. */
 const hand = () => {
@@ -75,10 +75,11 @@ const report = (
 });
 
 describe("Scan sessions", () => {
-  it("plans one shot for skin, two for nails, three for hair", () => {
+  it("plans one shot for skin, two for nails, four for hair", () => {
     expect(SESSIONS.skin.map((shot) => shot.id)).toEqual(["face"]);
     expect(SESSIONS.nails.map((shot) => shot.id)).toEqual(["hand", "thumb"]);
-    expect(SESSIONS.hair.map((shot) => shot.id)).toEqual(["lengths", "crown", "ends"]);
+    expect(SESSIONS.hair.map((shot) => shot.id)).toEqual(["lengths", "crown", "ends", "length"]);
+    expect(shotsForHair("protective").map((shot) => shot.id)).toEqual(["crown"]);
   });
 
   it("averages every nail tile and ignores unusable ones", () => {

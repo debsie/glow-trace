@@ -6,7 +6,8 @@ import type { ScanCategory } from "./types";
  * combine into one result. Pure, so the plan and the maths are tested.
  */
 
-export type Overlay = "face" | "hand-flat" | "thumb" | "hair-lengths" | "hair-crown" | "hair-ends";
+export type Overlay =
+  "face" | "hand-flat" | "thumb" | "hair-lengths" | "hair-crown" | "hair-ends" | "hair-length";
 
 export type Shot = {
   id: string;
@@ -94,10 +95,30 @@ export const SESSIONS: Record<ScanCategory, Shot[]> = {
       camera: "environment",
       reads: ["porosity"],
     },
+    {
+      id: "length",
+      title: "Length",
+      steps: [
+        "Face the camera and bring your hair forward over your shoulders",
+        "Prop your phone up and use the timer, or ask someone to help",
+        "Head to hips in the frame",
+      ],
+      overlay: "hair-length",
+      camera: "environment",
+      // Length is measured separately (hair-length.ts), not as a 0-100 indicator.
+      reads: [],
+    },
   ],
 };
 
 export type ShotResult = { shotId: string; reports: BiomarkerReport[]; label?: string };
+
+/** How the hair is worn today: decides which hair photos are taken and what is compared. */
+export type HairToday = "stretched" | "natural" | "protective";
+
+/** Protective styles hide the lengths and ends, so only the scalp photo is taken. */
+export const shotsForHair = (today: HairToday): Shot[] =>
+  today === "protective" ? SESSIONS.hair.filter((shot) => shot.id === "crown") : SESSIONS.hair;
 
 /**
  * One report from many: each indicator is the mean over the shots trusted for it (and over every

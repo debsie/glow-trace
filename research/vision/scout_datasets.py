@@ -22,11 +22,16 @@ import urllib.request
 
 TOPICS = {
     "skin": ["skin texture", "facial skin", "acne", "skin redness", "hyperpigmentation", "skin tone",
-             "melasma", "dark circles", "wrinkles", "pores", "face skin dataset"],
+             "melasma", "dark circles", "wrinkles", "pores", "face skin dataset", "dark skin",
+             "skin of colour", "post-inflammatory hyperpigmentation", "rosacea", "oily skin",
+             "dry skin", "under eye", "lips", "makeup", "selfie skin", "face parsing"],
     "hair": ["hair texture", "hair damage", "split ends", "frizz", "curly hair", "afro hair",
-             "hair segmentation", "scalp", "dandruff", "hair loss", "hair strands", "hair shine"],
+             "hair segmentation", "scalp", "dandruff", "hair loss", "hair strands", "hair shine",
+             "natural hair", "braids", "box braids", "dreadlocks", "hairline", "traction alopecia",
+             "grey hair", "hair length", "curl pattern", "trichoscopy", "hair type"],
     "nails": ["fingernail", "nail segmentation", "nail polish", "nail disease", "nail health",
-              "onychomycosis", "nail ridges", "hand segmentation"],
+              "onychomycosis", "nail ridges", "hand segmentation", "manicure", "nail art",
+              "acrylic nails", "cuticle", "hand keypoints"],
 }
 
 OK = ["cc0", "cc-zero", "cc-by-4", "cc-by-3", "cc-by-2", "cc by 4", "cc by 3", "cc by 2", "public domain",
@@ -131,6 +136,33 @@ def wikimedia():
                 print("  Wikimedia", category, error)
 
 
+def figshare():
+    for area, terms in TOPICS.items():
+        for term in terms:
+            try:
+                body = json.dumps({"search_for": f'"{term}"', "item_type": 3, "page_size": 20}).encode()
+                request = urllib.request.Request("https://api.figshare.com/v2/articles/search", data=body,
+                                                 headers={"Content-Type": "application/json", "User-Agent": "dataset-scout/1.0"})
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    hits = json.loads(response.read())
+                for hit in hits:
+                    title = hit.get("title", "")
+                    if IRRELEVANT.search(title.lower()):
+                        continue
+                    detail = get(f"https://api.figshare.com/v2/articles/{hit['id']}")
+                    text = (title + " " + detail.get("description", "")).lower()
+                    if not IMAGEY.search(text):
+                        continue
+                    size = sum(f.get("size", 0) for f in detail.get("files", []))
+                    if size < 20e6:
+                        continue
+                    add(area, "Figshare", title[:90], hit.get("url_public_html", ""),
+                        (detail.get("license") or {}).get("name", ""), f"{size / 1e9:.1f} GB", term)
+                time.sleep(0.5)
+            except Exception as error:
+                print("  Figshare", term, error)
+
+
 def kaggle():
     if not (os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY")):
         print("  Kaggle skipped (add KAGGLE_USERNAME and KAGGLE_KEY to Colab Secrets to include it)")
@@ -178,8 +210,8 @@ def roboflow():
 
 
 if __name__ == "__main__":
-    for name, step in [("Hugging Face", huggingface), ("Zenodo", zenodo), ("Wikimedia Commons", wikimedia),
-                       ("Kaggle", kaggle), ("Roboflow", roboflow)]:
+    for name, step in [("Hugging Face", huggingface), ("Zenodo", zenodo), ("Figshare", figshare),
+                       ("Wikimedia Commons", wikimedia), ("Kaggle", kaggle), ("Roboflow", roboflow)]:
         print("Searching", name, flush=True)
         step()
     order = {"ok": 0, "share-alike": 1, "unknown": 2, "no": 3}

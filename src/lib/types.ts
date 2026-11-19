@@ -52,6 +52,26 @@ export type ScanReport = {
   };
   tone?: { ita: number; hueAngle: number } | undefined;
   zones?: { forehead: number; leftCheek: number; rightCheek: number; chin: number } | undefined;
+  face?:
+    | { noseRedness: number; darkCircles: number; skinType: "oily" | "combination" | "balanced" }
+    | undefined;
+  hairLength?:
+    | {
+        band:
+          | "ear"
+          | "chin"
+          | "shoulder"
+          | "collarbone"
+          | "armpit"
+          | "bra-strap"
+          | "mid-back"
+          | "waist"
+          | "hip"
+          | "past-hip";
+        position: number;
+        state: "stretched" | "natural";
+      }
+    | undefined;
   metrics: {
     key: string;
     label: string;
