@@ -3,6 +3,7 @@ import type { ScanCategory } from "../types";
 import { filterCheck, withFilterCheck } from "./filter-check";
 import { findFace, findHairMask, findNails } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
+import { hairTextureSignalFast } from "./hair-model";
 import { analyzeBiomarkers } from "./kernel";
 import { cropTile } from "./nail-tiles";
 import type { Finger } from "./nail-tiles";
@@ -66,7 +67,17 @@ export const analyseShot = async (
   return {
     shotId: shot.id,
     reports: [
-      parseBiomarkerReport(withFilterCheck(analyzeBiomarkers(category, pixels, mask), check)),
+      parseBiomarkerReport(
+        withFilterCheck(
+          analyzeBiomarkers(
+            category,
+            pixels,
+            mask,
+            category === "hair" ? { hairTexture: await hairTextureSignalFast(pixels, mask) } : {},
+          ),
+          check,
+        ),
+      ),
     ],
     nails: [],
     ...(note ? { note } : {}),

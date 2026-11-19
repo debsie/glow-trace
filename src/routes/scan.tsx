@@ -28,6 +28,7 @@ import {
 import { filterCheck, withFilterCheck } from "@/lib/cv/filter-check";
 import type { FilterCheck } from "@/lib/cv/filter-check";
 import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
+import { hairTextureSignalFast } from "@/lib/cv/hair-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
@@ -223,7 +224,15 @@ function ScanPage() {
         setFaceResult(skin ? "used" : "none");
       } else setFaceResult(null);
       report = parseBiomarkerReport(
-        withFilterCheck(analyzeBiomarkers(category, pixels, skin), check),
+        withFilterCheck(
+          analyzeBiomarkers(
+            category,
+            pixels,
+            skin,
+            category === "hair" ? { hairTexture: await hairTextureSignalFast(pixels, null) } : {},
+          ),
+          check,
+        ),
       );
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);

@@ -480,12 +480,17 @@ def main():
                 "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], truth[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
             }
     print(json.dumps(report, indent=2))
-    json.dump(report, open(f"{AREA}_eval.json", "w"), indent=2)
-    model.cpu()
-    torch.onnx.export(model, torch.zeros(1, 4, SIZE, SIZE), f"{AREA}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
-    weights = {name: t.detach().numpy().round(6).tolist() for name, t in model.state_dict().items()}
+    # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
+    # failed export or a runtime reset afterwards cannot lose the training.
+    weights = {name: t.detach().cpu().numpy().round(6).tolist() for name, t in model.state_dict().items()}
     json.dump({"area": AREA, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{AREA}_weights.json", "w"))
-    print(f"Wrote {AREA}_model.onnx, {AREA}_weights.json, {AREA}_eval.json")
+    json.dump(report, open(f"{AREA}_eval.json", "w"), indent=2)
+    print(f"Wrote {AREA}_weights.json and {AREA}_eval.json", flush=True)
+    try:
+        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{AREA}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
+        print(f"Wrote {AREA}_model.onnx")
+    except Exception as error:  # the weights file is enough
+        print(f"ONNX export skipped ({error}); {AREA}_weights.json is all Glowtrace needs")
 
 
 if __name__ == "__main__":

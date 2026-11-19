@@ -18,8 +18,14 @@ const DENSITY_WEIGHT = 2;
 const TEXTURE_ZERO = -0.12;
 const TEXTURE_SPAN = 0.24;
 
-const textureScore = (planes: Planes, image: PixelBuffer | null, mask: Uint8Array | null) => {
-  const signal = image ? hairTextureSignal(image, mask) : null;
+const textureScore = (
+  planes: Planes,
+  image: PixelBuffer | null,
+  mask: Uint8Array | null,
+  precomputed?: number | null,
+) => {
+  const signal =
+    precomputed !== undefined ? precomputed : image ? hairTextureSignal(image, mask) : null;
   if (signal === null) return score((gradientEnergy(planes) / POROSITY_SPAN) * 100);
   return score(((signal - TEXTURE_ZERO) / TEXTURE_SPAN) * 100);
 };
@@ -28,10 +34,11 @@ export const porosity = (
   planes: Planes,
   image: PixelBuffer | null = null,
   mask: Uint8Array | null = null,
+  precomputed?: number | null,
 ): BiomarkerMetric => ({
   key: "porosity",
   label: "Porosity / Texture",
-  value: textureScore(planes, image, mask),
+  value: textureScore(planes, image, mask, precomputed),
   higherMeans: "more",
   description: "How rough and open the strands look.",
 });
@@ -56,4 +63,9 @@ export const analyzeHair = (
   planes: Planes,
   image: PixelBuffer | null = null,
   mask: Uint8Array | null = null,
-): BiomarkerMetric[] => [porosity(planes, image, mask), shine(planes), densityVariance(planes)];
+  precomputed?: number | null,
+): BiomarkerMetric[] => [
+  porosity(planes, image, mask, precomputed),
+  shine(planes),
+  densityVariance(planes),
+];

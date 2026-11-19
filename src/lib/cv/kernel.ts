@@ -49,6 +49,8 @@ export const analyzeBiomarkers = (
   category: ScanCategory,
   image: PixelBuffer,
   areaMask: Uint8Array | null = null,
+  /** Hair texture computed ahead of time by the fast runtime (see hairTextureSignalFast). */
+  precomputed: { hairTexture?: number | null } = {},
 ): BiomarkerReport => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
@@ -72,7 +74,7 @@ export const analyzeBiomarkers = (
     category === "skin"
       ? analyzeSkin(area, image)
       : category === "hair"
-        ? analyzeHair(area, image, areaMask)
+        ? analyzeHair(area, image, areaMask, precomputed.hairTexture)
         : analyzeNails(area);
   const tone = category === "skin" ? skinTone(area) : null;
   const zones = category === "skin" ? faceZones(image, areaMask) : null;

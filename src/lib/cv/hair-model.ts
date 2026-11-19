@@ -199,7 +199,10 @@ export const hairTextureSignal = (
   mask: Uint8Array | null = null,
 ): number | null => {
   const { canvas, valid, area } = toCanvas(image, mask);
-  const maps = forward(toInput(canvas, valid));
+  return textureFromMaps(forward(toInput(canvas, valid)).data, area);
+};
+
+const textureFromMaps = (maps: Float32Array, area: Float32Array): number | null => {
   const head = model().heads.indexOf("texture");
   const plane = model().size * model().size;
   let sum = 0;
@@ -207,10 +210,30 @@ export const hairTextureSignal = (
   for (let p = 0; p < plane; p += 1) {
     const a = area[p] ?? 0;
     if (a <= 0) continue;
-    sum += a * (maps.data[head * plane + p] ?? 0);
+    sum += a * (maps[head * plane + p] ?? 0);
     weight += a;
   }
   return weight < 16 ? null : sum / weight / TARGET_SCALE;
+};
+
+/**
+ * The same reading, run by ONNX Runtime Web on the phone's graphics chip (WebGPU) or fast
+ * WebAssembly, many times faster than the plain forward pass. Falls back to that pass if the
+ * runtime cannot load. Same network, same weights (public/models/hair.onnx).
+ */
+export const hairTextureSignalFast = async (
+  image: PixelBuffer,
+  mask: Uint8Array | null = null,
+): Promise<number | null> => {
+  const { canvas, valid, area } = toCanvas(image, mask);
+  const input = toInput(canvas, valid);
+  try {
+    const { runModel } = await import("./onnx-runtime");
+    const maps = await runModel("/models/hair.onnx", input.data, model().size);
+    return textureFromMaps(maps, area);
+  } catch {
+    return textureFromMaps(forward(input).data, area);
+  }
 };
 
 /** Parity reference from export_web.py, for the test. */
