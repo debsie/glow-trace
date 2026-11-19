@@ -24,3 +24,16 @@ Google SCIN (skin): Google Research, SCIN Data Use License, https://github.com/g
 | hair  | hair_dataset_updated     | Hair segmentation                   | CC BY 4.0 | 132    | https://universe.roboflow.com/manish-kumar-ytl7z/hair_dataset_updated         |
 
 Downloaded but empty (not used): facial-ngz7q, nail-images, face-r74ti, hair-54plg.
+
+## Open Images V7 (from training v3)
+
+Google's Open Images V7, used for photos with outlines of hair, hands and faces. Annotations are
+CC BY 4.0. Images are listed by Google as CC BY 2.0; credit for each photo travels with its metadata.
+https://storage.googleapis.com/openimages/web/index.html
+
+## Open Beauty Facts (product lookup, not training)
+
+The ingredient check looks up scanned barcodes in Open Beauty Facts
+(https://world.openbeautyfacts.org). The database is under the Open Database Licence (ODbL) and
+its contents under the Database Contents Licence. Glowtrace shows the data with credit and does not
+build a derived database from it.

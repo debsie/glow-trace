@@ -6,6 +6,9 @@
 /** Cloudflare Turnstile, the bot check on sign-in. Kept here so this file stays free of Vite-only code. */
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
+/** Open Beauty Facts: product lookup by barcode in the ingredient check (only the number is sent). */
+export const OPEN_BEAUTY_FACTS = "https://world.openbeautyfacts.org";
+
 /** Origins of the Supabase project, for the content security policy (https and websocket). */
 export const supabaseOrigins = (supabaseUrl: string | undefined): string[] => {
   if (!supabaseUrl) return [];
@@ -36,7 +39,7 @@ export const contentSecurityPolicy = (supabaseUrl: string | undefined): string =
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src ${["'self'", ...supabaseOrigins(supabaseUrl)].join(" ")}`,
+    `connect-src ${["'self'", ...supabaseOrigins(supabaseUrl), OPEN_BEAUTY_FACTS].join(" ")}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "media-src 'self' blob:",

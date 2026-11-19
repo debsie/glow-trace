@@ -329,3 +329,7 @@ Also in v2.3:
   thumb. Hair must fill 25% of the frame. The shutter waits for this as it does for light and focus
   ("Take photo anyway" after 5 s). If a guide cannot load, the camera works without it. Checked in
   a browser: each guide accepted its own sample photo and rejected the other two.
+- **Fast runtime** (`onnx-runtime.ts`): ONNX Runtime Web (MIT) runs `public/models/hair.onnx` on
+  WebGPU where available, otherwise WebAssembly, and `hairTextureSignalFast` falls back to the
+  TypeScript forward pass if it cannot load. Measured in Chromium: same reading to six decimals,
+  0.10 s against 1.04 s. Its runtime (about 5 MB compressed) loads only on a hair scan.

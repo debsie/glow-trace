@@ -50,14 +50,17 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Fine detail (nail spots and ridges, hair shine and breakage, scalp flakes) needs more pixels
 # than 128. Pass --size 256 for nails and hair; the app reads the size from the weights file.
 SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 128
-EPOCHS = 2 if QUICK else 80
-STEPS = 4 if QUICK else 50
+EPOCHS = int(os.environ.get("GLOWTRACE_EPOCHS", 2 if QUICK else 80))
+STEPS = int(os.environ.get("GLOWTRACE_STEPS", 4 if QUICK else 50))
+# Each head's loss divided by its own target energy, so sparse effects (spots, flakes, breakage,
+# shine streaks) count as much as effects that cover the whole area. Off only for comparison.
+BALANCE = os.environ.get("GLOWTRACE_BALANCE", "1") == "1"
 WORK = os.environ.get("GLOWTRACE_WORK", "glowtrace_work")
 
 HEADS = {
     "skin": ["redness", "pigment", "shine", "texture", "breakouts", "dark_circles"],
     "nails": ["yellowing", "spots", "ridges", "cuticle"],
-    "hair": ["shine", "texture", "breakage", "flakes"],
+    "hair": ["shine", "texture", "flakes"],
 }[AREA]
 
 HAEMOGLOBIN = torch.tensor([0.04, 1.0, 0.85])
@@ -297,14 +300,10 @@ def add_effects(rgb, mask, gen):
         img = img * (1 + rough[:, None] * fine_noise(n, gen)[:, None])
         spec = amount(0.0, 0.4) * streaks(n, gen, 3, 40, 3) * mask
         img = img + spec[:, None] * light
-        # Breakage: short broken fragments (bright frayed tips and dark gaps) instead of long
-        # strands. Flakes: tiny pale specks, as on the scalp or roots.
-        frag = amount(0.0, 0.5) * streaks(n, gen, 12, 4, 1.0) * mask
-        sign = torch.where(fine_noise(n, gen) > 0, 1.0, -0.6)[:, None]
-        img = img * (1 + 0.6 * frag[:, None] * sign)
+        # Flakes: tiny pale specks, as on the scalp or roots.
         flakes = amount(0.0, 0.7) * blobs(n, gen, 10, 0.6, 1.5) * mask
         img = img * (1 - flakes[:, None]) + 240 * flakes[:, None]
-        maps["shine"], maps["texture"], maps["breakage"], maps["flakes"] = spec, rough, frag, flakes
+        maps["shine"], maps["texture"], maps["flakes"] = spec, rough, flakes
     return img, torch.stack([maps[h] for h in HEADS], 1)
 
 
@@ -431,7 +430,11 @@ def main():
                 idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
             xa, xb, targets, mask = make_batch(images[idx], valid[idx], gen)
             diff = model(xb) - model(xa)
-            loss = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean()
+            per_head = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
+            if BALANCE:
+                energy = (((targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
+                per_head = per_head / energy.detach().clamp(min=1e-3)
+            loss = per_head.mean()
             if fair:
                 sample = train_t[torch.randint(len(train_t), (64,), device=DEVICE, generator=gen)]
                 m = area_mask(images[sample], valid[sample])
@@ -477,12 +480,17 @@ def main():
                 "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], truth[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
             }
     print(json.dumps(report, indent=2))
-    json.dump(report, open(f"{AREA}_eval.json", "w"), indent=2)
-    model.cpu()
-    torch.onnx.export(model, torch.zeros(1, 4, SIZE, SIZE), f"{AREA}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
-    weights = {name: t.detach().numpy().round(6).tolist() for name, t in model.state_dict().items()}
+    # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
+    # failed export or a runtime reset afterwards cannot lose the training.
+    weights = {name: t.detach().cpu().numpy().round(6).tolist() for name, t in model.state_dict().items()}
     json.dump({"area": AREA, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{AREA}_weights.json", "w"))
-    print(f"Wrote {AREA}_model.onnx, {AREA}_weights.json, {AREA}_eval.json")
+    json.dump(report, open(f"{AREA}_eval.json", "w"), indent=2)
+    print(f"Wrote {AREA}_weights.json and {AREA}_eval.json", flush=True)
+    try:
+        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{AREA}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
+        print(f"Wrote {AREA}_model.onnx")
+    except Exception as error:  # the weights file is enough
+        print(f"ONNX export skipped ({error}); {AREA}_weights.json is all Glowtrace needs")
 
 
 if __name__ == "__main__":
