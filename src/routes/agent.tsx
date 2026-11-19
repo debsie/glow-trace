@@ -21,7 +21,8 @@ import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
 import type { Finding, Intent, Severity, Suggestion, Trend } from "@/lib/agent/agent";
 import { cloudConfigured } from "@/integrations/supabase/client";
-import { answer, briefing, intentFor, QUICK_QUESTIONS } from "@/lib/agent/agent";
+import { answer, briefing, QUICK_QUESTIONS } from "@/lib/agent/agent";
+import { route, topicAnswer, topicContext } from "@/lib/agent/retrieve";
 import { askCoach } from "@/lib/coach-client";
 import type { BlockedGate } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
@@ -185,6 +186,39 @@ function AgentPage() {
   const [area, setArea] = useState<ScanCategory | "all">("all");
   const nextId = useRef(0);
 
+  /** Typed questions on the device: the knowledge base, a personal intent, or suggestions. */
+  const localAnswer = (question: string): { paragraphs: string[]; productIds: string[] } => {
+    const result = route(question);
+    if (result.kind === "intent") return answer(result.intent, brief, catalog, inventory);
+    if (result.kind === "topic") {
+      const shelfNames = inventory
+        .filter((item) => item.in_stock)
+        .map((item) => productName(item.product_id));
+      return {
+        paragraphs: topicAnswer(result.topic, topicContext(scans, brief.findings, shelfNames)),
+        productIds: [],
+      };
+    }
+    return {
+      paragraphs: [
+        result.suggestions.length
+          ? `I'm not sure I understood. Did you mean ${result.suggestions.map((topic) => topic.title.toLowerCase()).join(", or ")}? Ask in a few words, for example "dark circles" or "braids and edges".`
+          : 'I can help with your skin, hair and nails: try a few words like "dark marks", "dry hair", "yellow nails", or pick a question below.',
+      ],
+      productIds: [],
+    };
+  };
+
+  const askLocal = (question: string) => {
+    const id = nextId.current;
+    nextId.current += 2;
+    setTurns((current) => [
+      ...current,
+      { id, from: "you", paragraphs: [question], productIds: [] },
+      { id: id + 1, from: "agent", ...localAnswer(question) },
+    ]);
+  };
+
   const ask = (question: string, intent: Intent | null) => {
     const id = nextId.current;
     nextId.current += 2;
@@ -219,17 +253,8 @@ function AgentPage() {
     });
     setThinking(false);
     if ("off" in reply && reply.off) {
-      // No written coach yet (or unreachable): answer from the on-device care rules instead.
-      const intent = intentFor(question);
-      const local = intent
-        ? answer(intent, brief, catalog, inventory)
-        : {
-            paragraphs: [
-              "I can help with what to focus on, which products to use and when, whether your shelf mixes safely, your progress, and habits. Try one of the questions below.",
-            ],
-            productIds: [],
-          };
-      setTurns((current) => [...current, { id: id + 1, from: "agent", ...local }]);
+      // No written coach yet (or unreachable): answer from the on-device knowledge base.
+      setTurns((current) => [...current, { id: id + 1, from: "agent", ...localAnswer(question) }]);
       return;
     }
     setTurns((current) => [
@@ -364,14 +389,14 @@ function AgentPage() {
                 const text = draft.trim();
                 if (!text || thinking) return;
                 if (coach) void askWritten(text);
-                else ask(text, intentFor(text));
+                else askLocal(text);
                 setDraft("");
               }}
             >
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="e.g. Can I use my BHA with retinal?"
+                placeholder="e.g. Why are my nails yellow? or My edges are thinning"
                 aria-label="Ask your agent"
                 maxLength={coach ? 500 : 200}
                 disabled={thinking}
