@@ -12,11 +12,12 @@ const SHINE_WEIGHT = 140;
 // ≈ 10-20, visibly patchy ≈ 40+.
 const DENSITY_WEIGHT = 2;
 
-// Kernel v2.3: the trained texture model's roughness (training units) mapped to 0-100. A sleek
-// reference photo reads ≈ -0.09 (score ≈ 11); the most roughness training added (+0.15) reads
-// ≈ +0.02 (score ≈ 57). Provisional span; trends compare same-kernel scans only.
-const TEXTURE_ZERO = -0.12;
-const TEXTURE_SPAN = 0.24;
+// Kernel v2.6: the trained texture model's roughness (training units) mapped to 0-100. Calibrated
+// on 9 real hair photos of two adults (masked hair reads -0.17 to -0.13, so 17 to 30) and the
+// sample photo (-0.05, about 57); the most roughness training added (+0.15) lifts a photo by about
+// 50. v2.3's zero (-0.12) sat above real hair, so real photos read 0.
+const TEXTURE_ZERO = -0.22;
+const TEXTURE_SPAN = 0.3;
 
 const textureScore = (
   planes: Planes,

@@ -351,3 +351,18 @@ Not shipped from training v3.2 (rule: r ≥ 0.7, leak ≤ 0.3, even across tone 
 - hair: shine 0.58; flakes 0.59 with leak 0.70 (texture 0.93 again; the shipped 128 px model stays)
 - skin: six heads in one network diluted every one, so redness fell to 0.18 and texture to 0.77
   with leak 0.42. The v2 redness ensemble and the v1 formulas stay.
+
+## v2.6 (`mojocv-v2.6.0-ts`): checked on real photos of two adult volunteers
+
+16 photos (selfies, hands, nails, lengths, crowns; consented) run through every guide and indicator:
+
+- Hair texture recalibrated: masked real hair reads -0.17 to -0.13 in training units, below
+  v2.3's zero (-0.12), so every real photo scored 0. Now `TEXTURE_ZERO = -0.22`,
+  `TEXTURE_SPAN = 0.3`: real hair 16-33, the sample photo about 57.
+- Hair length: only when the hips and the hair's end are both inside the photo (selfies cut at the
+  chest had guessed hips and read the frame edge as the end: mid-back, waist and bra strap for one
+  person). Back views still fail (the pose model needs a face).
+- Live check: crown and ends shots no longer wait for the hair finder (it misses close-ups of
+  grey and blonde hair); face centring is looser vertically (selfies hold the face high).
+- Seen, not yet fixed: one hand photo (hand flat, pointing down) found no hand; ITA read -18 on a
+  fair face in shade, so shade matching should ask for daylight.

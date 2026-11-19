@@ -11,7 +11,9 @@ export type SubjectMeasure =
 
 export const FACE_MIN_SHARE = 0.12;
 export const FACE_MAX_SHARE = 0.6;
-const FACE_OFF_CENTRE = 0.18;
+// Selfies hold the face high in a portrait frame, so up and down is looser than side to side.
+const FACE_OFF_CENTRE_X = 0.22;
+const FACE_OFF_CENTRE_Y = 0.3;
 export const HAIR_MIN_SHARE = 0.25;
 
 /**
@@ -24,8 +26,8 @@ export const subjectHint = (shotId: string, measure: SubjectMeasure): string | u
     if (measure.share < FACE_MIN_SHARE) return "Move a little closer";
     if (measure.share > FACE_MAX_SHARE) return "Move back a little so your whole face fits";
     if (
-      Math.abs(measure.centreX - 0.5) > FACE_OFF_CENTRE ||
-      Math.abs(measure.centreY - 0.5) > FACE_OFF_CENTRE
+      Math.abs(measure.centreX - 0.5) > FACE_OFF_CENTRE_X ||
+      Math.abs(measure.centreY - 0.5) > FACE_OFF_CENTRE_Y
     ) {
       return "Centre your face in the outline";
     }
@@ -36,11 +38,10 @@ export const subjectHint = (shotId: string, measure: SubjectMeasure): string | u
     if (shotId === "thumb") return measure.thumb ? undefined : "Turn your thumb nail to the camera";
     return measure.fingertips >= 4 ? undefined : "Spread your fingers so every nail shows";
   }
-  if (measure.share < HAIR_MIN_SHARE) {
-    return shotId === "crown"
-      ? "Tilt your head so the crown fills the frame"
-      : "Fill the frame with your hair";
-  }
+  // The hair finder needs a whole head: it misses crown and ends close-ups (tested on real grey and
+  // blonde hair), so those shots rely on the light and focus check alone.
+  if (shotId === "crown" || shotId === "ends") return undefined;
+  if (measure.share < HAIR_MIN_SHARE) return "Fill the frame with your hair";
   return undefined;
 };
 

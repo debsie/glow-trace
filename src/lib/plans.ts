@@ -1,7 +1,7 @@
 import type { SubscriptionTier } from "./types";
 
 /** Written coach limits live in coach-limits.ts so the edge function can read them too. */
-export { COACH_MODEL, COACH_QUESTIONS_PER_DAY } from "./coach-limits";
+export { COACH_MODEL_BY_TIER, COACH_QUESTIONS_PER_DAY } from "./coach-limits";
 
 /**
  * Launch pricing and plan limits. Every price, cap and gate message lives here so the

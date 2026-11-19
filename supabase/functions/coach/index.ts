@@ -1,4 +1,4 @@
-// Glowtrace written coach: Claude Haiku answers a question about the person's own readings.
+// Glowtrace written coach: Claude Opus answers a question about the person's own readings.
 // Paid plans only, checked here against public.subscriptions (never trusted from the app).
 // Receives numbers and product names only, never photos. Set the ANTHROPIC_API_KEY secret in
 // Supabase (Edge Functions > Secrets); SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are built in.
@@ -6,7 +6,7 @@ import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@4";
 
-import { COACH_MODEL, COACH_QUESTIONS_PER_DAY } from "../../../src/lib/coach-limits.ts";
+import { COACH_MODEL_BY_TIER, COACH_QUESTIONS_PER_DAY } from "../../../src/lib/coach-limits.ts";
 
 // Browser origins allowed to call this (comma-separated ALLOWED_ORIGINS secret, e.g. the site's
 // own domain). Not the security boundary: the signed-in user's token is.
@@ -79,7 +79,8 @@ Deno.serve(async (request) => {
     .maybeSingle();
   const tier = (plan?.tier ?? "free") as keyof typeof COACH_QUESTIONS_PER_DAY;
   const limit = COACH_QUESTIONS_PER_DAY[tier] ?? 0;
-  if (limit === 0)
+  const model = COACH_MODEL_BY_TIER[tier] ?? null;
+  if (limit === 0 || !model)
     return json(403, { error: "The written coach is part of Pro and Studio." }, origin);
 
   const { data: remaining, error: usageError } = await admin.rpc("coach_consume", {
@@ -104,11 +105,15 @@ Deno.serve(async (request) => {
 
   try {
     const client = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
-    const response = await client.messages.create({
-      model: COACH_MODEL,
-      max_tokens: 1024,
+    // Opus thinks before answering (always on); max_tokens covers thinking plus the reply. On a
+    // safety decline the API retries on a fallback model it picks ("default").
+    const response = await client.beta.messages.create({
+      model,
+      max_tokens: 4000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
       system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
-      output_config: { effort: "low" },
+      output_config: { effort: "medium" },
       messages: [{ role: "user", content: `${context}\n\nQuestion: ${question}` }],
     });
     if (response.stop_reason === "refusal") {
