@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { Session } from "@supabase/supabase-js";
 
 import { cloudConfigured, getSupabase } from "@/integrations/supabase/client";
+import { deleteAllSharedPhotos } from "@/lib/training-share";
 import type { AccessState } from "@/lib/access";
 import { checkEmail, displayNameFor, safeNext } from "@/lib/access";
 import { requestAccess as sendAccessRequest } from "@/integrations/beta-api";
@@ -152,6 +153,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const deleteAccount = useCallback(async (): Promise<Result> => {
     const supabase = getSupabase();
     if (!supabase) return { ok: true };
+    // Shared training photos live in storage, which account deletion doesn't reach: remove first.
+    await deleteAllSharedPhotos();
     const { error } = await supabase.rpc("delete_my_account");
     if (error) return { ok: false, reason: friendly(error.message) };
     await supabase.auth.signOut();

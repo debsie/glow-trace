@@ -16,6 +16,7 @@ import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { CheerCard } from "@/components/agent/cheer-card";
 import { DetectionView } from "@/components/scan/detection-view";
+import { ShareForTraining } from "@/components/scan/share-for-training";
 import { HairLengthCard } from "@/components/scan/hair-length-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
@@ -185,6 +186,8 @@ function ScanPage() {
   // site's content security policy (connect-src) blocks in production.
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   const [intakeProblem, setIntakeProblem] = useState<string | null>(null);
+  // The photo behind the latest result, kept in memory only, for the optional training share.
+  const [resultPhoto, setResultPhoto] = useState<Blob | null>(null);
   const [views, setViews] = useState<{ title: string; url: string; detections: Detections }[]>([]);
   const showViews = (next: { title: string; photo: Blob; detections: Detections }[]) =>
     setViews((current) => {
@@ -282,6 +285,7 @@ function ScanPage() {
       );
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
+      setResultPhoto(photoFile);
       showViews(
         photoFile && faceShapes
           ? [
@@ -360,6 +364,7 @@ function ScanPage() {
       return;
     }
     setNailReadings(session.nails);
+    setResultPhoto(session.photo ?? null);
     showViews(session.views);
     setSessionNotes(session.notes);
     setResult(scan);
@@ -616,6 +621,9 @@ function ScanPage() {
                   ))}
                 </div>
               </section>
+            )}
+            {resultPhoto && shown.report && !shown.demo && (
+              <ShareForTraining photo={resultPhoto} report={shown.report} />
             )}
             {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
             {shown.report?.hairLength && !shown.demo && (

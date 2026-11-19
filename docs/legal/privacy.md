@@ -14,8 +14,8 @@ Last updated: [DATE]
   feature that clearly says it does.
 - We collect as little as we can: an email address to sign you in, your plan, and payment
   status.
-- We do not sell your information, share it for advertising, or use your photos to train
-  models.
+- We do not sell your information or share it for advertising. We use photos to train
+  models only if you turn on "Help train Glowtrace" and then choose to share a specific photo.
 - You can see, export, correct and delete your information at any time.
 - Glowtrace is for adults (18+).
 
@@ -76,6 +76,16 @@ Data Act). We handle it as sensitive everywhere:
 - we never use it for advertising, never sell it, and never share it except with the
   service providers listed in section 5 when you use the feature that needs them.
 
+### Optional: photos you choose to share for training
+
+If you turn on "Help train Glowtrace" (Privacy page; separate from beta access and never
+required), you can share individual scan photos after a scan. For each one we keep a new JPEG
+copy without location or camera details, the scan's readings, the area and the analysis version,
+in a private Supabase storage bucket in the United Kingdom (London). Only the Glowtrace team can
+see them. We use them only to train and test Glowtrace's analysis. They are kept for 2 years at
+most. Withdrawing deletes every photo you shared; deleting your account does too. Our legal basis
+is your explicit consent, which you can withdraw at any time.
+
 ## 3. Why we use your information, and our legal grounds
 
 | Purpose                                                                     | Legal ground (GDPR / POPIA)                       |
@@ -133,6 +143,7 @@ steps under Australian Privacy Principle 8.
 | Data on your device                     | Until you delete it or remove the app                                                                                  |
 | Account and synced data                 | Until you delete your account, then removed within 30 days                                                             |
 | Billing and tax records                 | 5 years, as South African tax and company law requires [CONFIRM]                                                       |
+| Photos you chose to share for training  | Until you withdraw or delete your account, and 2 years at most                                                         |
 | Written coach questions                 | Not stored by Glowtrace. We count questions per day only. Anthropic's own API retention applies [CONFIRM current term] |
 | Error and security logs                 | Up to 90 days                                                                                                          |
 | Numbers you shared to test the analysis | Until you delete them on the Your Data page or delete your account                                                     |

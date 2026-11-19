@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  CreditCard,
+  ImageIcon,
   AlertTriangle,
   Ban,
   Check,
@@ -16,6 +18,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+import { PhotosPanel } from "@/components/admin/photos-panel";
+import { PlansPanel } from "@/components/admin/plans-panel";
 
 import { Badge, PageHeader, PrimaryButton, SectionCard } from "@/components/ui/bits";
 import { useAuth } from "@/context/auth";
@@ -62,7 +67,8 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Tab = "feedback" | "requests" | "testers" | "grant" | "calibration" | "audit";
+type Tab =
+  "feedback" | "requests" | "testers" | "grant" | "plans" | "photos" | "calibration" | "audit";
 
 const SENTIMENT: Record<
   Sentiment,
@@ -281,6 +287,8 @@ function AdminPage() {
     { id: "requests", label: "Requests", icon: Clock, count: pending.length },
     { id: "testers", label: "Testers", icon: Users },
     { id: "grant", label: "Grant access", icon: UserPlus },
+    { id: "plans", label: "Plans", icon: CreditCard },
+    { id: "photos", label: "Shared photos", icon: ImageIcon },
     { id: "calibration", label: "Calibration", icon: FlaskConical, count: samples.length },
     { id: "audit", label: "Audit log", icon: ScrollText },
   ];
@@ -559,6 +567,10 @@ function AdminPage() {
         )}
 
         {tab === "calibration" && <CalibrationPanel rows={samples} />}
+
+        {tab === "plans" && <PlansPanel />}
+
+        {tab === "photos" && <PhotosPanel />}
 
         {tab === "grant" && (
           <SectionCard title="Grant access by email">
