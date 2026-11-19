@@ -218,6 +218,20 @@ function AgentPage() {
       routine: [],
     });
     setThinking(false);
+    if ("off" in reply && reply.off) {
+      // No written coach yet (or unreachable): answer from the on-device care rules instead.
+      const intent = intentFor(question);
+      const local = intent
+        ? answer(intent, brief, catalog, inventory)
+        : {
+            paragraphs: [
+              "I can help with what to focus on, which products to use and when, whether your shelf mixes safely, your progress, and habits. Try one of the questions below.",
+            ],
+            productIds: [],
+          };
+      setTurns((current) => [...current, { id: id + 1, from: "agent", ...local }]);
+      return;
+    }
     setTurns((current) => [
       ...current,
       {

@@ -65,6 +65,12 @@ Deno.serve(async (request) => {
     return new Response(null, { status: 204, headers: cors(origin) });
   if (request.method !== "POST") return json(405, { error: "POST only" }, origin);
 
+  // Until the Anthropic key is added (planned for when payments start), say so without counting
+  // anything; the app then answers on the device.
+  if (!Deno.env.get("ANTHROPIC_API_KEY")) {
+    return json(503, { error: "The written coach isn't switched on yet.", off: true }, origin);
+  }
+
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return json(401, { error: "Sign in to ask the coach." }, origin);
   const admin = createClient(

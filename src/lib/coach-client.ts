@@ -9,9 +9,10 @@ import type { Finding } from "./agent/agent";
  * never photos, to the `coach` edge function, which checks the plan and daily allowance itself.
  */
 const replySchema = z.object({ answer: z.string().min(1).max(4000) });
-const errorSchema = z.object({ error: z.string().max(300) });
+const errorSchema = z.object({ error: z.string().max(300), off: z.boolean().optional() });
 
-export type CoachReply = { answer: string } | { error: string };
+/** `off`: the coach isn't switched on (no key yet) or can't be reached; answer on the device. */
+export type CoachReply = { answer: string } | { error: string; off?: boolean | undefined };
 
 export const askCoach = async (input: {
   question: string;
@@ -20,7 +21,7 @@ export const askCoach = async (input: {
   routine: readonly string[];
 }): Promise<CoachReply> => {
   const supabase = getSupabase();
-  if (!supabase) return { error: "Sign in to use the written coach." };
+  if (!supabase) return { error: "Sign in to use the written coach.", off: true };
   const { data, error } = await supabase.functions.invoke("coach", {
     body: {
       question: input.question.slice(0, 500),
@@ -41,7 +42,7 @@ export const askCoach = async (input: {
       const parsed = errorSchema.safeParse(await context.json().catch(() => null));
       if (parsed.success) return parsed.data;
     }
-    return { error: "The coach is unavailable right now. Your on-device agent still works." };
+    return { error: "The coach can't be reached right now.", off: true };
   }
   const parsed = replySchema.safeParse(data);
   return parsed.success ? parsed.data : { error: "The coach sent something unreadable." };
