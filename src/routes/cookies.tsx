@@ -73,7 +73,7 @@ function CookiesPage() {
       </Link>
       <PageHeader
         title="Cookies and Storage"
-        subtitle="Glowtrace sets no cookies, runs no analytics and loads no ads. The only outside script is a bot check on the sign-in page."
+        subtitle="Glowtrace sets no cookies, runs no analytics and loads no ads. The only outside script is a bot check on the sign-in page. A barcode scan asks Open Beauty Facts for the product's ingredients, sending only the number."
       />
 
       <SectionCard>

@@ -57,7 +57,10 @@ read your skin without the background; those points are used for that one scan a
 or sent anywhere.
 
 If you scan a product label in the ingredient check, the text is read on your device by a reader
-we serve from our own site. The label photo and its text are not uploaded or stored.
+we serve from our own site. The label photo and its text are not uploaded or stored. If you scan a barcode instead, the
+barcode is read on your device and only its number is sent to Open Beauty Facts, an open product
+database, to look up the ingredients. No photo, reading or account detail goes with it, and
+Glowtrace sends no cookies or referrer with the request.
 
 ### Sensitive information
 

@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ScanText, Plus, X } from "lucide-react";
+import { Barcode, ScanText, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { ACTIVE_LABEL, checkIngredients } from "@/lib/ingredients";
+import { lookUpBarcode } from "@/lib/barcode";
+import { readBarcode } from "@/lib/barcode-read";
 import { cleanIngredientText } from "@/lib/label-text";
 import { OCR_DOWNLOAD_MB, readLabel } from "@/lib/ocr";
 import type { ProductInput } from "@/lib/ingredients";
@@ -36,6 +38,31 @@ function IngredientCheck() {
   const { detected, clashes } = checkIngredients(products);
   const [reading, setReading] = useState<number | null>(null);
   const [readNote, setReadNote] = useState<string>("");
+
+  const scanBarcode = async (index: number, file: File | undefined) => {
+    if (!file) return;
+    setReading(index);
+    setReadNote("Reading the barcode on this device");
+    try {
+      const code = await readBarcode(file);
+      if (!code) {
+        setReadNote("No barcode found. Fill the frame with the barcode, flat and sharp");
+        return;
+      }
+      setReadNote("Looking up the barcode number in Open Beauty Facts");
+      const found = await lookUpBarcode(code);
+      if (!found) {
+        setReadNote("That product isn't in Open Beauty Facts yet. Scan the label instead");
+        return;
+      }
+      update(index, found);
+      setReadNote(`Found ${found.name}. Ingredients from Open Beauty Facts`);
+    } catch {
+      setReadNote("The lookup didn't work. Check your connection or scan the label instead");
+    } finally {
+      setReading(null);
+    }
+  };
 
   const scanLabel = async (index: number, file: File | undefined) => {
     if (!file) return;
@@ -123,6 +150,24 @@ function IngredientCheck() {
                     }}
                   />
                 </label>
+                <label
+                  className="mt-1 ml-2 inline-flex min-h-[50px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-secondary px-4 text-sm font-semibold"
+                  aria-disabled={reading !== null}
+                >
+                  <Barcode className="h-4 w-4" aria-hidden="true" />
+                  Scan the barcode
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    disabled={reading !== null}
+                    onChange={(event) => {
+                      void scanBarcode(index, event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
                 <textarea
                   id={`inci-${index}`}
                   value={product.ingredients}
@@ -137,7 +182,7 @@ function IngredientCheck() {
 
           <p className="text-xs text-muted-foreground" aria-live="polite">
             {readNote ||
-              `The label reader runs on this phone. The first scan downloads about ${OCR_DOWNLOAD_MB} MB.`}
+              `Both readers run on this phone. A barcode sends only its number to Open Beauty Facts (open data, ODbL); a label scan sends nothing. The first label scan downloads about ${OCR_DOWNLOAD_MB} MB.`}
           </p>
 
           {products.length < MAX_PRODUCTS && (
