@@ -145,7 +145,9 @@ export const measureHairLength = async (
     const span = Math.abs((pose[11]?.x ?? 0) - (pose[12]?.x ?? 0));
     const end = hairEndRow(mask, segment.width, segment.height, x(11, 12), 0.08, span * 0.75);
     segment.close();
-    if (end === null) return null;
+    // Only when the hips and the hair's end are both in the photo: a selfie cut off at the chest
+    // otherwise guesses the hips and reads the frame's edge as the end (seen on real photos).
+    if (end === null || marks.hips > 0.97 || end > 0.96) return null;
     const position = lengthPosition(end, marks);
     return position === null ? null : { position, marks, end };
   } catch {

@@ -19,6 +19,9 @@ describe("Live subject check", () => {
     expect(subjectHint("face", face(0.05))).toMatch(/closer/);
     expect(subjectHint("face", face(0.8))).toMatch(/back/);
     expect(subjectHint("face", face(0.3, 0.9))).toMatch(/Centre/);
+    expect(
+      subjectHint("face", { kind: "face", found: true, share: 0.3, centreX: 0.5, centreY: 0.3 }),
+    ).toBeUndefined();
     expect(subjectHint("face", face(0.3))).toBeUndefined();
   });
 
@@ -36,7 +39,7 @@ describe("Live subject check", () => {
 
   it("asks for more hair until it fills the frame", () => {
     expect(subjectHint("lengths", { kind: "hair", share: 0.1 })).toMatch(/Fill the frame/);
-    expect(subjectHint("crown", { kind: "hair", share: 0.1 })).toMatch(/crown/);
+    expect(subjectHint("crown", { kind: "hair", share: 0.02 })).toBeUndefined();
     expect(subjectHint("ends", { kind: "hair", share: 0.5 })).toBeUndefined();
   });
 });

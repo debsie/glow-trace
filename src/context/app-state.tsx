@@ -34,7 +34,10 @@ import { clientGate, currentUsage, scanGate, shelfGate } from "@/lib/plans";
 import type { RedeemResult, ReferralRewards, ReferralStats } from "@/lib/referrals";
 import { makeReferralCode, redeemCode, referralRewards, streakBonusScans } from "@/lib/referrals";
 import type { AccountState } from "@/lib/storage";
+import { z } from "zod";
+
 import { useAuth } from "@/context/auth";
+import { getSupabase } from "@/integrations/supabase/client";
 import { weeklyStreak } from "@/lib/engagement";
 import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
 import type { SamplePhotos } from "@/lib/vault";
@@ -195,7 +198,30 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, [account, hydrated]);
 
   // Admins always get the top tier so they can test every feature. UI only: no payments exist yet.
-  const tier: SubscriptionTier = isAdmin ? "studio" : account.tier;
+  // The plan on the account (public.subscriptions, set by admins or billing) wins over the
+  // device's own setting once signed in; the server checks it again for anything that costs money.
+  const [accountTier, setAccountTier] = useState<SubscriptionTier | null>(null);
+  useEffect(() => {
+    if (access.kind !== "member") {
+      setAccountTier(null);
+      return;
+    }
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let cancelled = false;
+    void supabase
+      .from("subscriptions")
+      .select("tier")
+      .maybeSingle()
+      .then(({ data }) => {
+        const parsed = z.object({ tier: z.enum(["free", "pro", "studio"]) }).safeParse(data);
+        if (!cancelled) setAccountTier(parsed.success ? parsed.data.tier : null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [access.kind]);
+  const tier: SubscriptionTier = isAdmin ? "studio" : (accountTier ?? account.tier);
   const usage = useMemo(() => currentUsage(account.usage, new Date()), [account.usage]);
   const activeClients = useMemo(() => clients.filter((client) => !client.archived), [clients]);
   const shelfCount = inventory.filter((item) => item.in_stock).length;

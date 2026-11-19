@@ -17,6 +17,7 @@ import json
 import os
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -55,10 +56,19 @@ def verdict(licence):
     return "unknown"
 
 
-def get(url, headers=None):
-    request = urllib.request.Request(url, headers={"User-Agent": "dataset-scout/1.0", **(headers or {})})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.loads(response.read())
+def get(url, headers=None, tries=5):
+    """GET JSON, waiting and retrying when a site says "too many requests" (HTTP 429)."""
+    for attempt in range(tries):
+        request = urllib.request.Request(url, headers={"User-Agent": "dataset-scout/1.0", **(headers or {})})
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.loads(response.read())
+        except urllib.error.HTTPError as error:
+            if error.code != 429 or attempt == tries - 1:
+                raise
+            wait = int(error.headers.get("Retry-After") or 0) or 5 * 2**attempt
+            print(f"  (rate limited, waiting {wait}s)", flush=True)
+            time.sleep(wait)
 
 
 finds = {}
@@ -110,7 +120,8 @@ def zenodo():
                     size = f"{sum(f.get('size', 0) for f in files) / 1e9:.1f} GB" if files else ""
                     add(area, "Zenodo", meta.get("title", "")[:90], hit.get("links", {}).get("self_html", ""),
                         licence, size, term)
-                time.sleep(0.5)
+                # Zenodo allows about 30 searches a minute without a key.
+                time.sleep(2.5)
             except Exception as error:
                 print("  Zenodo", term, error)
 

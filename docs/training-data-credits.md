@@ -37,3 +37,8 @@ The ingredient check looks up scanned barcodes in Open Beauty Facts
 (https://world.openbeautyfacts.org). The database is under the Open Database Licence (ODbL) and
 its contents under the Database Contents Licence. Glowtrace shows the data with credit and does not
 build a derived database from it.
+
+## Glowtrace team volunteers
+
+20 photos (skin, hair and nails) of two adult volunteers who gave consent on 2026-11-19 for their
+use in training and testing. Re-encoded without metadata. Kept privately, never published.
