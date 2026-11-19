@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { useTicks } from "@/components/engagement/use-ticks";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { MakeupDayPanel } from "@/components/makeup/makeup-day-panel";
 import { Badge, PageHeader, ProBadge, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { activeNeeds, matchShelf } from "@/lib/beauty";
+import { routineDone } from "@/lib/daily";
+import { dayKey } from "@/lib/engagement";
 import { longDate } from "@/lib/progress";
 import type { BlockedGate, RoutineMode } from "@/lib/plans";
 import { PLANS, routineModeGate } from "@/lib/plans";
@@ -146,6 +149,7 @@ const NeedRow = ({
 };
 
 function RoutinePage() {
+  const { ticks, toggle } = useTicks();
   const { tab: tabFromLink } = Route.useSearch();
   const { scans, inventory, catalog, tier, shelfCount, toggleShelfProduct } = useAppState();
   const [tab, setTab] = useState<Tab>(tabFromLink ?? "am");
@@ -230,6 +234,7 @@ function RoutinePage() {
   };
 
   const steps = tab === "makeup" ? null : routineModeSpec(tab as RoutineMode);
+  const today = dayKey(new Date());
 
   return (
     <div className="space-y-8">
@@ -273,16 +278,46 @@ function RoutinePage() {
         steps && (
           <SectionCard>
             <p className="text-sm text-muted-foreground">{steps.summary}</p>
-            <ol className="mt-4 space-y-3">
-              {steps.steps.map((step, index) => (
-                <li key={step} className="flex gap-4">
-                  <span className="readout w-6 shrink-0 pt-0.5 text-sm text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-foreground">{step}</span>
-                </li>
-              ))}
+            <ol className="mt-4 space-y-2">
+              {steps.steps.map((step, index) => {
+                const ticked = ticks[today]?.[tab]?.includes(index) ?? false;
+                return (
+                  <li key={step}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={ticked}
+                      onClick={() => toggle(today, tab, index)}
+                      className={`flex min-h-[56px] w-full items-center gap-4 rounded-2xl border px-4 text-left transition-colors ${
+                        ticked ? "border-primary bg-secondary" : "border-border hover:bg-secondary"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
+                          ticked
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {ticked && <Check className="h-4 w-4" />}
+                      </span>
+                      <span className="readout w-6 shrink-0 text-sm text-primary">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className={ticked ? "text-muted-foreground" : "text-foreground"}>
+                        {step}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ol>
+            <p className="mt-3 text-sm" aria-live="polite">
+              {routineDone(ticks, today, tab, steps.steps.length)
+                ? `${TAB_LABELS[tab].label} done. That counts towards your daily streak.`
+                : "Tick each step as you go. A finished routine counts towards your daily streak."}
+            </p>
           </SectionCard>
         )
       )}

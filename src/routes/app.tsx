@@ -18,6 +18,7 @@ import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
 import { CheerCard } from "@/components/agent/cheer-card";
 import { StreakCard } from "@/components/engagement/streak-card";
+import { TodayCard } from "@/components/engagement/today-card";
 import { briefing } from "@/lib/agent/agent";
 import { scanScore } from "@/lib/beauty";
 import { shortDate } from "@/lib/progress";
@@ -121,6 +122,8 @@ function Dashboard() {
       </Link>
 
       {recent[0] && <CheerCard scans={scans} area={recent[0].category} />}
+
+      <TodayCard scans={scans} />
 
       <StreakCard scans={scans} />
 
