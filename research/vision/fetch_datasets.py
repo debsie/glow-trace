@@ -35,6 +35,7 @@ DATASETS = {
         ("fatima-vahabi", "nail-seg-vfa2h", "Nail segmentation"),
         ("vnrvjiet-mnvm9", "nail-images", "Nail conditions"),
         ("nail-acf3b", "nail_disease_own_dataset", "Nail conditions"),
+        ("fatima-wmkf6", "nail-segmentation-jrprm", "Nail segmentation"),
     ],
     "hair": [
         ("hairbaldsemanticsegmentation", "hair_baldness", "Scalp and crown"),
@@ -47,6 +48,13 @@ DATASETS = {
         ("itclab", "hair-detection-lkule", "Hair detection"),
         ("hair-oprdr", "mask_segmentation1", "Hair masks"),
         ("manish-kumar-ytl7z", "hair_dataset_updated", "Hair segmentation"),
+        # Scalp and hair-health close-ups (found by scout_datasets.ipynb, CC BY 4.0).
+        ("sreenithi", "hairproblems-detection", "Good hair, dry scalp, dandruff, oiliness, white hair"),
+        ("husnas-workspace", "head-lice-ai", "Healthy scalp and dandruff"),
+        ("scalpdet", "scalp-data-iqjst", "Scalp dandruff and oiliness"),
+        ("scalpdet", "dandruff-big-chunks", "Dandruff close-ups"),
+        ("rooted", "hair-loss-nq8hh-tqveb", "Hair thinning levels"),
+        ("major-project-s3rff", "hair-disease-detection-o2ok0", "Scalp conditions"),
     ],
 }
 
@@ -67,6 +75,35 @@ def licence_of(info):
         if value:
             return str(value)
     return None
+
+
+ZENODO_SCALP = "https://zenodo.org/api/records/23433121"
+
+
+def zenodo_scalp(credits):
+    """ScalpHairLabels v1 (CC BY 4.0): 504 scalp close-up tiles cut from CC0 ISIC images."""
+    import io
+    import urllib.request
+    import zipfile
+
+    target = os.path.join("data", "hair", "zenodo__scalphairlabels")
+    link = "https://zenodo.org/records/23433121"
+    try:
+        record = json.loads(urllib.request.urlopen(ZENODO_SCALP, timeout=60).read())
+        os.makedirs(target, exist_ok=True)
+        for entry in record.get("files", []):
+            if "tiles" not in entry["key"]:
+                continue
+            data = urllib.request.urlopen(entry["links"]["self"], timeout=600).read()
+            zipfile.ZipFile(io.BytesIO(data)).extractall(target)
+        count = sum(1 for _, _, files in os.walk(target) for f in files if f.lower().endswith((".jpg", ".jpeg", ".png")))
+        print(f"OK   hair: ScalpHairLabels v1 ({count} tiles, licence: CC BY 4.0, source photos CC0)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "hair", "name": "ScalpHairLabels v1", "what": "Scalp close-ups (ISIC, CC0)",
+                        "link": link, "licence": "CC BY 4.0", "images": count})
+    except Exception as error:
+        print(f"FAIL hair: ScalpHairLabels ({str(error)[:120]})")
+    return credits
 
 
 def main():
@@ -97,7 +134,7 @@ def main():
                 newest = sorted(versions, key=lambda v: int(str(v.version).split("/")[-1]))[-1]
                 if os.path.exists(target):
                     shutil.rmtree(target)
-                for fmt in ("coco", "coco-segmentation", "yolov8"):
+                for fmt in ("coco", "coco-segmentation", "yolov8", "folder"):
                     try:
                         newest.download(fmt, location=target, overwrite=True)
                         break
@@ -114,6 +151,8 @@ def main():
                 credits.append({"area": area, "name": project, "what": what, "link": link, "licence": licence, "images": count})
             except Exception as error:
                 print(f"FAIL {area}: {project} ({str(error)[:120]})")
+    if "hair" in areas:
+        credits = zenodo_scalp(credits)
     json.dump(credits, open(credits_path, "w"), indent=2)
     print(f"\nCredits written to {credits_path}. Check any 'not reported' licence on its page before shipping.")
 

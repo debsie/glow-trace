@@ -57,11 +57,19 @@ STEPS = int(os.environ.get("GLOWTRACE_STEPS", 4 if QUICK else 50))
 BALANCE = os.environ.get("GLOWTRACE_BALANCE", "1") == "1"
 WORK = os.environ.get("GLOWTRACE_WORK", "glowtrace_work")
 
-HEADS = {
+ALL_HEADS = {
     "skin": ["redness", "pigment", "shine", "texture", "breakouts", "dark_circles"],
     "nails": ["yellowing", "spots", "ridges", "cuticle"],
     "hair": ["shine", "texture", "flakes"],
 }[AREA]
+# Smaller models learn better: --heads picks which effects this model reads (the others are still
+# added to the photos, unlabelled, so the model learns to ignore them). --name names the files.
+HEADS = sys.argv[sys.argv.index("--heads") + 1].split(",") if "--heads" in sys.argv else ALL_HEADS
+NAME = sys.argv[sys.argv.index("--name") + 1] if "--name" in sys.argv else AREA
+OWN = [ALL_HEADS.index(h) for h in HEADS]
+assert set(HEADS) <= set(ALL_HEADS), f"unknown heads {set(HEADS) - set(ALL_HEADS)}"
+# Hair: effects go on hair pixels only, found by MediaPipe's hair segmenter (the app's own guide).
+HAIR_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite"
 
 HAEMOGLOBIN = torch.tensor([0.04, 1.0, 0.85])
 # Dark circles: deoxygenated blood under thin skin plus a little melanin. An approximation of the
@@ -168,7 +176,12 @@ def lab(rgb):
 
 
 def area_mask(rgb, valid):
-    """Skin: skin-coloured pixels (the app's rule). Hair and nails: the whole valid photo."""
+    """Skin: skin-coloured pixels (the app's rule). Hair: hair pixels (valid == 2, from
+    hair_masks) when at least 15% of the photo is hair. Nails: the whole valid photo."""
+    if AREA == "hair":
+        hair = valid > 1
+        enough = (hair.flatten(1).float().mean(1) >= 0.15)[:, None, None]
+        return torch.where(enough, hair, valid > 0).float()
     if AREA != "skin":
         return (valid > 0).float()
     L, a, b = lab(rgb)
@@ -304,7 +317,8 @@ def add_effects(rgb, mask, gen):
         flakes = amount(0.0, 0.7) * blobs(n, gen, 10, 0.6, 1.5) * mask
         img = img * (1 - flakes[:, None]) + 240 * flakes[:, None]
         maps["shine"], maps["texture"], maps["flakes"] = spec, rough, flakes
-    return img, torch.stack([maps[h] for h in HEADS], 1)
+    # Every effect's map, in ALL_HEADS order; the model is trained on its HEADS columns only.
+    return img, torch.stack([maps[h] for h in ALL_HEADS], 1)
 
 
 def camera(rgb, gen):
@@ -316,6 +330,11 @@ def camera(rgb, gen):
     blur = torch.rand(n, device=DEVICE, generator=gen) < 0.4
     if blur.any():
         img[blur] = F.avg_pool2d(F.pad(img[blur], (1, 1, 1, 1), mode="replicate"), 3, 1)
+    if AREA == "hair":
+        # Unlabelled glare (round, not along the strands) on half the photos: the shine head must
+        # learn that only highlights running along the hair count.
+        glare = blobs(n, gen, 2, 6, 25) * rand((n, 1, 1), gen, 0, 0.35) * (torch.rand(n, 1, 1, device=DEVICE, generator=gen) < 0.5)
+        img = img + glare[:, None] * 255
     sigma = rand((n, 1, 1, 1), gen, 0.5, 3.0)
     return (img + torch.randn(img.shape, device=DEVICE, generator=gen) * sigma).clamp(0, 255).round()
 
@@ -324,7 +343,9 @@ def make_batch(images, valid, gen):
     mask = area_mask(images, valid)
     with_effects, targets = add_effects(images, mask, gen)
     a, b = camera(images, gen), camera(with_effects, gen)
-    return network_input(a, area_mask(a, valid)), network_input(b, area_mask(b, valid)), targets, mask
+    # The 4th channel is the valid-photo mask, exactly what the app feeds.
+    seen = (valid > 0).float()
+    return network_input(a, seen), network_input(b, seen), targets, mask
 
 
 # ---------------------------------------------------------------- model
@@ -378,6 +399,32 @@ def tone_groups(images, valid):
 # ---------------------------------------------------------------- train and evaluate
 
 
+def hair_masks(images_np, valid_np):
+    """Marks hair pixels as 2 in the valid mask. Skipped (whole photo) if MediaPipe is missing."""
+    try:
+        import mediapipe as mp
+        from mediapipe.tasks.python import vision, BaseOptions
+    except (ImportError, OSError) as error:
+        print(f"MediaPipe unavailable ({error}): effects go on the whole photo")
+        return valid_np
+    path = os.path.join(WORK, "hair_segmenter.tflite")
+    os.makedirs(WORK, exist_ok=True)
+    if not os.path.exists(path):
+        open(path, "wb").write(fetch(HAIR_MODEL_URL))
+    segmenter = vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
+        base_options=BaseOptions(model_asset_path=path), output_category_mask=True))
+    out = valid_np.copy()
+    found = 0
+    for i, image in enumerate(images_np):
+        result = segmenter.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(image)))
+        hair = np.squeeze(result.category_mask.numpy_view()) > 0
+        out[i][hair & (valid_np[i] > 0)] = 2
+        found += hair.mean() >= 0.15
+    segmenter.close()
+    print(f"hair found in {found} of {len(images_np)} photos; the rest use the whole photo")
+    return out
+
+
 def main():
     torch.manual_seed(0)
     if AREA == "skin":
@@ -393,6 +440,8 @@ def main():
             raise SystemExit("Hair and nails need --images DIR (see research/vision/README.md)")
         images_np, valid_np, groups_np = load_folder(IMAGES_DIR, 200 if QUICK else 8000)
         groups_np = np.full(len(images_np), -1)
+        if AREA == "hair":
+            valid_np = hair_masks(images_np, valid_np)
     order = np.random.default_rng(0).permutation(len(images_np))
     split = int(0.8 * len(order))
     train_ids, test_ids = order[:split], order[split:]
@@ -428,7 +477,8 @@ def main():
                 idx = torch.cat(parts)
             else:
                 idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
-            xa, xb, targets, mask = make_batch(images[idx], valid[idx], gen)
+            xa, xb, every, mask = make_batch(images[idx], valid[idx], gen)
+            targets = every[:, OWN]
             diff = model(xb) - model(xa)
             per_head = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
             if BALANCE:
@@ -438,7 +488,7 @@ def main():
             if fair:
                 sample = train_t[torch.randint(len(train_t), (64,), device=DEVICE, generator=gen)]
                 m = area_mask(images[sample], valid[sample])
-                level = masked_mean(model(network_input(images[sample], m)), m)
+                level = masked_mean(model(network_input(images[sample], (valid[sample] > 0).float())), m)
                 g = groups[sample]
                 means = torch.stack([level[g == k].mean(0) for k in range(4) if (g == k).any()])
                 loss = loss + 2.0 * ((means - means.mean(0)) ** 2).mean()
@@ -450,24 +500,26 @@ def main():
         print(f"epoch {epoch + 1}/{EPOCHS} loss {total / STEPS:.4f}", flush=True)
 
     model.eval()
-    report = {"area": AREA, "photos": len(images_np), "photos_per_tone_band": counts if fair else None, "heads": {}}
+    report = {"area": AREA, "name": NAME, "photos": len(images_np), "photos_per_tone_band": counts if fair else None, "heads": {}}
     with torch.no_grad():
         egen = torch.Generator(device=DEVICE).manual_seed(99)
         reps = torch.tensor(test_ids, device=DEVICE).repeat_interleave(8)
         diffs, truths, bands = [], [], []
         for start in range(0, len(reps), 64):
             idx = reps[start : start + 64]
-            xa, xb, targets, mask = make_batch(images[idx], valid[idx], egen)
+            xa, xb, every, mask = make_batch(images[idx], valid[idx], egen)
             diffs.append(masked_mean(model(xb) - model(xa), mask))
-            truths.append(masked_mean(targets, mask))
+            truths.append(masked_mean(every, mask))
             bands.append(groups[idx])
         diff, truth = torch.cat(diffs).cpu().numpy(), torch.cat(truths).cpu().numpy()
         band = torch.cat(bands).cpu().numpy()
         for k, head in enumerate(HEADS):
-            d, t = diff[:, k], truth[:, k]
+            j = ALL_HEADS.index(head)
+            d, t = diff[:, k], truth[:, j]
             slope = float(np.polyfit(t, d, 1)[0]) if t.std() > 0 else float("nan")
             # How much this head reacts to the other effects and to light alone (lower is better).
-            others = np.abs(np.delete(truth, k, axis=1)).sum(1) > 0
+            # Leak is measured against every other effect, including those this model does not read.
+            others = np.abs(np.delete(truth, j, axis=1)).sum(1) > 0
             alone = (t == 0)
             report["heads"][head] = {
                 "corr_with_true_amount": round(float(np.corrcoef(d, t)[0, 1]), 3),
@@ -477,20 +529,20 @@ def main():
                     round(float(np.corrcoef(d[band == g], t[band == g])[0, 1]), 3) if (band == g).sum() > 5 and t[band == g].std() > 0 else None
                     for g in range(4)
                 ] if fair else None,
-                "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], truth[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
+                "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], np.delete(truth, j, axis=1)[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
             }
     print(json.dumps(report, indent=2))
     # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
     # failed export or a runtime reset afterwards cannot lose the training.
     weights = {name: t.detach().cpu().numpy().round(6).tolist() for name, t in model.state_dict().items()}
-    json.dump({"area": AREA, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{AREA}_weights.json", "w"))
-    json.dump(report, open(f"{AREA}_eval.json", "w"), indent=2)
-    print(f"Wrote {AREA}_weights.json and {AREA}_eval.json", flush=True)
+    json.dump({"area": AREA, "name": NAME, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{NAME}_weights.json", "w"))
+    json.dump(report, open(f"{NAME}_eval.json", "w"), indent=2)
+    print(f"Wrote {NAME}_weights.json and {NAME}_eval.json", flush=True)
     try:
-        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{AREA}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
-        print(f"Wrote {AREA}_model.onnx")
+        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{NAME}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
+        print(f"Wrote {NAME}_model.onnx")
     except Exception as error:  # the weights file is enough
-        print(f"ONNX export skipped ({error}); {AREA}_weights.json is all Glowtrace needs")
+        print(f"ONNX export skipped ({error}); {NAME}_weights.json is all Glowtrace needs")
 
 
 if __name__ == "__main__":
