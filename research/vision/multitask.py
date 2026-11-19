@@ -50,14 +50,17 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Fine detail (nail spots and ridges, hair shine and breakage, scalp flakes) needs more pixels
 # than 128. Pass --size 256 for nails and hair; the app reads the size from the weights file.
 SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 128
-EPOCHS = 2 if QUICK else 80
-STEPS = 4 if QUICK else 50
+EPOCHS = int(os.environ.get("GLOWTRACE_EPOCHS", 2 if QUICK else 80))
+STEPS = int(os.environ.get("GLOWTRACE_STEPS", 4 if QUICK else 50))
+# Each head's loss divided by its own target energy, so sparse effects (spots, flakes, breakage,
+# shine streaks) count as much as effects that cover the whole area. Off only for comparison.
+BALANCE = os.environ.get("GLOWTRACE_BALANCE", "1") == "1"
 WORK = os.environ.get("GLOWTRACE_WORK", "glowtrace_work")
 
 HEADS = {
     "skin": ["redness", "pigment", "shine", "texture", "breakouts", "dark_circles"],
     "nails": ["yellowing", "spots", "ridges", "cuticle"],
-    "hair": ["shine", "texture", "breakage", "flakes"],
+    "hair": ["shine", "texture", "flakes"],
 }[AREA]
 
 HAEMOGLOBIN = torch.tensor([0.04, 1.0, 0.85])
@@ -297,14 +300,10 @@ def add_effects(rgb, mask, gen):
         img = img * (1 + rough[:, None] * fine_noise(n, gen)[:, None])
         spec = amount(0.0, 0.4) * streaks(n, gen, 3, 40, 3) * mask
         img = img + spec[:, None] * light
-        # Breakage: short broken fragments (bright frayed tips and dark gaps) instead of long
-        # strands. Flakes: tiny pale specks, as on the scalp or roots.
-        frag = amount(0.0, 0.5) * streaks(n, gen, 12, 4, 1.0) * mask
-        sign = torch.where(fine_noise(n, gen) > 0, 1.0, -0.6)[:, None]
-        img = img * (1 + 0.6 * frag[:, None] * sign)
+        # Flakes: tiny pale specks, as on the scalp or roots.
         flakes = amount(0.0, 0.7) * blobs(n, gen, 10, 0.6, 1.5) * mask
         img = img * (1 - flakes[:, None]) + 240 * flakes[:, None]
-        maps["shine"], maps["texture"], maps["breakage"], maps["flakes"] = spec, rough, frag, flakes
+        maps["shine"], maps["texture"], maps["flakes"] = spec, rough, flakes
     return img, torch.stack([maps[h] for h in HEADS], 1)
 
 
@@ -431,7 +430,11 @@ def main():
                 idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
             xa, xb, targets, mask = make_batch(images[idx], valid[idx], gen)
             diff = model(xb) - model(xa)
-            loss = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean()
+            per_head = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
+            if BALANCE:
+                energy = (((targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
+                per_head = per_head / energy.detach().clamp(min=1e-3)
+            loss = per_head.mean()
             if fair:
                 sample = train_t[torch.randint(len(train_t), (64,), device=DEVICE, generator=gen)]
                 m = area_mask(images[sample], valid[sample])
