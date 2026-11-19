@@ -48,6 +48,14 @@ export type BiomarkerReport = {
   tone?: SkinTone | undefined;
   /** Redness by face zone, 0-100 (face guide only). */
   zones?: FaceZones | undefined;
+  /** Nose redness, dark circles and skin type (face guide only). */
+  face?: FaceDetails | undefined;
+};
+
+export type FaceDetails = {
+  noseRedness: number;
+  darkCircles: number;
+  skinType: "oily" | "combination" | "balanced";
 };
 
 export type FaceZones = { forehead: number; leftCheek: number; rightCheek: number; chin: number };

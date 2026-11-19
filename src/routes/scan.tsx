@@ -33,6 +33,7 @@ import { hairTextureSignalFast } from "@/lib/cv/hair-model";
 import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
+import type { FaceAreas } from "@/lib/cv/face-mask";
 import type { BiomarkerReport } from "@/lib/cv/types";
 import { ZONE_LABEL } from "@/lib/cv/zones";
 import { MOCK_BIOMARKERS } from "@/lib/mock-data";
@@ -44,6 +45,12 @@ import type { ScanRecord, ScanCategory } from "@/lib/types";
 import scanSkin from "@/assets/scan-skin.jpg";
 import scanHair from "@/assets/scan-hair.jpg";
 import scanNails from "@/assets/scan-nails.jpg";
+
+const SKIN_TYPE_LABEL = {
+  oily: "Oily all over",
+  combination: "Combination (shiny T-zone)",
+  balanced: "Balanced",
+} as const;
 
 export const Route = createFileRoute("/scan")({
   validateSearch: z.object({ area: z.enum(["skin", "hair", "nails"]).optional().catch(undefined) }),
@@ -216,10 +223,12 @@ function ScanPage() {
       // Validate before the report enters app state, as with any other payload.
       let skin: Uint8Array | null = null;
       let check: FilterCheck | null = null;
+      let faceAreas: FaceAreas | null = null;
       if (category === "skin" && faceGuide && photoFile) {
         const larger = await loadImageData(photoFile, PHOTO_DIM);
         const face = await findFace(larger);
         skin = face?.skinAt(pixels.width, pixels.height) ?? null;
+        faceAreas = face?.areasAt(pixels.width, pixels.height) ?? null;
         const largeSkin = face?.skinAt(larger.width, larger.height) ?? null;
         if (face && largeSkin)
           check = filterCheck(larger, largeSkin, face.featuresAt(larger.width, larger.height));
@@ -235,7 +244,7 @@ function ScanPage() {
               ? { hairTexture: await hairTextureSignalFast(pixels, null) }
               : category === "nails"
                 ? { nailYellowing: await nailYellowingSignalFast(pixels) }
-                : {},
+                : { faceAreas },
           ),
           check,
         ),
@@ -528,6 +537,34 @@ function ScanPage() {
               </div>
             </div>
             {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
+            {shown.report?.face && !shown.demo && (
+              <div className="mt-5">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  Up close
+                </p>
+                <ul className="mt-2 divide-y divide-border">
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Redness on the nose</span>
+                    <span className="readout">{shown.report.face.noseRedness.toFixed(1)}</span>
+                  </li>
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Dark circles, against your own cheek</span>
+                    <span className="readout">{shown.report.face.darkCircles.toFixed(1)}</span>
+                  </li>
+                  <li className="flex items-center justify-between py-2 text-sm">
+                    <span>Skin type today</span>
+                    <span className="font-semibold">
+                      {SKIN_TYPE_LABEL[shown.report.face.skinType]}
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Dark circles compare the skin under your eyes with your own cheek, so every skin
+                  tone is read the same way. Skin type comes from shine on your nose against your
+                  cheeks, and can change with the weather.
+                </p>
+              </div>
+            )}
             {shown.report?.zones && !shown.demo && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">

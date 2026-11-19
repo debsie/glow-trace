@@ -5,7 +5,8 @@ import { analyzeNails } from "./nails";
 import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
 import { KERNEL_VERSION } from "./types";
-import { faceZones } from "./zones";
+import { faceDetails, faceZones } from "./zones";
+import type { FaceAreas } from "./face-mask";
 
 /**
  * The on-device analysis kernel. A pure function of the pixels: the same image always gives
@@ -50,7 +51,11 @@ export const analyzeBiomarkers = (
   image: PixelBuffer,
   areaMask: Uint8Array | null = null,
   /** Trained-model readings computed ahead of time by the fast runtime (hair-model, nails-model). */
-  precomputed: { hairTexture?: number | null; nailYellowing?: number | null } = {},
+  precomputed: {
+    hairTexture?: number | null;
+    nailYellowing?: number | null;
+    faceAreas?: FaceAreas | null;
+  } = {},
 ): BiomarkerReport => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
@@ -78,6 +83,7 @@ export const analyzeBiomarkers = (
         : analyzeNails(area, precomputed.nailYellowing);
   const tone = category === "skin" ? skinTone(area) : null;
   const zones = category === "skin" ? faceZones(image, areaMask) : null;
+  const face = category === "skin" ? faceDetails(image, precomputed.faceAreas ?? null) : null;
   return {
     kernelVersion: KERNEL_VERSION,
     category,
@@ -85,6 +91,7 @@ export const analyzeBiomarkers = (
     metrics,
     ...(tone ? { tone } : {}),
     ...(zones ? { zones } : {}),
+    ...(face ? { face } : {}),
   };
 };
 

@@ -37,6 +37,13 @@ export const biomarkerReportSchema = z.object({
       chin: z.number().min(0).max(100),
     })
     .optional(),
+  face: z
+    .object({
+      noseRedness: z.number().min(0).max(100),
+      darkCircles: z.number().min(0).max(100),
+      skinType: z.enum(["oily", "combination", "balanced"]),
+    })
+    .optional(),
 });
 
 export class InvalidReportError extends Error {

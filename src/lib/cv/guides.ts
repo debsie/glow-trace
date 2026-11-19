@@ -1,4 +1,5 @@
-import { faceFeatureMask, faceSkinMask } from "./face-mask";
+import { faceAreaMasks, faceFeatureMask, faceSkinMask } from "./face-mask";
+import type { FaceAreas } from "./face-mask";
 import type { FaceRegions } from "./face-mask";
 import { nailBoxes } from "./nail-tiles";
 import type { Point, TileBox } from "./nail-tiles";
@@ -109,6 +110,8 @@ export type FoundFace = {
   skinAt: (width: number, height: number) => Uint8Array | null;
   /** Eyes, brows and lips at the given size. */
   featuresAt: (width: number, height: number) => Uint8Array;
+  /** Nose, under-eyes and cheek reference patches at the given size. */
+  areasAt: (width: number, height: number) => FaceAreas | null;
 };
 
 /** One detection, masks at any size: the analysis size and the larger filter-check size. */
@@ -120,6 +123,7 @@ export const findFace = async (detectOn: ImageData): Promise<FoundFace | null> =
     return {
       skinAt: (width, height) => faceSkinMask(face, regions, width, height),
       featuresAt: (width, height) => faceFeatureMask(face, regions, width, height),
+      areasAt: (width, height) => faceAreaMasks(face, width, height),
     };
   } catch {
     return null;

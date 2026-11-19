@@ -85,7 +85,9 @@ export const analyseShot = async (
             category,
             pixels,
             mask,
-            category === "hair" ? { hairTexture: await hairTextureSignalFast(pixels, mask) } : {},
+            category === "hair"
+              ? { hairTexture: await hairTextureSignalFast(pixels, mask) }
+              : { faceAreas: face?.areasAt(pixels.width, pixels.height) ?? null },
           ),
           check,
         ),
