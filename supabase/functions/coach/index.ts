@@ -1,12 +1,18 @@
-// Glowtrace written coach: Claude Opus answers a question about the person's own readings.
-// Paid plans only, checked here against public.subscriptions (never trusted from the app).
+// Glowtrace written coach: Claude Haiku answers a question about the person's own readings.
+// Every plan, within the plan's monthly spend budget and daily cap, both checked here against
+// public.subscriptions and the coach counters (never trusted from the app).
 // Receives numbers and product names only, never photos. Set the ANTHROPIC_API_KEY secret in
 // Supabase (Edge Functions > Secrets); SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are built in.
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@4";
 
-import { COACH_MODEL_BY_TIER, COACH_QUESTIONS_PER_DAY } from "../../../src/lib/coach-limits.ts";
+import {
+  COACH_BUDGET_MICRO_USD_PER_MONTH,
+  COACH_MODEL,
+  COACH_QUESTIONS_PER_DAY,
+  coachCostMicroUsd,
+} from "../../../src/lib/coach-limits.ts";
 
 // Browser origins allowed to call this (comma-separated ALLOWED_ORIGINS secret, e.g. the site's
 // own domain). Not the security boundary: the signed-in user's token is.
@@ -78,18 +84,28 @@ Deno.serve(async (request) => {
     .eq("user_id", user.id)
     .maybeSingle();
   const tier = (plan?.tier ?? "free") as keyof typeof COACH_QUESTIONS_PER_DAY;
-  const limit = COACH_QUESTIONS_PER_DAY[tier] ?? 0;
-  const model = COACH_MODEL_BY_TIER[tier] ?? null;
-  if (limit === 0 || !model)
-    return json(403, { error: "The written coach is part of Pro and Studio." }, origin);
-
-  const { data: remaining, error: usageError } = await admin.rpc("coach_consume", {
+  const daily = COACH_QUESTIONS_PER_DAY[tier] ?? COACH_QUESTIONS_PER_DAY.free;
+  const budget = COACH_BUDGET_MICRO_USD_PER_MONTH[tier] ?? COACH_BUDGET_MICRO_USD_PER_MONTH.free;
+  const { data: gate, error: gateError } = await admin.rpc("coach_begin", {
     p_user: user.id,
-    p_limit: limit,
+    p_daily: daily,
+    p_budget: budget,
   });
-  if (usageError) return json(500, { error: "The coach is unavailable right now." }, origin);
-  if (remaining === -1) {
-    return json(429, { error: `That's today's ${limit} questions. Ask again tomorrow.` }, origin);
+  if (gateError) return json(500, { error: "The coach is unavailable right now." }, origin);
+  if (gate === "daily") {
+    return json(429, { error: `That's today's ${daily} questions. Ask again tomorrow.` }, origin);
+  }
+  if (gate === "budget") {
+    return json(
+      429,
+      {
+        error:
+          tier === "free"
+            ? "You've used this month's free coach questions. They come back on the 1st, and Pro gives you many more."
+            : "You've used this month's coach allowance. It resets on the 1st.",
+      },
+      origin,
+    );
   }
 
   const { question, findings, shelf, routine } = parsed.data;
@@ -105,21 +121,22 @@ Deno.serve(async (request) => {
 
   try {
     const client = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
-    // Opus thinks before answering (always on); max_tokens covers thinking plus the reply. On a
-    // safety decline the API retries on a fallback model it picks ("default").
-    const response = await client.beta.messages.create({
-      model,
-      max_tokens: 4000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+    const response = await client.messages.create({
+      model: COACH_MODEL,
+      max_tokens: 2000,
       system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
-      output_config: { effort: "medium" },
+      // Short coaching answers: low effort keeps them quick and cheap.
+      output_config: { effort: "low" },
       messages: [{ role: "user", content: `${context}\n\nQuestion: ${question}` }],
+    });
+    await admin.rpc("coach_record_spend", {
+      p_user: user.id,
+      p_micro_usd: coachCostMicroUsd(response.usage),
     });
     if (response.stop_reason === "refusal") {
       return json(
         200,
-        { answer: "That's one for a doctor or dermatologist rather than Glowtrace.", remaining },
+        { answer: "That's one for a doctor or dermatologist rather than Glowtrace." },
         origin,
       );
     }
@@ -128,7 +145,7 @@ Deno.serve(async (request) => {
       .join("\n")
       .replace(/!/g, ".")
       .trim();
-    return json(200, { answer, remaining }, origin);
+    return json(200, { answer }, origin);
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) {
       return json(503, { error: "Lots of questions right now. Try again in a minute." }, origin);

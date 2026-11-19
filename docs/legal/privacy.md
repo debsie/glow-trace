@@ -116,14 +116,14 @@ Privacy Control signals.
 We share information only with service providers who act on our instructions under
 contract:
 
-| Provider           | Purpose                                                                                                                                                  | Location                |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Supabase Inc.      | Sign-in, account, beta access and feedback database                                                                                                      | United Kingdom (London) |
-| Vercel Inc.        | Website hosting; does not store personal information                                                                                                     | [CONFIRM REGION]        |
-| Cloudflare, Inc.   | Bot check (Turnstile) on the sign-in page; sees your IP address and browser signals                                                                      | Global network          |
-| [PAYMENT PROVIDER] | Payments                                                                                                                                                 | [REGION]                |
-| Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                                                                                          | United Kingdom (London) |
-| Anthropic, PBC     | Written coach on Pro and Studio (Claude Opus): your question, scores, trends and shelf product names. Never photos. Anthropic does not train on API data | United States           |
+| Provider           | Purpose                                                                                                                                                       | Location                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Supabase Inc.      | Sign-in, account, beta access and feedback database                                                                                                           | United Kingdom (London) |
+| Vercel Inc.        | Website hosting; does not store personal information                                                                                                          | [CONFIRM REGION]        |
+| Cloudflare, Inc.   | Bot check (Turnstile) on the sign-in page; sees your IP address and browser signals                                                                           | Global network          |
+| [PAYMENT PROVIDER] | Payments                                                                                                                                                      | [REGION]                |
+| Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                                                                                               | United Kingdom (London) |
+| Anthropic, PBC     | Written coach for signed-in members (Claude Haiku): your question, scores, trends and shelf product names. Never photos. Anthropic does not train on API data | United States           |
 
 We may also disclose information when the law requires it, or to a successor if the
 business is sold, on the condition that this policy continues to apply. We do **not** sell
