@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { Badge, BUTTON_PRIMARY, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
+import { useAuth } from "@/context/auth";
 import type { Finding, Intent, Severity, Suggestion, Trend } from "@/lib/agent/agent";
 import { cloudConfigured } from "@/integrations/supabase/client";
 import { answer, briefing, intentFor, QUICK_QUESTIONS } from "@/lib/agent/agent";
@@ -172,7 +173,10 @@ const ProductCard = ({
 function AgentPage() {
   const { scans, catalog, inventory, toggleShelfProduct, tier } = useAppState();
   // Pro and Studio: typed questions go to the written coach (server checks the plan too).
-  const coach = tier !== "free" && cloudConfigured;
+  // Signed-in members on every plan get the written coach (the server checks each plan's
+  // allowance); without an account, the on-device agent answers.
+  const { access } = useAuth();
+  const coach = access.kind === "member" && cloudConfigured;
   const [thinking, setThinking] = useState(false);
   const brief = useMemo(() => briefing(scans, catalog, inventory), [scans, catalog, inventory]);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -220,16 +224,7 @@ function AgentPage() {
         id: id + 1,
         from: "agent",
         paragraphs:
-          "answer" in reply
-            ? [
-                ...reply.answer.split(/\n{2,}/).filter(Boolean),
-                ...(reply.remaining <= 3
-                  ? [
-                      `${reply.remaining} written ${reply.remaining === 1 ? "question" : "questions"} left today.`,
-                    ]
-                  : []),
-              ]
-            : [reply.error],
+          "answer" in reply ? reply.answer.split(/\n{2,}/).filter(Boolean) : [reply.error],
         productIds: [],
       },
     ]);
@@ -323,6 +318,20 @@ function AgentPage() {
               )}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
+              {coach && (
+                <button
+                  type="button"
+                  disabled={thinking}
+                  onClick={() =>
+                    void askWritten(
+                      "Write my weekly summary: what improved, what needs attention, and the one thing to focus on this week.",
+                    )
+                  }
+                  className="min-h-[44px] rounded-full border border-primary bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+                >
+                  Write my weekly summary
+                </button>
+              )}
               {QUICK_QUESTIONS.map((question) => (
                 <button
                   key={question.intent}
@@ -364,8 +373,8 @@ function AgentPage() {
             </form>
             <p className="mt-3 text-xs text-muted-foreground">
               {coach
-                ? "Typed questions are answered by Glowtrace's written coach: it sees your scores, trends and shelf, never your photos. The quick questions above stay on this device."
-                : "Answers come from fixed care rules applied to your own results. Nothing you type leaves this device. Pro and Studio add a written coach for questions in your own words."}
+                ? `Typed questions are answered by Glowtrace's written coach: it sees your scores, trends and shelf, never your photos. The quick questions above stay on this device. ${tier === "free" ? "Free plans include a few written questions a month; Pro gives you many more." : "Your plan includes a generous monthly allowance."}`
+                : "Answers come from fixed care rules applied to your own results. Nothing you type leaves this device. Sign in for the written coach."}
             </p>
           </SectionCard>
         </div>

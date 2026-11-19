@@ -5,13 +5,13 @@ import { getSupabase } from "@/integrations/supabase/client";
 import type { Finding } from "./agent/agent";
 
 /**
- * The written coach (Pro and Studio). Sends the question plus numbers and product names only,
+ * The written coach (every plan, within its monthly allowance). Sends the question plus numbers and product names only,
  * never photos, to the `coach` edge function, which checks the plan and daily allowance itself.
  */
-const replySchema = z.object({ answer: z.string().min(1).max(4000), remaining: z.number().int() });
+const replySchema = z.object({ answer: z.string().min(1).max(4000) });
 const errorSchema = z.object({ error: z.string().max(300) });
 
-export type CoachReply = { answer: string; remaining: number } | { error: string };
+export type CoachReply = { answer: string } | { error: string };
 
 export const askCoach = async (input: {
   question: string;
