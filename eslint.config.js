@@ -7,7 +7,15 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist", ".output", ".vinxi", ".vercel", "public/mediapipe", "public/ocr"],
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      ".vercel",
+      "public/mediapipe",
+      "public/ocr",
+      "supabase/functions",
+    ],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

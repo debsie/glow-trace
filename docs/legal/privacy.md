@@ -106,14 +106,14 @@ Privacy Control signals.
 We share information only with service providers who act on our instructions under
 contract:
 
-| Provider           | Purpose                                                                                 | Location                |
-| ------------------ | --------------------------------------------------------------------------------------- | ----------------------- |
-| Supabase Inc.      | Sign-in, account, beta access and feedback database                                     | United Kingdom (London) |
-| Vercel Inc.        | Website hosting; does not store personal information                                    | [CONFIRM REGION]        |
-| Cloudflare, Inc.   | Bot check (Turnstile) on the sign-in page; sees your IP address and browser signals     | Global network          |
-| [PAYMENT PROVIDER] | Payments                                                                                | [REGION]                |
-| Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                         | United Kingdom (London) |
-| [AI PROVIDER]      | Routine Coach answers (scores and product names only; no photos; not used for training) | [REGION]                |
+| Provider           | Purpose                                                                                                                                    | Location                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| Supabase Inc.      | Sign-in, account, beta access and feedback database                                                                                        | United Kingdom (London) |
+| Vercel Inc.        | Website hosting; does not store personal information                                                                                       | [CONFIRM REGION]        |
+| Cloudflare, Inc.   | Bot check (Turnstile) on the sign-in page; sees your IP address and browser signals                                                        | Global network          |
+| [PAYMENT PROVIDER] | Payments                                                                                                                                   | [REGION]                |
+| Supabase Inc.      | Sign-in link emails (until a dedicated email provider is added)                                                                            | United Kingdom (London) |
+| Anthropic, PBC     | Written coach on Pro and Studio: your question, scores, trends and shelf product names. Never photos. Anthropic does not train on API data | United States           |
 
 We may also disclose information when the law requires it, or to a successor if the
 business is sold, on the condition that this policy continues to apply. We do **not** sell
@@ -128,14 +128,15 @@ steps under Australian Privacy Principle 8.
 
 ## 7. How long we keep information
 
-| Information                             | Kept for                                                           |
-| --------------------------------------- | ------------------------------------------------------------------ |
-| Data on your device                     | Until you delete it or remove the app                              |
-| Account and synced data                 | Until you delete your account, then removed within 30 days         |
-| Billing and tax records                 | 5 years, as South African tax and company law requires [CONFIRM]   |
-| Error and security logs                 | Up to 90 days                                                      |
-| Numbers you shared to test the analysis | Until you delete them on the Your Data page or delete your account |
-| Artist client records                   | Until the artist deletes the client or closes their account        |
+| Information                             | Kept for                                                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Data on your device                     | Until you delete it or remove the app                                                                                  |
+| Account and synced data                 | Until you delete your account, then removed within 30 days                                                             |
+| Billing and tax records                 | 5 years, as South African tax and company law requires [CONFIRM]                                                       |
+| Written coach questions                 | Not stored by Glowtrace. We count questions per day only. Anthropic's own API retention applies [CONFIRM current term] |
+| Error and security logs                 | Up to 90 days                                                                                                          |
+| Numbers you shared to test the analysis | Until you delete them on the Your Data page or delete your account                                                     |
+| Artist client records                   | Until the artist deletes the client or closes their account                                                            |
 
 ## 8. How we protect it
 
