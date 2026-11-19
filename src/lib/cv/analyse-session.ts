@@ -5,6 +5,7 @@ import { findFace, findHairMask, findNails } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
 import { hairTextureSignalFast } from "./hair-model";
 import { analyzeBiomarkers } from "./kernel";
+import { nailYellowingSignalFast } from "./nails-model";
 import { cropTile } from "./nail-tiles";
 import type { Finger } from "./nail-tiles";
 import { parseBiomarkerReport } from "./schemas";
@@ -34,15 +35,26 @@ export const analyseShot = async (
     if (boxes.length === 0) {
       return {
         shotId: shot.id,
-        reports: [parseBiomarkerReport(analyzeBiomarkers("nails", pixels))],
+        reports: [
+          parseBiomarkerReport(
+            analyzeBiomarkers("nails", pixels, null, {
+              nailYellowing: await nailYellowingSignalFast(pixels),
+            }),
+          ),
+        ],
         nails: [],
         note: "No hand found, so the whole photo was read. Lay your hand flat and try again for per-nail results.",
       };
     }
-    const nails = boxes.map((box) => ({
-      finger: box.finger,
-      report: parseBiomarkerReport(analyzeBiomarkers("nails", cropTile(large, box, NAIL_TILE_PX))),
-    }));
+    const nails: NailReading[] = [];
+    for (const box of boxes) {
+      const tile = cropTile(large, box, NAIL_TILE_PX);
+      const nailYellowing = await nailYellowingSignalFast(tile);
+      nails.push({
+        finger: box.finger,
+        report: parseBiomarkerReport(analyzeBiomarkers("nails", tile, null, { nailYellowing })),
+      });
+    }
     // The thumb shot is for the thumb; the flat-hand shot for the other four.
     const wanted = nails.filter((nail) => (shot.id === "thumb") === (nail.finger === "thumb"));
     const kept = wanted.length > 0 ? wanted : nails;

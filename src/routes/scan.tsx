@@ -29,6 +29,7 @@ import { filterCheck, withFilterCheck } from "@/lib/cv/filter-check";
 import type { FilterCheck } from "@/lib/cv/filter-check";
 import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { hairTextureSignalFast } from "@/lib/cv/hair-model";
+import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
@@ -229,7 +230,11 @@ function ScanPage() {
             category,
             pixels,
             skin,
-            category === "hair" ? { hairTexture: await hairTextureSignalFast(pixels, null) } : {},
+            category === "hair"
+              ? { hairTexture: await hairTextureSignalFast(pixels, null) }
+              : category === "nails"
+                ? { nailYellowing: await nailYellowingSignalFast(pixels) }
+                : {},
           ),
           check,
         ),

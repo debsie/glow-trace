@@ -333,3 +333,21 @@ Also in v2.3:
   WebGPU where available, otherwise WebAssembly, and `hairTextureSignalFast` falls back to the
   TypeScript forward pass if it cannot load. Measured in Chromium: same reading to six decimals,
   0.10 s against 1.04 s. Its runtime (about 5 MB compressed) loads only on a hair scan.
+
+## v2.4 (`mojocv-v2.4.0-ts`): trained nail yellowing
+
+Nail "Yellowness" now comes from the nails U-Net (`nails-model.ts`, `nails-weights.json`,
+`public/models/nails.onnx`), trained at 256 px on 2,141 real nail photos with a known Beer-Lambert
+stain added, balanced across four skin-tone bands. Held out: r = 0.754 (0.748-0.775 by tone band),
+noise when absent 0.129, leak 0.209. Each 128 px nail tile is enlarged to 256 px and the yellowing
+map is averaged, then mapped with `YELLOWING_ZERO = -1.2`, `YELLOWING_SPAN = 0.6` (provisional,
+from tiles of one reference photo: clean 15-37, most training stain 52-86). In Chromium, ONNX
+Runtime Web matches the TypeScript pass to six decimals, at 0.09 s against 3.7 s per nail. The
+shared network code is `area-model.ts`.
+
+Not shipped from training v3.2 (rule: r ≥ 0.7, leak ≤ 0.3, even across tone bands):
+
+- nails: ridges r 0.79 but leak 0.56; spots 0.55; cuticle 0.24
+- hair: shine 0.58; flakes 0.59 with leak 0.70 (texture 0.93 again; the shipped 128 px model stays)
+- skin: six heads in one network diluted every one, so redness fell to 0.18 and texture to 0.77
+  with leak 0.42. The v2 redness ensemble and the v1 formulas stay.
