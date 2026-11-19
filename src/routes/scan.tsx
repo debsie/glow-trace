@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/bits";
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
+import { CheerCard } from "@/components/agent/cheer-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
@@ -29,6 +30,7 @@ import { filterCheck, withFilterCheck } from "@/lib/cv/filter-check";
 import type { FilterCheck } from "@/lib/cv/filter-check";
 import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { hairTextureSignalFast } from "@/lib/cv/hair-model";
+import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { BiomarkerReport } from "@/lib/cv/types";
@@ -229,7 +231,11 @@ function ScanPage() {
             category,
             pixels,
             skin,
-            category === "hair" ? { hairTexture: await hairTextureSignalFast(pixels, null) } : {},
+            category === "hair"
+              ? { hairTexture: await hairTextureSignalFast(pixels, null) }
+              : category === "nails"
+                ? { nailYellowing: await nailYellowingSignalFast(pixels) }
+                : {},
           ),
           check,
         ),
@@ -521,6 +527,7 @@ function ScanPage() {
                     ))}
               </div>
             </div>
+            {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
             {shown.report?.zones && !shown.demo && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
