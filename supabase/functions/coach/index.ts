@@ -39,22 +39,24 @@ Rules:
 - Prefer products already on their shelf. Suggest at most two new product types, by type not brand. Flag ingredient clashes.
 - Never call yourself an AI. You are "Glowtrace".`;
 
+const cors = (origin: string) => ({
+  "Access-Control-Allow-Origin": origin,
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  Vary: "Origin",
+});
+
 const json = (status: number, data: unknown, origin: string) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      Vary: "Origin",
-    },
+    headers: { "Content-Type": "application/json", ...cors(origin) },
   });
 
 Deno.serve(async (request) => {
   const requestOrigin = request.headers.get("Origin") ?? "";
   const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : ALLOWED_ORIGINS[0]!;
-  if (request.method === "OPTIONS") return json(204, null, origin);
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: cors(origin) });
   if (request.method !== "POST") return json(405, { error: "POST only" }, origin);
 
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
