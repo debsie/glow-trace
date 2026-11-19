@@ -27,7 +27,7 @@ Vitest, Supabase (sign-in and beta only), bun.
 - Security headers (`lib/security-headers.ts`): any new origin must be added there. No third-party
   scripts, fonts, analytics or embeds without updating the CSP, `/cookies` and `docs/legal/privacy.md`.
 - Privacy: photos and scans stay on the device; only email, name, access, requests, feedback, the
-  audit log and opt-in calibration numbers (scores and ratings, never photos) live in Supabase.
+  audit log, opt-in calibration numbers and photos a beta tester explicitly chooses to share for training (separate opt-in, per photo, 2-year limit, deleted on withdrawal) live in Supabase.
   Adults only (18+).
 - Calibration (`docs/calibration-plan.md`): never claim clinical accuracy. Claims are repeatability
   and direction of change. Trends come from a Kalman filter (`lib/trend.ts`): a change counts at 95%

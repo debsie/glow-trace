@@ -22,6 +22,7 @@ import {
   PrimaryButton,
   SectionCard,
 } from "@/components/ui/bits";
+import { TrainingConsent } from "@/components/privacy/training-consent";
 import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
 import { pageHead } from "@/lib/seo";
@@ -205,6 +206,8 @@ function PrivacyPage() {
           invite code are stored here too.
         </p>
       </SectionCard>
+
+      {member && <TrainingConsent />}
 
       {member && (
         <SectionCard title="Your account">
