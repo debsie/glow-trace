@@ -22,6 +22,7 @@ const FRAMES: Record<Overlay, React.ReactElement> = {
   "hair-lengths": <rect x="18" y="12" width="64" height="76" rx="6" />,
   "hair-crown": <circle cx="50" cy="50" r="34" />,
   "hair-ends": <rect x="26" y="30" width="48" height="40" rx="6" />,
+  "hair-length": <rect x="22" y="6" width="56" height="88" rx="6" />,
 };
 
 const PREVIEW_PX = 160;

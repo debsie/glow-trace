@@ -1,7 +1,8 @@
+import type { LengthBand } from "../hair-length";
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v2.4.0-ts";
+export const KERNEL_VERSION = "mojocv-v2.5.0-ts";
 
 export type { ScanCategory };
 
@@ -50,6 +51,14 @@ export type BiomarkerReport = {
   zones?: FaceZones | undefined;
   /** Nose redness, dark circles and skin type (face guide only). */
   face?: FaceDetails | undefined;
+  /** Hair length photo: band, position in torso units and stretched or natural. */
+  hairLength?: HairLengthReading | undefined;
+};
+
+export type HairLengthReading = {
+  band: LengthBand;
+  position: number;
+  state: "stretched" | "natural";
 };
 
 export type FaceDetails = {

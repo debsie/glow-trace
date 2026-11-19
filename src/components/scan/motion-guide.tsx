@@ -188,6 +188,41 @@ const HairLengths = () => (
   </svg>
 );
 
+const HairLength = () => (
+  <svg viewBox="0 0 240 170" className="h-full w-full" aria-hidden="true">
+    <g className="text-muted-foreground">
+      <circle cx="90" cy="30" r="15" {...STROKE} />
+      <path d="M62 66 C70 54 110 54 118 66 L122 150 L58 150 Z" {...STROKE} />
+    </g>
+    <g className="mg-swing text-foreground" style={{ transformOrigin: "90px 24px" }}>
+      {[-8, -3, 2, 7].map((offset) => (
+        <path
+          key={offset}
+          d={`M${90 + offset} 22 C${88 + offset} 60 ${92 + offset} 90 ${90 + offset} 112`}
+          {...STROKE}
+        />
+      ))}
+    </g>
+    <g className="text-primary">
+      {[62, 88, 112, 136].map((y) => (
+        <line
+          key={y}
+          x1="128"
+          y1={y}
+          x2="140"
+          y2={y}
+          {...STROKE}
+          strokeDasharray="3 3"
+          className="mg-frame"
+        />
+      ))}
+    </g>
+    <g className="mg-phone-side">
+      <Phone x={200} y={92} />
+    </g>
+  </svg>
+);
+
 const HairCrown = () => (
   <svg viewBox="0 0 240 170" className="h-full w-full" aria-hidden="true">
     <g className="text-muted-foreground">
@@ -253,6 +288,7 @@ const SCENES: Record<Overlay, () => React.ReactElement> = {
   "hand-flat": HandFlat,
   thumb: Thumb,
   "hair-lengths": HairLengths,
+  "hair-length": HairLength,
   "hair-crown": HairCrown,
   "hair-ends": HairEnds,
 };

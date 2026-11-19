@@ -44,6 +44,24 @@ export const biomarkerReportSchema = z.object({
       skinType: z.enum(["oily", "combination", "balanced"]),
     })
     .optional(),
+  hairLength: z
+    .object({
+      band: z.enum([
+        "ear",
+        "chin",
+        "shoulder",
+        "collarbone",
+        "armpit",
+        "bra-strap",
+        "mid-back",
+        "waist",
+        "hip",
+        "past-hip",
+      ]),
+      position: z.number().min(-2).max(3),
+      state: z.enum(["stretched", "natural"]),
+    })
+    .optional(),
 });
 
 export class InvalidReportError extends Error {

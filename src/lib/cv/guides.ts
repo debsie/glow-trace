@@ -1,6 +1,8 @@
 import { faceAreaMasks, faceFeatureMask, faceSkinMask } from "./face-mask";
 import type { FaceAreas } from "./face-mask";
 import type { FaceRegions } from "./face-mask";
+import { hairEndRow, lengthPosition } from "../hair-length";
+import type { BodyMarks } from "../hair-length";
 import { nailBoxes } from "./nail-tiles";
 import type { Point, TileBox } from "./nail-tiles";
 import type { SubjectMeasure } from "./subject-check";
@@ -19,7 +21,8 @@ const RUNTIME_MB = 15;
 export const GUIDE_DOWNLOAD_MB = {
   skin: RUNTIME_MB + 4,
   nails: RUNTIME_MB + 8,
-  hair: RUNTIME_MB + 1,
+  // Hair segmenter plus the pose model for the length photo.
+  hair: RUNTIME_MB + 7,
 };
 
 type Vision = typeof import("@mediapipe/tasks-vision");
@@ -89,6 +92,59 @@ const hairModel = once(async () => {
     outputConfidenceMasks: false,
   });
 });
+
+const poseModel = once(async () => {
+  const { lib, files } = await loadVision();
+  return lib.PoseLandmarker.createFromOptions(files, {
+    baseOptions: { modelAssetPath: "/mediapipe/pose_landmarker_lite.task", delegate: "CPU" },
+    runningMode: "IMAGE",
+    numPoses: 1,
+  });
+});
+
+/**
+ * Hair length from a front photo, hair forward: body marks from the pose model (ears, mouth, shoulders,
+ * hips) and where the hair ends down the middle of the back. Null when either is missing.
+ */
+export const measureHairLength = async (
+  detectOn: ImageData,
+): Promise<{ position: number; marks: BodyMarks } | null> => {
+  try {
+    const pose = (await poseModel()).detect(detectOn).landmarks[0];
+    if (!pose) return null;
+    const y = (...indices: number[]) => {
+      const points = indices.flatMap((i) => (pose[i] ? [pose[i]] : []));
+      return points.length ? points.reduce((sum, p) => sum + p.y, 0) / points.length : NaN;
+    };
+    const x = (...indices: number[]) => {
+      const points = indices.flatMap((i) => (pose[i] ? [pose[i]] : []));
+      return points.length ? points.reduce((sum, p) => sum + p.x, 0) / points.length : NaN;
+    };
+    // Pose points: 7 and 8 ears, 9 and 10 mouth corners, 11 and 12 shoulders, 23 and 24 hips.
+    const ear = y(7, 8);
+    const mouth = y(9, 10);
+    const shoulders = y(11, 12);
+    const marks: BodyMarks = {
+      ear,
+      chin: mouth + (shoulders - mouth) * 0.35,
+      shoulders,
+      hips: y(23, 24),
+    };
+    const segment = (await hairModel()).segment(detectOn).categoryMask;
+    if (!segment) return null;
+    const mask = segment.getAsUint8Array().map((value) => (value > 0 ? 1 : 0));
+    // Hair brought forward falls over either shoulder: search the whole shoulder width, with a
+    // lower share because each side is only part of that width.
+    const span = Math.abs((pose[11]?.x ?? 0) - (pose[12]?.x ?? 0));
+    const end = hairEndRow(mask, segment.width, segment.height, x(11, 12), 0.08, span * 0.75);
+    segment.close();
+    if (end === null) return null;
+    const position = lengthPosition(end, marks);
+    return position === null ? null : { position, marks };
+  } catch {
+    return null;
+  }
+};
 
 /** Face skin mask at width x height, from a larger copy of the photo. Null if no usable face. */
 export const findFaceMask = async (

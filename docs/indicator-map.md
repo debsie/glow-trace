@@ -12,46 +12,46 @@ study), **context** (asked, not measured).
 
 ## Skin
 
-| Indicator                                    | Status                    | Signal                                                |
-| -------------------------------------------- | ------------------------- | ----------------------------------------------------- |
-| Redness, overall                             | live                      | trained redness model (v2)                            |
-| Redness by zone (forehead, cheeks, chin)     | live                      | face zones                                            |
-| Redness on the nose                          | build                     | nose zone from face landmarks                         |
-| Dark circles                                 | build, then train-sim     | under-eye vs own cheek brightness (fair across tones) |
-| Pigmentation, melasma, dark spots            | live (formula), train-sim | pigment map, by zone                                  |
-| Even tone                                    | live                      | hue variance                                          |
-| Breakouts (count and where)                  | train-sim, train-label    | acne datasets (CC BY)                                 |
-| Texture and pores                            | live (formula), train-sim |                                                       |
-| Shine and skin type (oily, combination, dry) | build                     | T-zone shine vs cheek shine                           |
-| Ashy skin (grey dry cast on deeper tones)    | build                     | lightness up and colour down vs own baseline          |
-| Dryness and flaking                          | train-sim                 |                                                       |
-| Fine lines (forehead, eyes)                  | train-label               | wrinkle datasets (CC BY)                              |
-| Lips dryness                                 | build                     | texture inside the lips outline                       |
-| Makeup and your skin                         | build                     | readings after Makeup Day vs bare days                |
-| Makeup left on overnight                     | context                   | Makeup Day removal check-in                           |
-| Under-eye puffiness                          | own-data                  | needs depth or side light                             |
-| Sun exposure effect                          | build                     | pigment trend with sunscreen use from the routine     |
-| Shade and undertone                          | live                      | ITA and hue angle                                     |
+| Indicator                                    | Status                    | Signal                                                   |
+| -------------------------------------------- | ------------------------- | -------------------------------------------------------- |
+| Redness, overall                             | live                      | trained redness model (v2)                               |
+| Redness by zone (forehead, cheeks, chin)     | live                      | face zones                                               |
+| Redness on the nose                          | live                      | nose zone from face landmarks                            |
+| Dark circles                                 | live (provisional scale)  | under-eye vs own cheekbone lightness (fair across tones) |
+| Pigmentation, melasma, dark spots            | live (formula), train-sim | pigment map, by zone                                     |
+| Even tone                                    | live                      | hue variance                                             |
+| Breakouts (count and where)                  | train-sim, train-label    | acne datasets (CC BY)                                    |
+| Texture and pores                            | live (formula), train-sim |                                                          |
+| Shine and skin type (oily, combination, dry) | live (provisional)        | T-zone shine vs cheek shine                              |
+| Ashy skin (grey dry cast on deeper tones)    | build                     | lightness up and colour down vs own baseline             |
+| Dryness and flaking                          | train-sim                 |                                                          |
+| Fine lines (forehead, eyes)                  | train-label               | wrinkle datasets (CC BY)                                 |
+| Lips dryness                                 | build                     | texture inside the lips outline                          |
+| Makeup and your skin                         | build                     | readings after Makeup Day vs bare days                   |
+| Makeup left on overnight                     | context                   | Makeup Day removal check-in                              |
+| Under-eye puffiness                          | own-data                  | needs depth or side light                                |
+| Sun exposure effect                          | build                     | pigment trend with sunscreen use from the routine        |
+| Shade and undertone                          | live                      | ITA and hue angle                                        |
 
 ## Hair
 
-| Indicator                                  | Status                    | Signal                                            |
-| ------------------------------------------ | ------------------------- | ------------------------------------------------- |
-| Length band (ear to hip, APL, BSL)         | build                     | pose landmarks + hair mask, length photo          |
-| Growth and length retention                | build                     | trend of length over time                         |
-| Stretched or natural (shrinkage)           | context                   | asked with each length photo; only like with like |
-| Hair today (out, braids, wig, weave, locs) | context, then train-label | pauses hair readings during protective styles     |
-| Curl pattern (1A to 4C)                    | train-label               | curl-type datasets                                |
-| Texture and porosity                       | live                      | trained hair model                                |
-| Shine                                      | train-sim                 | v4 hair-fine model                                |
-| Frizz                                      | train-sim                 |                                                   |
-| Ends and breakage                          | own-data                  | no usable public dataset yet                      |
-| Crown thinning (visible scalp)             | build                     | hair mask share in the crown photo                |
-| Edges and hairline (traction)              | build, then own-data      | hairline position vs face landmarks over time     |
-| Grey share                                 | build                     | light, low-colour hair pixels                     |
-| Scalp flakes                               | train-sim, train-label    | ScalpHairLabels, dandruff sets                    |
-| Scalp oiliness and dryness                 | train-label               | scalp datasets with oily and dry labels           |
-| Treatments (relaxer, colour, heat)         | context                   | logged, explains jumps in the trend               |
+| Indicator                                  | Status                         | Signal                                               |
+| ------------------------------------------ | ------------------------------ | ---------------------------------------------------- |
+| Length band (ear to hip, APL, BSL)         | live (preview)                 | pose landmarks + hair mask, front photo hair forward |
+| Growth and length retention                | build                          | trend of length over time                            |
+| Stretched or natural (shrinkage)           | live (asked)                   | asked with each length photo; only like with like    |
+| Hair today (out, braids, wig, weave, locs) | live (asked), then train-label | pauses hair readings during protective styles        |
+| Curl pattern (1A to 4C)                    | train-label                    | curl-type datasets                                   |
+| Texture and porosity                       | live                           | trained hair model                                   |
+| Shine                                      | train-sim                      | v4 hair-fine model                                   |
+| Frizz                                      | train-sim                      |                                                      |
+| Ends and breakage                          | own-data                       | no usable public dataset yet                         |
+| Crown thinning (visible scalp)             | build                          | hair mask share in the crown photo                   |
+| Edges and hairline (traction)              | build, then own-data           | hairline position vs face landmarks over time        |
+| Grey share                                 | build                          | light, low-colour hair pixels                        |
+| Scalp flakes                               | train-sim, train-label         | ScalpHairLabels, dandruff sets                       |
+| Scalp oiliness and dryness                 | train-label                    | scalp datasets with oily and dry labels              |
+| Treatments (relaxer, colour, heat)         | context                        | logged, explains jumps in the trend                  |
 
 ## Nails
 

@@ -1,7 +1,9 @@
+import { bandFor } from "../hair-length";
+import type { LengthBand } from "../hair-length";
 import type { Shot, ShotResult } from "../scan-session";
 import type { ScanCategory } from "../types";
 import { filterCheck, withFilterCheck } from "./filter-check";
-import { findFace, findHairMask, findNails } from "./guides";
+import { findFace, findHairMask, findNails, measureHairLength } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
 import { hairTextureSignalFast } from "./hair-model";
 import { analyzeBiomarkers } from "./kernel";
@@ -18,6 +20,8 @@ const NAIL_TILE_PX = 128;
 export type NailReading = { finger: Finger; report: BiomarkerReport };
 export type ShotAnalysis = ShotResult & {
   nails: NailReading[];
+  /** Hair length photo: where the hair ends (hair-length.ts). */
+  length?: { position: number; band: LengthBand };
   /** Plain note for the result screen, e.g. that no hand was found. */
   note?: string;
 };
@@ -28,6 +32,22 @@ export const analyseShot = async (
   shot: Shot,
   photo: Blob,
 ): Promise<ShotAnalysis> => {
+  if (category === "hair" && shot.id === "length") {
+    const measured = await measureHairLength(await loadImageData(photo, PHOTO_DIM));
+    return measured
+      ? {
+          shotId: shot.id,
+          reports: [],
+          nails: [],
+          length: { position: measured.position, band: bandFor(measured.position, measured.marks) },
+        }
+      : {
+          shotId: shot.id,
+          reports: [],
+          nails: [],
+          note: "We couldn't see where your hair ends. Stand back so your head to hips fit, with your hair brought forward.",
+        };
+  }
   const pixels = await loadImageData(photo, MAX_DIM);
   if (category === "nails") {
     const large = await loadImageData(photo, NAIL_DETECT_DIM);

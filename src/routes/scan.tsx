@@ -15,6 +15,7 @@ import {
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { CheerCard } from "@/components/agent/cheer-card";
+import { HairLengthCard } from "@/components/scan/hair-length-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
@@ -291,7 +292,12 @@ function ScanPage() {
   const saveSession = async (session: SessionResult) => {
     setGuided(false);
     setFaceResult(null);
-    const report = session.report ? parseBiomarkerReport(session.report) : null;
+    const report = session.report
+      ? parseBiomarkerReport({
+          ...session.report,
+          ...(session.hairLength ? { hairLength: session.hairLength } : {}),
+        })
+      : null;
     const photo = session.photo
       ? await makeThumbnail(session.photo).catch(() => undefined)
       : undefined;
@@ -537,6 +543,9 @@ function ScanPage() {
               </div>
             </div>
             {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
+            {shown.report?.hairLength && !shown.demo && (
+              <HairLengthCard scans={scans} current={shown} className="mt-5" />
+            )}
             {shown.report?.face && !shown.demo && (
               <div className="mt-5">
                 <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
