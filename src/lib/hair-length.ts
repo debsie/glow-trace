@@ -41,6 +41,14 @@ const BANDS: [LengthBand, number][] = [
   ["hip", 1.08],
 ];
 
+/** Guide lines for the result overlay: where a few familiar bands start, in torso units. */
+export const GUIDE_LINES: [string, number][] = [
+  ["Shoulders", 0],
+  ["Armpit", 0.3],
+  ["Bra strap", 0.45],
+  ["Waist", 0.85],
+];
+
 /** Average adult shoulder-to-hip height, for a rough centimetre figure (provisional). */
 export const TORSO_CM = 48;
 

@@ -15,6 +15,7 @@ import {
 import { UpgradeCard } from "@/components/billing/upgrade-card";
 import { CalibrationCard } from "@/components/calibration/calibration-card";
 import { CheerCard } from "@/components/agent/cheer-card";
+import { DetectionView } from "@/components/scan/detection-view";
 import { HairLengthCard } from "@/components/scan/hair-length-card";
 import { GuidedSession } from "@/components/scan/guided-session";
 import type { SessionResult } from "@/components/scan/guided-session";
@@ -35,6 +36,7 @@ import { hairTextureSignalFast } from "@/lib/cv/hair-model";
 import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
+import type { DetectionShape, Detections } from "@/lib/cv/detections";
 import type { FaceAreas } from "@/lib/cv/face-mask";
 import type { BiomarkerReport } from "@/lib/cv/types";
 import { ZONE_LABEL } from "@/lib/cv/zones";
@@ -183,6 +185,16 @@ function ScanPage() {
   // site's content security policy (connect-src) blocks in production.
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   const [intakeProblem, setIntakeProblem] = useState<string | null>(null);
+  const [views, setViews] = useState<{ title: string; url: string; detections: Detections }[]>([]);
+  const showViews = (next: { title: string; photo: Blob; detections: Detections }[]) =>
+    setViews((current) => {
+      current.forEach((view) => URL.revokeObjectURL(view.url));
+      return next.map((view) => ({
+        title: view.title,
+        url: URL.createObjectURL(view.photo),
+        detections: view.detections,
+      }));
+    });
   const takePhoto = useCallback(
     (file: File) => {
       setPreviewUrl((current) => {
@@ -241,11 +253,13 @@ function ScanPage() {
       let skin: Uint8Array | null = null;
       let check: FilterCheck | null = null;
       let faceAreas: FaceAreas | null = null;
+      let faceShapes: DetectionShape[] | null = null;
       if (category === "skin" && faceGuide && photoFile) {
         const larger = await loadImageData(photoFile, PHOTO_DIM);
         const face = await findFace(larger);
         skin = face?.skinAt(pixels.width, pixels.height) ?? null;
         faceAreas = face?.areasAt(pixels.width, pixels.height) ?? null;
+        faceShapes = face ? face.shapes(larger.width, larger.height) : null;
         const largeSkin = face?.skinAt(larger.width, larger.height) ?? null;
         if (face && largeSkin)
           check = filterCheck(larger, largeSkin, face.featuresAt(larger.width, larger.height));
@@ -268,6 +282,21 @@ function ScanPage() {
       );
       // Keep a compact copy of the user's own photo for history; sample photos ship with the app.
       if (photoFile) photo = await makeThumbnail(photoFile).catch(() => undefined);
+      showViews(
+        photoFile && faceShapes
+          ? [
+              {
+                title: "Face",
+                photo: photoFile,
+                detections: {
+                  caption:
+                    "Only the skin inside the outline was read: no eyes, brows, lips or background.",
+                  shapes: faceShapes,
+                },
+              },
+            ]
+          : [],
+      );
     } catch {
       failure = "We couldn't read that photo — try a JPEG or PNG";
     }
@@ -331,6 +360,7 @@ function ScanPage() {
       return;
     }
     setNailReadings(session.nails);
+    showViews(session.views);
     setSessionNotes(session.notes);
     setResult(scan);
     window.setTimeout(
@@ -570,6 +600,23 @@ function ScanPage() {
                     ))}
               </div>
             </div>
+            {views.length > 0 && !shown.demo && (
+              <section aria-label="What Glowtrace looked at" className="mt-5 space-y-3">
+                <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+                  What Glowtrace looked at
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {views.map((view) => (
+                    <DetectionView
+                      key={view.url}
+                      src={view.url}
+                      detections={view.detections}
+                      alt={`Your ${view.title.toLowerCase()} photo with what was read outlined`}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
             {!shown.demo && <CheerCard scans={scans} area={shown.category} className="mt-5" />}
             {shown.report?.hairLength && !shown.demo && (
               <HairLengthCard scans={scans} current={shown} className="mt-5" />

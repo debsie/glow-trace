@@ -660,3 +660,36 @@ details[open] > .details-body {
     animation: none !important;
   }
 }
+
+/* Detection overlay on the result photo: outlines draw in once, labels fade up. */
+.detect-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: detect-draw 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.detect-label {
+  opacity: 0;
+  animation: detect-fade 0.5s 0.9s ease-out forwards;
+}
+
+@keyframes detect-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes detect-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detect-line,
+  .detect-label {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

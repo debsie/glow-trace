@@ -1,4 +1,11 @@
-import { faceAreaMasks, faceFeatureMask, faceSkinMask } from "./face-mask";
+import {
+  faceAreaMasks,
+  faceAreaPolygons,
+  faceFeatureMask,
+  faceOutline,
+  faceSkinMask,
+} from "./face-mask";
+import type { DetectionShape } from "./detections";
 import type { FaceAreas } from "./face-mask";
 import type { FaceRegions } from "./face-mask";
 import { hairEndRow, lengthPosition } from "../hair-length";
@@ -108,7 +115,7 @@ const poseModel = once(async () => {
  */
 export const measureHairLength = async (
   detectOn: ImageData,
-): Promise<{ position: number; marks: BodyMarks } | null> => {
+): Promise<{ position: number; marks: BodyMarks; end: number } | null> => {
   try {
     const pose = (await poseModel()).detect(detectOn).landmarks[0];
     if (!pose) return null;
@@ -140,7 +147,7 @@ export const measureHairLength = async (
     segment.close();
     if (end === null) return null;
     const position = lengthPosition(end, marks);
-    return position === null ? null : { position, marks };
+    return position === null ? null : { position, marks, end };
   } catch {
     return null;
   }
@@ -168,6 +175,8 @@ export type FoundFace = {
   featuresAt: (width: number, height: number) => Uint8Array;
   /** Nose, under-eyes and cheek reference patches at the given size. */
   areasAt: (width: number, height: number) => FaceAreas | null;
+  /** Outlines for the result overlay (0-1 of the photo). */
+  shapes: (width: number, height: number) => DetectionShape[];
 };
 
 /** One detection, masks at any size: the analysis size and the larger filter-check size. */
@@ -180,6 +189,19 @@ export const findFace = async (detectOn: ImageData): Promise<FoundFace | null> =
       skinAt: (width, height) => faceSkinMask(face, regions, width, height),
       featuresAt: (width, height) => faceFeatureMask(face, regions, width, height),
       areasAt: (width, height) => faceAreaMasks(face, width, height),
+      shapes: (width, height) => {
+        const areas = faceAreaPolygons(face, width, height);
+        return [
+          { kind: "outline", points: faceOutline(face, regions), role: "area" },
+          ...(areas
+            ? ([
+                { kind: "outline", points: areas.nose, role: "detail", label: "Nose" },
+                { kind: "outline", points: areas.underEyeRight, role: "detail" },
+                { kind: "outline", points: areas.underEyeLeft, role: "detail", label: "Under-eye" },
+              ] as const)
+            : []),
+        ];
+      },
     };
   } catch {
     return null;

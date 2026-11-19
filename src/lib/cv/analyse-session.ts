@@ -1,8 +1,9 @@
-import { bandFor } from "../hair-length";
+import { BAND_LABEL, bandFor, GUIDE_LINES } from "../hair-length";
 import type { LengthBand } from "../hair-length";
 import type { Shot, ShotResult } from "../scan-session";
 import type { ScanCategory } from "../types";
 import { filterCheck, withFilterCheck } from "./filter-check";
+import type { Detections } from "./detections";
 import { findFace, findHairMask, findNails, measureHairLength } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
 import { hairTextureSignalFast } from "./hair-model";
@@ -20,6 +21,8 @@ const NAIL_TILE_PX = 128;
 export type NailReading = { finger: Finger; report: BiomarkerReport };
 export type ShotAnalysis = ShotResult & {
   nails: NailReading[];
+  /** What the guides found, for the result overlay (in memory only). */
+  detections?: Detections;
   /** Hair length photo: where the hair ends (hair-length.ts). */
   length?: { position: number; band: LengthBand };
   /** Plain note for the result screen, e.g. that no hand was found. */
@@ -40,6 +43,23 @@ export const analyseShot = async (
           reports: [],
           nails: [],
           length: { position: measured.position, band: bandFor(measured.position, measured.marks) },
+          detections: {
+            caption: "Where your hair ends, against your shoulders and waist.",
+            shapes: [
+              ...GUIDE_LINES.map(([label, at]) => ({
+                kind: "level" as const,
+                y: measured.marks.shoulders + at * (measured.marks.hips - measured.marks.shoulders),
+                label,
+                role: "mark" as const,
+              })),
+              {
+                kind: "level" as const,
+                y: measured.end,
+                label: BAND_LABEL[bandFor(measured.position, measured.marks)],
+                role: "end" as const,
+              },
+            ],
+          },
         }
       : {
           shotId: shot.id,
@@ -78,7 +98,25 @@ export const analyseShot = async (
     // The thumb shot is for the thumb; the flat-hand shot for the other four.
     const wanted = nails.filter((nail) => (shot.id === "thumb") === (nail.finger === "thumb"));
     const kept = wanted.length > 0 ? wanted : nails;
-    return { shotId: shot.id, reports: kept.map((nail) => nail.report), nails: kept };
+    const keptFingers = new Set(kept.map((nail) => nail.finger));
+    return {
+      shotId: shot.id,
+      reports: kept.map((nail) => nail.report),
+      nails: kept,
+      detections: {
+        caption: "Each nail was read on its own.",
+        shapes: boxes
+          .filter((box) => keptFingers.has(box.finger))
+          .map((box) => ({
+            kind: "box" as const,
+            x: box.x / large.width,
+            y: box.y / large.height,
+            w: box.size / large.width,
+            h: box.size / large.height,
+            label: box.finger.charAt(0).toUpperCase() + box.finger.slice(1),
+          })),
+      },
+    };
   }
   const large = await loadImageData(photo, PHOTO_DIM);
   const face = category === "skin" ? await findFace(large) : null;
@@ -96,8 +134,15 @@ export const analyseShot = async (
     : category === "skin"
       ? "No face found, so the whole photo was read."
       : "Not enough hair found, so the whole photo was read.";
+  const detections: Detections | undefined = face
+    ? {
+        caption: "Only the skin inside the outline was read: no eyes, brows, lips or background.",
+        shapes: face.shapes(large.width, large.height),
+      }
+    : undefined;
   return {
     shotId: shot.id,
+    ...(detections ? { detections } : {}),
     reports: [
       parseBiomarkerReport(
         withFilterCheck(

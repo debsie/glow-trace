@@ -8,6 +8,7 @@ import { analyseShot } from "@/lib/cv/analyse-session";
 import type { NailReading, ShotAnalysis } from "@/lib/cv/analyse-session";
 import { GUIDE_DOWNLOAD_MB } from "@/lib/cv/guides";
 import type { BiomarkerReport } from "@/lib/cv/types";
+import type { Detections } from "@/lib/cv/detections";
 import type { LengthBand } from "@/lib/hair-length";
 import { combineShots, SESSIONS, shotsForHair } from "@/lib/scan-session";
 import type { HairToday } from "@/lib/scan-session";
@@ -38,6 +39,8 @@ export type SessionResult = {
   photo: Blob | undefined;
   nails: NailReading[];
   notes: string[];
+  /** Each photo with what the guides found, for the result overlay (in memory only). */
+  views: { title: string; photo: Blob; detections: Detections }[];
   /** Hair only: where the hair ends and whether it was stretched or natural. */
   hairLength?: { position: number; band: LengthBand; state: "stretched" | "natural" };
 };
@@ -107,7 +110,15 @@ export const GuidedSession = ({
         "Your hair is resting in a protective style, so only your scalp was read. Lengths, ends and length pick up again when it's out.",
       );
     }
+    const views = analyses.flatMap((analysis, index) => {
+      const photo = all[index];
+      const shot = shots.find((item) => item.id === analysis.shotId);
+      return analysis.detections && photo && shot
+        ? [{ title: shot.title, photo, detections: analysis.detections }]
+        : [];
+    });
     onDone({
+      views,
       report: combineShots(category, shots, analyses),
       photo: all[0],
       nails: analyses.flatMap((analysis) => analysis.nails),
