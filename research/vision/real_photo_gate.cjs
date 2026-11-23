@@ -77,8 +77,8 @@ if (!weightsPath || pairs.length < 3) {
         const ctx = c.getContext("2d", { willReadFrequently: true });
         ctx.drawImage(src, 0, 0, w, h);
         const values = [];
-        for (let y = 0; y + 128 <= h; y += 64)
-          for (let x = 0; x + 128 <= w; x += 64) {
+        for (let y = 0; y + 128 <= h; y += 128)
+          for (let x = 0; x + 128 <= w; x += 128) {
             const mask = new Uint8Array(128 * 128);
             let on = 0;
             for (let yy = 0; yy < 128; yy += 1)
@@ -90,7 +90,7 @@ if (!weightsPath || pairs.length < 3) {
                   on += 1;
                 }
               }
-            if (on < 0.6 * 128 * 128) continue;
+            if (on < 0.6 * 128 * 128 || values.length >= 12) continue;
             const patch = ctx.getImageData(x, y, 128, 128);
             const v = window.__gate.signal(patch, mask);
             if (v !== null) values.push(v);
