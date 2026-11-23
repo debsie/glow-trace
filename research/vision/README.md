@@ -29,3 +29,26 @@ Locally: `python3 multitask.py skin`, or `python3 multitask.py nails --images DI
 A model ships only if, on held-out photos, each head tracks its true amount (correlation), stays
 quiet when its effect is absent (noise and leak from other effects), and passes the app's
 robustness tests. Skin redness must also beat the shipped redness model.
+
+Skin texture (v5 onwards) must also pass two real-photo gates:
+
+1. `real_photo_checks` in the training eval (held-out real patches, no simulated effects): a blur
+   lowers the reading by at least half the between-photo spread (`blur <= -0.5`), and +/-20%
+   exposure moves it by at most a fifth (`brightness <= 0.2`).
+2. `real_photo_gate.cjs` on this machine, through the app's own face finder, with consented photos
+   of at least two people: the same blur and brightness checks, and repeat photos of one person
+   within half the spread between people. Photos stay on the machine and out of the repo.
+
+## v5: skin texture on patches
+
+v4's texture head scored r = 0.81 on simulated roughness yet barely moved on real faces (heavy
+grain +0.001, blur -0.014, two people 0.05 apart), because it learnt the simulated speckle at the
+shrunk-photo scale. `--patches` (`train_glowtrace_v5_kaggle.ipynb`) changes four things:
+
+- Close-up 128 px skin patches at a random scale (short side 256-640 px), three per photo.
+- Realistic surface change: pores (soft dark dots), side-lit bumps, fine roughness, and beauty
+  filter smoothing on 30% of photos, plus phone processing (resampling, sharpening, JPEG).
+- The texture label is measured: the change in fine-scale relative contrast (`hp_contrast`), so
+  smoothing gives a negative label and every effect shares one unit.
+- An anchor term (a single photo's reading tracks its own fine contrast) and a ranking term (every
+  clear change points the right way), so readings mean something on one photo, not only as changes.

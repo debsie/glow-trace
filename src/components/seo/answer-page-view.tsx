@@ -15,9 +15,10 @@ export const AnswerPageView = ({ page }: { page: AnswerPage }) => (
           <LogoMark />
           <span className="font-display text-xl font-semibold">Glowtrace</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
-          <Link to={page.cta.to} className={BUTTON_PRIMARY}>
+          {/* On phones the same button sits right under the headline, so the bar stays one line. */}
+          <Link to={page.cta.to} className={`${BUTTON_PRIMARY} max-sm:hidden`}>
             {page.cta.label}
           </Link>
         </div>

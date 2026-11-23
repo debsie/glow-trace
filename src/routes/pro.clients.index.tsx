@@ -175,14 +175,14 @@ function ClientsPage() {
             const scanCount = scans.filter((scan) => scan.client_id === client.id).length;
             const look = looks.find((item) => item.client_id === client.id);
             return (
-              <div key={client.id} className="surface p-5">
+              <div key={client.id} className="surface min-w-0 p-5">
                 <Link
                   to="/pro/clients/$id"
                   params={{ id: client.id }}
                   className="block rounded-xl transition-opacity hover:opacity-90"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <p className="font-display truncate text-lg font-semibold">
                         {client.client_name}
                       </p>

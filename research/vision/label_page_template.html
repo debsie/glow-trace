@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glowtrace skin labelling</title>
+    <style>
+      :root {
+        --bg: #f6f2ee;
+        --card: #fffdfb;
+        --ink: #241c22;
+        --muted: #6d6268;
+        --line: #e4dcd6;
+        --primary: #8c2a3f;
+        --on-primary: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1d1520;
+          --card: #261c2a;
+          --ink: #f3ecef;
+          --muted: #b6a9b0;
+          --line: #3a2d3f;
+          --primary: #d06a80;
+          --on-primary: #1d1520;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 26px;
+        margin: 8px 0 4px;
+        font-weight: 650;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .bar {
+        height: 8px;
+        background: var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 12px 0 4px;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        background: var(--primary);
+        width: 0;
+        transition: width 0.2s;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .side img {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        image-rendering: pixelated;
+        background: var(--line);
+      }
+      button {
+        font: inherit;
+        min-height: 54px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        padding: 0 14px;
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--primary);
+        color: var(--on-primary);
+        border-color: transparent;
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button {
+        -webkit-tap-highlight-color: transparent;
+      }
+      button:focus {
+        outline: none;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .row > button {
+        flex: 1 1 140px;
+      }
+      .label {
+        text-align: center;
+        font-weight: 600;
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        font:
+          12px/1.4 ui-monospace,
+          monospace;
+      }
+      .note {
+        padding: 10px 12px;
+        border-left: 3px solid var(--primary);
+        background: var(--card);
+        margin: 12px 0;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      kbd {
+        font:
+          12px ui-monospace,
+          monospace;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Which skin looks smoother?</h1>
+      <p class="muted" id="intro">
+        Two close-up patches of skin at a time. Tap the one whose surface looks smoother: fewer
+        visible pores, bumps or roughness. Ignore colour, redness, spots of colour and lighting. Go
+        with your first impression; most pairs take a couple of seconds.
+      </p>
+      <div class="note" id="storageNote" hidden>
+        This browser can't save as you go. Keep this tab open, and download your answers before
+        closing it.
+      </div>
+
+      <section id="work">
+        <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+        <p class="muted" aria-live="polite" id="count"></p>
+        <div class="pair">
+          <div class="side">
+            <img id="left" alt="Skin patch A" />
+            <button class="primary" id="pickLeft">A is smoother</button>
+          </div>
+          <div class="side">
+            <img id="right" alt="Skin patch B" />
+            <button class="primary" id="pickRight">B is smoother</button>
+          </div>
+        </div>
+        <div class="row">
+          <button id="same">About the same</button>
+          <button id="skip">Can't tell / not skin</button>
+          <button id="undo">Undo last</button>
+        </div>
+        <p class="muted" style="font-size: 13px">
+          Keyboard: <kbd>←</kbd> A, <kbd>→</kbd> B, <kbd>↓</kbd> same, <kbd>S</kbd> can't tell,
+          <kbd>U</kbd> undo. Your answers save after every tap; close any time and pick up later.
+        </p>
+      </section>
+
+      <section id="done" class="card" hidden>
+        <h1>All done. Thank you.</h1>
+        <p>Please send your answers file to the Glowtrace team.</p>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <p style="margin-top: 0">
+          <strong>Your answers</strong> <span class="muted" id="saved"></span>
+        </p>
+        <div class="row">
+          <button id="share">Share answers</button>
+          <button id="download">Download answers</button>
+          <button id="showText">Show as text</button>
+        </div>
+        <div id="textBox" hidden>
+          <p class="muted">
+            If the buttons above don't work, copy all of this and paste it into a message.
+          </p>
+          <textarea id="text" readonly></textarea>
+          <button id="copy">Copy</button>
+        </div>
+      </section>
+    </main>
+
+    <script id="data" type="application/json">
+      __GLOWTRACE_DATA__
+    </script>
+    <script>
+      (function () {
+        "use strict";
+        var DATA = JSON.parse(document.getElementById("data").textContent);
+        var KEY = "glowtrace-labels-" + DATA.setId;
+        var total = DATA.pairs.length;
+        var answers = [];
+        var shownAt = Date.now();
+        var canStore = true;
+
+        try {
+          var raw = window.localStorage.getItem(KEY);
+          if (raw) {
+            var saved = JSON.parse(raw);
+            if (saved && saved.setId === DATA.setId && Array.isArray(saved.answers))
+              answers = saved.answers;
+          }
+          window.localStorage.setItem(KEY + "-probe", "1");
+          window.localStorage.removeItem(KEY + "-probe");
+        } catch (error) {
+          canStore = false;
+          document.getElementById("storageNote").hidden = false;
+        }
+
+        var el = function (id) {
+          return document.getElementById(id);
+        };
+
+        function payload() {
+          return {
+            format: "glowtrace-labels-v1",
+            setId: DATA.setId,
+            total: total,
+            savedAt: new Date().toISOString(),
+            answers: answers,
+          };
+        }
+
+        function persist() {
+          if (!canStore) return;
+          try {
+            window.localStorage.setItem(KEY, JSON.stringify(payload()));
+          } catch (error) {
+            canStore = false;
+            el("storageNote").hidden = false;
+          }
+        }
+
+        function render() {
+          var index = answers.length;
+          el("fill").style.width = (100 * index) / total + "%";
+          el("count").textContent =
+            index < total
+              ? "Pair " + (index + 1) + " of " + total
+              : total + " of " + total + " answered";
+          el("saved").textContent =
+            answers.length + " saved" + (canStore ? " on this device" : " in this tab");
+          el("undo").disabled = index === 0;
+          el("intro").hidden = index > 0;
+          var finished = index >= total;
+          el("work").hidden = finished;
+          el("done").hidden = !finished;
+          if (finished) return;
+          var pair = DATA.pairs[index];
+          el("left").src = DATA.patches[pair[0]];
+          el("right").src = DATA.patches[pair[1]];
+          shownAt = Date.now();
+          // Load the next pair's images ahead so taps never wait.
+          var next = DATA.pairs[index + 1];
+          if (next) {
+            new Image().src = DATA.patches[next[0]];
+            new Image().src = DATA.patches[next[1]];
+          }
+        }
+
+        function answer(choice) {
+          var index = answers.length;
+          if (index >= total) return;
+          var pair = DATA.pairs[index];
+          answers.push({
+            pair: index,
+            a: pair[0],
+            b: pair[1],
+            choice: choice,
+            ms: Date.now() - shownAt,
+          });
+          persist();
+          render();
+        }
+
+        function text() {
+          return JSON.stringify(payload());
+        }
+        function fileName() {
+          return "glowtrace_labels_" + DATA.setId + "_" + answers.length + ".json";
+        }
+
+        function download() {
+          try {
+            var blob = new Blob([text()], { type: "application/json" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName();
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function () {
+              URL.revokeObjectURL(link.href);
+              link.remove();
+            }, 1000);
+          } catch (error) {
+            showText();
+          }
+        }
+
+        function share() {
+          try {
+            var file = new File([text()], fileName(), { type: "application/json" });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: "Glowtrace labels" }).catch(function () {});
+              return;
+            }
+          } catch (error) {}
+          download();
+        }
+
+        function showText() {
+          el("textBox").hidden = false;
+          el("text").value = text();
+        }
+
+        el("pickLeft").onclick = function () {
+          answer("a");
+        };
+        el("pickRight").onclick = function () {
+          answer("b");
+        };
+        el("same").onclick = function () {
+          answer("same");
+        };
+        el("skip").onclick = function () {
+          answer("skip");
+        };
+        el("undo").onclick = function () {
+          answers.pop();
+          persist();
+          render();
+        };
+        el("download").onclick = download;
+        el("share").onclick = share;
+        el("showText").onclick = showText;
+        el("copy").onclick = function () {
+          var box = el("text");
+          box.select();
+          try {
+            if (navigator.clipboard) navigator.clipboard.writeText(box.value);
+            else document.execCommand("copy");
+          } catch (error) {}
+        };
+        document.addEventListener("keydown", function (event) {
+          if (event.target && event.target.tagName === "TEXTAREA") return;
+          var map = { ArrowLeft: "a", ArrowRight: "b", ArrowDown: "same", s: "skip", S: "skip" };
+          if (map[event.key]) {
+            event.preventDefault();
+            answer(map[event.key]);
+          }
+          if (event.key === "u" || event.key === "U") el("undo").click();
+        });
+        window.addEventListener("beforeunload", function (event) {
+          if (!canStore && answers.length > 0 && answers.length < total) {
+            event.preventDefault();
+            event.returnValue = "";
+          }
+        });
+        render();
+      })();
+    </script>
+  </body>
+</html>

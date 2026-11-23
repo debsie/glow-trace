@@ -35,6 +35,7 @@ import json
 import os
 import sys
 import urllib.request
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -50,6 +51,21 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Fine detail (nail spots and ridges, hair shine and breakage, scalp flakes) needs more pixels
 # than 128. Pass --size 256 for nails and hair; the app reads the size from the weights file.
 SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 128
+# v5 skin surface: train on close-up skin patches (pores a pixel or two across) instead of whole
+# photos shrunk to SIZE, with realistic pores, side-lit bumps, beauty-filter smoothing and phone
+# camera effects. The texture label is measured, not assumed: the change in fine-scale contrast.
+PATCHES = "--patches" in sys.argv
+PATCHES_PER_PHOTO = 3
+# v6: a fifth input channel, fine detail. Skin texture is a 1-2% brightness change on top of a
+# far larger colour signal; in the 4-channel input the network could not even reproduce the
+# texture measure (r 0.27 on labelled patches). The detail channel (luma optical density minus its
+# 7x7 reflect-padded box mean, times DETAIL_GAIN) lifts that to r 0.95. The app builds the same
+# channel when the weights file says "detail" (src/lib/cv/area-model.ts).
+DETAIL_GAIN = 30.0 if PATCHES else 0.0
+IN_CHANNELS = 5 if DETAIL_GAIN else 4
+# v6: a person's "which patch is smoother" answers (make_label_page.py). --labels DIR holds
+# label_patches.npz and one or more glowtrace_labels_*.json files from the labelling page.
+LABELS_DIR = sys.argv[sys.argv.index("--labels") + 1] if "--labels" in sys.argv else None
 EPOCHS = int(os.environ.get("GLOWTRACE_EPOCHS", 2 if QUICK else 80))
 STEPS = int(os.environ.get("GLOWTRACE_STEPS", 4 if QUICK else 50))
 # Each head's loss divided by its own target energy, so sparse effects (spots, flakes, breakage,
@@ -89,6 +105,38 @@ def fetch(url):
         return response.read()
 
 
+def to_examples(image, key=""):
+    """Whole photo as one canvas, or (--patches) up to three skin-rich SIZE x SIZE crops taken at a
+    random scale (short side 256-640 px), so pores and bumps keep a realistic pixel size."""
+    if not PATCHES:
+        return [to_canvas(image)]
+    rng = np.random.default_rng(zlib.crc32(key.encode()))
+    image = image.convert("RGB")
+    short = rng.uniform(256, 640)
+    scale = short / min(image.size)
+    w, h = max(SIZE, round(image.width * scale)), max(SIZE, round(image.height * scale))
+    array = np.asarray(image.resize((w, h), Image.BILINEAR))
+    skin = skin_rule(array)
+    found = []
+    for _ in range(16):
+        y, x = rng.integers(0, h - SIZE + 1), rng.integers(0, w - SIZE + 1)
+        found.append((skin[y : y + SIZE, x : x + SIZE].mean(), y, x))
+    found.sort(reverse=True)
+    out = []
+    for share, y, x in found[:PATCHES_PER_PHOTO]:
+        if share < 0.6:
+            break
+        out.append((array[y : y + SIZE, x : x + SIZE].copy(), np.ones((SIZE, SIZE), np.uint8)))
+    return out
+
+
+def skin_rule(array):
+    """The app's skin-colour rule on an HxWx3 uint8 array (numpy twin of area_mask)."""
+    L, a, b = lab(torch.tensor(array, dtype=torch.float32).permute(2, 0, 1)[None])
+    hue = torch.rad2deg(torch.atan2(b, a))
+    return ((L > 20) & (L < 95) & (a > 2) & (hue > 10) & (hue < 80))[0].numpy()
+
+
 def to_canvas(image):
     image.thumbnail((SIZE, SIZE), Image.BILINEAR)
     canvas = np.zeros((SIZE, SIZE, 3), np.uint8)
@@ -101,10 +149,15 @@ def to_canvas(image):
 
 def load_scin(per_group):
     os.makedirs(WORK, exist_ok=True)
-    cache = os.path.join(WORK, f"scin_{per_group}_{SIZE}.npz")
+    cache = os.path.join(WORK, f"scin_{per_group}_{SIZE}{'_patches' if PATCHES else ''}.npz")
     if os.path.exists(cache):
-        d = np.load(cache)
-        return d["image"], d["valid"], d["group"]
+        # A cache left half-written by an interrupted run is ignored and rebuilt, never trusted.
+        try:
+            d = np.load(cache)
+            return d["image"], d["valid"], d["group"]
+        except Exception:
+            print(f"Rebuilding unreadable cache {cache}")
+            os.remove(cache)
     cases = {r["case_id"]: r for r in csv.DictReader(io.StringIO(fetch(BUCKET + "dataset/scin_cases.csv").decode()))}
     labels = list(csv.DictReader(io.StringIO(fetch(BUCKET + "dataset/scin_labels.csv").decode())))
     picks = []
@@ -123,13 +176,13 @@ def load_scin(per_group):
 
     def one(item):
         try:
-            canvas, valid = to_canvas(Image.open(io.BytesIO(fetch(BUCKET + item[1]))))
-            return canvas, valid, item[2]
+            examples = to_examples(Image.open(io.BytesIO(fetch(BUCKET + item[1]))), item[1])
+            return [(canvas, valid, item[2]) for canvas, valid in examples]
         except Exception:
             return None
 
     with ThreadPoolExecutor(8) as pool:
-        loaded = [x for x in pool.map(one, picks) if x is not None]
+        loaded = [x for found in pool.map(one, picks) if found for x in found]
     out = (np.stack([x[0] for x in loaded]), np.stack([x[1] for x in loaded]), np.array([x[2] for x in loaded]))
     np.savez_compressed(cache, image=out[0], valid=out[1], group=out[2])
     return out
@@ -150,7 +203,7 @@ def load_folder(folder, limit):
     loaded = []
     for path in paths:
         try:
-            loaded.append(to_canvas(Image.open(path)))
+            loaded += to_examples(Image.open(path), path)
         except Exception:
             continue
     if not loaded:
@@ -200,7 +253,12 @@ def from_od(density):
 
 
 def network_input(rgb, mask):
-    return torch.cat([od(rgb) / 3.0, mask[:, None]], 1)
+    density = od(rgb)
+    parts = [density / 3.0]
+    if DETAIL_GAIN:
+        luma = density.mean(1, keepdim=True)
+        parts.append((luma - box(luma, 7)) * DETAIL_GAIN)
+    return torch.cat(parts + [mask[:, None]], 1)
 
 
 # ---------------------------------------------------------------- effect generators (per-pixel weights)
@@ -250,6 +308,80 @@ def fine_noise(n, gen):
     return field / field.flatten(1).std(1).clamp(min=1e-6)[:, None, None]
 
 
+def box(x, k):
+    p = k // 2
+    return F.avg_pool2d(F.pad(x, (p, p, p, p), mode="reflect"), k, 1)
+
+
+def hp_contrast(img, mask):
+    """Fine-scale relative contrast of brightness inside the mask: the std of (luma minus its 7 px
+    local mean) over that mean. This is the texture unit for --patches training."""
+    lum = img.mean(1, keepdim=True) + 1.0
+    base = box(lum, 7)
+    rel = ((lum - base) / base)[:, 0]
+    weight = mask.flatten(1).sum(1).clamp(min=1)
+    mean = (rel * mask).flatten(1).sum(1) / weight
+    var = (((rel - mean[:, None, None]) ** 2) * mask).flatten(1).sum(1) / weight
+    return var.sqrt()
+
+
+def skin_texture(img, mask, gen, amount):
+    """Real-looking surface change on skin patches. Returns the photo and the texture map: the
+    measured change in hp_contrast, so pores, bumps and smoothing all share one honest unit."""
+    n = img.shape[0]
+    before = hp_contrast(img, mask)
+    m = mask[:, None]
+    # Pores: sparse soft dark dots, 1-3 px, denser on some patches than others.
+    field = box(torch.randn(n, 1, SIZE, SIZE, device=DEVICE, generator=gen), 3)
+    q = rand((n,), gen, 0.9, 0.985)
+    ordered = field.flatten(1).sort(1).values
+    thresh = ordered.gather(1, (q * (SIZE * SIZE - 1)).long()[:, None]).view(n, 1, 1, 1)
+    pores = box((field > thresh).float(), 3)
+    img = img * (1 - amount(0.0, 0.25)[:, None] * pores * m)
+    # Bumps lit from one side: a 3-11 px height field shaded along a random light direction.
+    height = box(torch.randn(n, 1, SIZE, SIZE, device=DEVICE, generator=gen), 3)
+    height = height - box(height, 11)
+    gy = F.pad(height[:, :, 1:] - height[:, :, :-1], (0, 0, 0, 1))
+    gx = F.pad(height[:, :, :, 1:] - height[:, :, :, :-1], (0, 1, 0, 0))
+    angle = rand((n, 1, 1, 1), gen, 0, 2 * np.pi)
+    shade = gx * torch.cos(angle) + gy * torch.sin(angle)
+    shade = shade / shade.flatten(1).std(1).clamp(min=1e-6).view(n, 1, 1, 1)
+    img = img * (1 + amount(0.0, 0.04)[:, None] * shade * m)
+    # Fine roughness (the v4 effect, now one ingredient of several).
+    img = img * (1 + amount(0.0, 0.025)[:, None] * fine_noise(n, gen)[:, None] * m)
+    # Beauty filter or soft focus on some photos: smoothing must read as smoother skin.
+    smooth = (torch.rand(n, device=DEVICE, generator=gen) < 0.3).float().view(n, 1, 1, 1)
+    strength = rand((n, 1, 1, 1), gen, 0.3, 1.0) * smooth * m
+    blurred = torch.where(rand((n, 1, 1, 1), gen) < 0.5, box(img, 3), box(img, 5))
+    img = img * (1 - strength) + blurred * strength
+    change = hp_contrast(img.clamp(0, 255), mask) - before
+    return img, change[:, None, None] * mask
+
+
+def phone(img, gen):
+    """Phone camera processing on some photos (--patches only): resampling softness, sharpening
+    and JPEG compression, each at random strength. Nuisances the texture head must ignore."""
+    n = img.shape[0]
+    pick = lambda p: torch.rand(n, device=DEVICE, generator=gen) < p
+    soft = pick(0.3)
+    if soft.any():
+        small = F.interpolate(img[soft], scale_factor=0.6, mode="bilinear", align_corners=False)
+        img[soft] = F.interpolate(small, size=img.shape[-2:], mode="bilinear", align_corners=False)
+    sharp = pick(0.4)
+    if sharp.any():
+        amount_ = rand((int(sharp.sum()), 1, 1, 1), gen, 0.2, 1.0)
+        img[sharp] = img[sharp] + amount_ * (img[sharp] - box(img[sharp], 3))
+    try:
+        from torchvision.io import decode_jpeg, encode_jpeg
+    except ImportError:
+        return img
+    for i in torch.nonzero(pick(0.5)).flatten().tolist():
+        quality = int(rand((1,), gen, 45, 95).item())
+        data = encode_jpeg(img[i].clamp(0, 255).round().to(torch.uint8).cpu(), quality=quality)
+        img[i] = decode_jpeg(data).float().to(DEVICE)
+    return img
+
+
 def ripple(n, gen):
     """Lengthwise ridges: a sinusoid across the nail at a random angle and spacing."""
     yy, xx = grid(n)
@@ -278,9 +410,12 @@ def add_effects(rgb, mask, gen):
         img_od = img_od + hb[:, None] * HAEMOGLOBIN.to(DEVICE)[None, :, None, None] + mel[:, None] * MELANIN.to(DEVICE)[None, :, None, None]
         maps["redness"], maps["pigment"] = hb, mel
         img = from_od(img_od)
-        rough = amount(0.0, 0.12) * mask
-        img = img * (1 + rough[:, None] * fine_noise(n, gen)[:, None])
-        maps["texture"] = rough
+        if PATCHES:
+            img, maps["texture"] = skin_texture(img, mask, gen, amount)
+        else:
+            rough = amount(0.0, 0.12) * mask
+            img = img * (1 + rough[:, None] * fine_noise(n, gen)[:, None])
+            maps["texture"] = rough
         spec = amount(0.0, 0.35) * blobs(n, gen, 3, 4, 20) * mask
         img = img + spec[:, None] * light
         maps["shine"] = spec
@@ -336,7 +471,10 @@ def camera(rgb, gen):
         glare = blobs(n, gen, 2, 6, 25) * rand((n, 1, 1), gen, 0, 0.35) * (torch.rand(n, 1, 1, device=DEVICE, generator=gen) < 0.5)
         img = img + glare[:, None] * 255
     sigma = rand((n, 1, 1, 1), gen, 0.5, 3.0)
-    return (img + torch.randn(img.shape, device=DEVICE, generator=gen) * sigma).clamp(0, 255).round()
+    img = (img + torch.randn(img.shape, device=DEVICE, generator=gen) * sigma).clamp(0, 255)
+    if PATCHES:
+        img = phone(img, gen).clamp(0, 255)
+    return img.round()
 
 
 def make_batch(images, valid, gen):
@@ -355,7 +493,7 @@ class UNet(nn.Module):
     def __init__(self, heads):
         super().__init__()
         conv = lambda i, o, s=1: nn.Sequential(nn.Conv2d(i, o, 3, s, 1), nn.ReLU())
-        self.e1, self.e2, self.e3 = conv(4, 16), conv(16, 32, 2), conv(32, 48, 2)
+        self.e1, self.e2, self.e3 = conv(IN_CHANNELS, 16), conv(16, 32, 2), conv(32, 48, 2)
         self.mid = conv(48, 48)
         self.d2, self.d1 = conv(80, 32), conv(48, 16)
         self.out = nn.Conv2d(16, heads, 1)
@@ -425,6 +563,112 @@ def hair_masks(images_np, valid_np):
     return out
 
 
+def load_labels(folder):
+    """Labelled pairs from the labelling page. Refuses answers from a different patch set, so a
+    label can never be joined to the wrong patch. Returns the patches, train and held-out pairs as
+    (a, b, target) with target 1 = a smoother, 0 = b smoother, 0.5 = about the same, and the
+    labeller's own consistency on the repeated pairs."""
+    data = np.load(os.path.join(folder, "label_patches.npz"))
+    set_id = str(data["set_id"])
+    pairs = []
+    for path in sorted(glob.glob(os.path.join(folder, "**", "*.json"), recursive=True)):
+        try:
+            answers = json.load(open(path))
+        except Exception:
+            print(f"labels: skipped unreadable {path}")
+            continue
+        if not isinstance(answers, dict) or answers.get("format") != "glowtrace-labels-v1":
+            continue
+        if answers.get("setId") != set_id:
+            print(f"labels: skipped {path}, made for patch set {answers.get('setId')} not {set_id}")
+            continue
+        for item in answers.get("answers", []):
+            target = {"a": 1.0, "b": 0.0, "same": 0.5}.get(item.get("choice"))
+            if target is not None:
+                pairs.append((int(item["a"]), int(item["b"]), target))
+    if not pairs:
+        raise SystemExit(f"--labels {folder}: no answers for patch set {set_id}")
+    # Consistency: pairs answered twice (once each way round) should agree.
+    seen, agree, both = {}, 0, 0
+    for a, b, t in pairs:
+        key = (min(a, b), max(a, b))
+        smoother_a = t if a == key[0] else 1 - t
+        if key in seen:
+            both += 1
+            agree += seen[key] == smoother_a
+        else:
+            seen[key] = smoother_a
+    consistency = agree / both if both else None
+    # Hold out a fifth of the patch pairs (by pair, both orders together) for evaluation.
+    rng = np.random.default_rng(7)
+    keys = sorted(seen)
+    held = set(map(tuple, np.array(keys)[rng.permutation(len(keys))[: len(keys) // 5]].tolist()))
+    train = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) not in held]
+    test = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) in held]
+    print(f"labels: {len(pairs)} answers, {len(train)} train / {len(test)} held out, self-consistency {consistency}")
+    return data["image"], train, test, consistency
+
+
+def label_levels(model, patches, ids):
+    """Texture reading per labelled patch, exactly as on any photo (whole patch valid)."""
+    img = patches[ids]
+    valid = torch.ones(img.shape[0], SIZE, SIZE, device=DEVICE)
+    k = HEADS.index("texture")
+    return masked_mean(model(network_input(img, valid)), area_mask(img, valid))[:, k]
+
+
+def label_loss(model, patches, pairs, gen, count=32):
+    """Bradley-Terry: the smoother patch must read lower texture; "about the same" pairs close."""
+    pick = torch.randint(len(pairs), (count,), device=DEVICE, generator=gen).tolist()
+    a = torch.tensor([pairs[i][0] for i in pick], device=DEVICE)
+    b = torch.tensor([pairs[i][1] for i in pick], device=DEVICE)
+    t = torch.tensor([pairs[i][2] for i in pick], device=DEVICE)
+    gap = label_levels(model, patches, b) - label_levels(model, patches, a)  # > 0: a smoother
+    return F.binary_cross_entropy_with_logits(gap * 4.0, t)
+
+
+def label_agreement(model, patches, pairs):
+    """Share of held-out clear answers (not "about the same") the model agrees with."""
+    clear = [p for p in pairs if p[2] != 0.5]
+    if not clear:
+        return None
+    right = 0
+    for start in range(0, len(clear), 64):
+        chunk = clear[start : start + 64]
+        a = torch.tensor([p[0] for p in chunk], device=DEVICE)
+        b = torch.tensor([p[1] for p in chunk], device=DEVICE)
+        gap = label_levels(model, patches, b) - label_levels(model, patches, a)
+        right += sum(int((g > 0) == (p[2] == 1.0)) for g, p in zip(gap.tolist(), chunk))
+    return right / len(clear)
+
+
+def real_photo_checks(model, images, valid):
+    """Step 4 of the v5 plan, on untouched held-out real patches (no simulated effects): blurring
+    must lower the texture reading clearly, brightness must barely move it, both measured against
+    how much readings differ between photos. Passing needs blur <= -0.5 and brightness <= 0.2."""
+    k = HEADS.index("texture")
+    seen = (valid > 0).float()
+
+    def level(img):
+        out = []
+        for s in range(0, len(img), 64):
+            mask = area_mask(img[s : s + 64], valid[s : s + 64])
+            out.append(masked_mean(model(network_input(img[s : s + 64], seen[s : s + 64])), mask)[:, k])
+        return torch.cat(out)
+
+    base = level(images)
+    spread = base.std().clamp(min=1e-6)
+    blur = ((level(box(images, 3)) - base).mean() / spread).item()
+    light = ((level((images * 1.2).clamp(0, 255)) - base).abs().mean() / spread).item()
+    dark = ((level(images * 0.8) - base).abs().mean() / spread).item()
+    bright = max(light, dark)
+    return {
+        "blur_change_vs_spread": round(blur, 3),
+        "brightness_change_vs_spread": round(bright, 3),
+        "passes": blur <= -0.5 and bright <= 0.2,
+    }
+
+
 def main():
     torch.manual_seed(0)
     if AREA == "skin":
@@ -462,6 +706,12 @@ def main():
     optimiser = torch.optim.Adam(model.parameters(), lr=2e-3)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, EPOCHS * STEPS)
     gen = torch.Generator(device=DEVICE).manual_seed(1)
+    labelled = None
+    if LABELS_DIR:
+        if "texture" not in HEADS:
+            raise SystemExit("--labels trains the texture head; add texture to --heads")
+        patches_np, label_train, label_test, consistency = load_labels(LABELS_DIR)
+        labelled = torch.tensor(patches_np, dtype=torch.float32).permute(0, 3, 1, 2).to(DEVICE)
     train_t = torch.tensor(train_ids, device=DEVICE)
     scale = 10.0
     for epoch in range(EPOCHS):
@@ -479,12 +729,26 @@ def main():
                 idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
             xa, xb, every, mask = make_batch(images[idx], valid[idx], gen)
             targets = every[:, OWN]
-            diff = model(xb) - model(xa)
+            out_a = model(xa)
+            diff = model(xb) - out_a
             per_head = (((diff - targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
             if BALANCE:
                 energy = (((targets * scale) ** 2) * mask[:, None]).flatten(2).sum(2).div(mask.flatten(1).sum(1).clamp(min=1)[:, None]).mean(0)
                 per_head = per_head / energy.detach().clamp(min=1e-3)
             loss = per_head.mean()
+            if PATCHES and "texture" in HEADS:
+                # Readings on one photo must mean something too, not only changes: the texture
+                # head's level on view A tracks that photo's own fine contrast (anchor), and every
+                # clear change must at least point the right way (ranking).
+                k = HEADS.index("texture")
+                own = hp_contrast(images[idx], mask) * scale
+                level = masked_mean(out_a, mask)[:, k]
+                loss = loss + 0.5 * ((level - own) ** 2).mean() / (own**2).mean().clamp(min=1e-3)
+                change = masked_mean(diff, mask)[:, k]
+                truth = masked_mean(targets, mask)[:, k] * scale
+                clear = truth.abs() > 0.05
+                if clear.any():
+                    loss = loss + 0.5 * F.relu(0.1 - change[clear] * torch.sign(truth[clear])).mean()
             if fair:
                 sample = train_t[torch.randint(len(train_t), (64,), device=DEVICE, generator=gen)]
                 m = area_mask(images[sample], valid[sample])
@@ -492,6 +756,8 @@ def main():
                 g = groups[sample]
                 means = torch.stack([level[g == k].mean(0) for k in range(4) if (g == k).any()])
                 loss = loss + 2.0 * ((means - means.mean(0)) ** 2).mean()
+            if labelled is not None and label_train:
+                loss = loss + label_loss(model, labelled, label_train, gen)
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
@@ -531,15 +797,25 @@ def main():
                 ] if fair else None,
                 "leak_from_other_effects": round(float(np.corrcoef(d[alone & others], np.delete(truth, j, axis=1)[alone & others].sum(1))[0, 1]), 3) if (alone & others).sum() > 2 else None,
             }
+        if PATCHES and "texture" in HEADS:
+            report["real_photo_checks"] = real_photo_checks(model, images[torch.tensor(test_ids, device=DEVICE)], valid[torch.tensor(test_ids, device=DEVICE)])
+        if labelled is not None:
+            agreement = label_agreement(model, labelled, label_test)
+            report["labeller"] = {
+                "held_out_agreement": None if agreement is None else round(agreement, 3),
+                "labeller_self_consistency": None if consistency is None else round(consistency, 3),
+                "held_out_pairs": len(label_test),
+                "passes": agreement is not None and agreement >= 0.75,
+            }
     print(json.dumps(report, indent=2))
     # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
     # failed export or a runtime reset afterwards cannot lose the training.
     weights = {name: t.detach().cpu().numpy().round(6).tolist() for name, t in model.state_dict().items()}
-    json.dump({"area": AREA, "name": NAME, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{NAME}_weights.json", "w"))
+    json.dump({"area": AREA, "name": NAME, "heads": HEADS, "size": SIZE, "detail": DETAIL_GAIN, "weights": weights, "evaluation": report}, open(f"{NAME}_weights.json", "w"))
     json.dump(report, open(f"{NAME}_eval.json", "w"), indent=2)
     print(f"Wrote {NAME}_weights.json and {NAME}_eval.json", flush=True)
     try:
-        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{NAME}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
+        torch.onnx.export(model.cpu(), torch.zeros(1, IN_CHANNELS, SIZE, SIZE), f"{NAME}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
         print(f"Wrote {NAME}_model.onnx")
     except Exception as error:  # the weights file is enough
         print(f"ONNX export skipped ({error}); {NAME}_weights.json is all Glowtrace needs")

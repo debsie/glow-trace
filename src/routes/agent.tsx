@@ -73,7 +73,7 @@ const FindingRow = ({ finding }: { finding: Finding }) => {
           <p className="mt-0.5 text-sm text-muted-foreground">{finding.habit}</p>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="readout text-sm text-foreground">{finding.health.toFixed(1)}</span>
         {trend && (
           <Badge tone="outline">

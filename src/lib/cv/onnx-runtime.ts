@@ -26,15 +26,16 @@ const session = async (url: string): Promise<InferenceSession> => {
   return pending;
 };
 
-/** Runs a 4-channel size x size input; returns the output maps, flat (heads x size x size). */
+/** Runs a channels x size x size input (4, or 5 for v6 detail models); returns the output maps. */
 export const runModel = async (
   url: string,
   input: Float32Array,
   size: number,
+  channels = 4,
 ): Promise<Float32Array> => {
   const ort = await import("onnxruntime-web/webgpu");
   const model = await session(url);
-  const feeds = { input: new ort.Tensor("float32", input, [1, 4, size, size]) };
+  const feeds = { input: new ort.Tensor("float32", input, [1, channels, size, size]) };
   const result = await model.run(feeds);
   const maps = result["maps"];
   if (!maps) throw new Error("Model returned no maps");

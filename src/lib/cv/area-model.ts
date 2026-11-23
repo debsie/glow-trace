@@ -15,6 +15,8 @@ const weightsSchema = z.object({
   area: z.enum(["skin", "hair", "nails"]),
   heads: z.array(z.string()),
   size: z.number().int().min(64).max(512),
+  /** v6 patch models: gain of the fifth input channel (fine detail); 0 or absent for 4-channel. */
+  detail: z.number().min(0).default(0),
   parity: z.record(z.string(), z.number()),
   tensors: z.record(z.string(), tensorSchema),
 });
@@ -97,16 +99,43 @@ const forward = (convs: Layers, input: Map): Map => {
 };
 
 /** Network input: optical density / 3 for r, g, b plus the valid-pixel channel. */
-const toInput = (size: number, canvas: Float32Array, valid: Uint8Array): Map => {
+/** Reflect padding as in PyTorch: index -1 mirrors to 1, size to size - 2 (edge not repeated). */
+const reflect = (i: number, n: number) => (i < 0 ? -i : i >= n ? 2 * n - 2 - i : i);
+
+/**
+ * Network input: optical density of r, g, b over 3, then (when `detail` > 0, v6 patch models) the
+ * fine-detail channel, luma density minus its 7 x 7 reflect-padded box mean, times `detail`, then
+ * the valid mask. Must match multitask.py's network_input exactly (export_web.py's parity checks it).
+ */
+const toInput = (size: number, canvas: Float32Array, valid: Uint8Array, detail = 0): Map => {
   const plane = size * size;
-  const data = new Float32Array(4 * plane);
+  const channels = detail > 0 ? 5 : 4;
+  const data = new Float32Array(channels * plane);
+  const luma = new Float32Array(plane);
   for (let p = 0; p < plane; p += 1) {
+    let sum = 0;
     for (let c = 0; c < 3; c += 1) {
-      data[c * plane + p] = -Math.log(((canvas[p * 3 + c] ?? 0) + 0.5) / 255.5) / 3;
+      const density = -Math.log(((canvas[p * 3 + c] ?? 0) + 0.5) / 255.5);
+      data[c * plane + p] = density / 3;
+      sum += density;
     }
-    data[3 * plane + p] = valid[p] ?? 0;
+    luma[p] = sum / 3;
+    data[(channels - 1) * plane + p] = valid[p] ?? 0;
   }
-  return { c: 4, h: size, w: size, data };
+  if (detail > 0) {
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        let local = 0;
+        for (let dy = -3; dy <= 3; dy += 1) {
+          const row = reflect(y + dy, size) * size;
+          for (let dx = -3; dx <= 3; dx += 1) local += luma[row + reflect(x + dx, size)] ?? 0;
+        }
+        const p = y * size + x;
+        data[3 * plane + p] = ((luma[p] ?? 0) - local / 49) * detail;
+      }
+    }
+  }
+  return { c: channels, h: size, w: size, data };
 };
 
 /**
@@ -173,6 +202,7 @@ export const createAreaModel = (
 ): AreaModel => {
   let cached: {
     size: number;
+    detail: number;
     heads: string[];
     parity: Record<string, number>;
     convs: Layers;
@@ -189,6 +219,7 @@ export const createAreaModel = (
     };
     cached = {
       size: parsed.size,
+      detail: parsed.detail,
       heads: parsed.heads,
       parity: parsed.parity,
       convs: {
@@ -219,17 +250,17 @@ export const createAreaModel = (
   };
   return {
     signal: (image, mask = null) => {
-      const { size, convs } = model();
+      const { size, detail, convs } = model();
       const { canvas, valid, area } = toCanvas(size, image, mask, upscale);
-      return reduce(forward(convs, toInput(size, canvas, valid)).data, area);
+      return reduce(forward(convs, toInput(size, canvas, valid, detail)).data, area);
     },
     signalFast: async (image, mask = null) => {
-      const { size, convs } = model();
+      const { size, detail, convs } = model();
       const { canvas, valid, area } = toCanvas(size, image, mask, upscale);
-      const input = toInput(size, canvas, valid);
+      const input = toInput(size, canvas, valid, detail);
       try {
         const { runModel } = await import("./onnx-runtime");
-        return reduce(await runModel(onnxUrl, input.data, size), area);
+        return reduce(await runModel(onnxUrl, input.data, size, input.c), area);
       } catch {
         return reduce(forward(convs, input).data, area);
       }
@@ -237,9 +268,9 @@ export const createAreaModel = (
     parity: () => model().parity,
     size: () => model().size,
     headMeans: (canvas) => {
-      const { size, heads, convs } = model();
+      const { size, detail, heads, convs } = model();
       const valid = new Uint8Array(size * size).fill(1);
-      const maps = forward(convs, toInput(size, canvas, valid));
+      const maps = forward(convs, toInput(size, canvas, valid, detail));
       const plane = size * size;
       const result: Record<string, number> = {};
       heads.forEach((name, k) => {
