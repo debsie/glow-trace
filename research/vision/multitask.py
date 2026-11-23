@@ -56,6 +56,9 @@ SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 
 # camera effects. The texture label is measured, not assumed: the change in fine-scale contrast.
 PATCHES = "--patches" in sys.argv
 PATCHES_PER_PHOTO = 3
+# v6: a person's "which patch is smoother" answers (make_label_page.py). --labels DIR holds
+# label_patches.npz and one or more glowtrace_labels_*.json files from the labelling page.
+LABELS_DIR = sys.argv[sys.argv.index("--labels") + 1] if "--labels" in sys.argv else None
 EPOCHS = int(os.environ.get("GLOWTRACE_EPOCHS", 2 if QUICK else 80))
 STEPS = int(os.environ.get("GLOWTRACE_STEPS", 4 if QUICK else 50))
 # Each head's loss divided by its own target energy, so sparse effects (spots, flakes, breakage,
@@ -141,8 +144,13 @@ def load_scin(per_group):
     os.makedirs(WORK, exist_ok=True)
     cache = os.path.join(WORK, f"scin_{per_group}_{SIZE}{'_patches' if PATCHES else ''}.npz")
     if os.path.exists(cache):
-        d = np.load(cache)
-        return d["image"], d["valid"], d["group"]
+        # A cache left half-written by an interrupted run is ignored and rebuilt, never trusted.
+        try:
+            d = np.load(cache)
+            return d["image"], d["valid"], d["group"]
+        except Exception:
+            print(f"Rebuilding unreadable cache {cache}")
+            os.remove(cache)
     cases = {r["case_id"]: r for r in csv.DictReader(io.StringIO(fetch(BUCKET + "dataset/scin_cases.csv").decode()))}
     labels = list(csv.DictReader(io.StringIO(fetch(BUCKET + "dataset/scin_labels.csv").decode())))
     picks = []
@@ -543,6 +551,85 @@ def hair_masks(images_np, valid_np):
     return out
 
 
+def load_labels(folder):
+    """Labelled pairs from the labelling page. Refuses answers from a different patch set, so a
+    label can never be joined to the wrong patch. Returns the patches, train and held-out pairs as
+    (a, b, target) with target 1 = a smoother, 0 = b smoother, 0.5 = about the same, and the
+    labeller's own consistency on the repeated pairs."""
+    data = np.load(os.path.join(folder, "label_patches.npz"))
+    set_id = str(data["set_id"])
+    pairs = []
+    for path in sorted(glob.glob(os.path.join(folder, "**", "*.json"), recursive=True)):
+        try:
+            answers = json.load(open(path))
+        except Exception:
+            print(f"labels: skipped unreadable {path}")
+            continue
+        if not isinstance(answers, dict) or answers.get("format") != "glowtrace-labels-v1":
+            continue
+        if answers.get("setId") != set_id:
+            print(f"labels: skipped {path}, made for patch set {answers.get('setId')} not {set_id}")
+            continue
+        for item in answers.get("answers", []):
+            target = {"a": 1.0, "b": 0.0, "same": 0.5}.get(item.get("choice"))
+            if target is not None:
+                pairs.append((int(item["a"]), int(item["b"]), target))
+    if not pairs:
+        raise SystemExit(f"--labels {folder}: no answers for patch set {set_id}")
+    # Consistency: pairs answered twice (once each way round) should agree.
+    seen, agree, both = {}, 0, 0
+    for a, b, t in pairs:
+        key = (min(a, b), max(a, b))
+        smoother_a = t if a == key[0] else 1 - t
+        if key in seen:
+            both += 1
+            agree += seen[key] == smoother_a
+        else:
+            seen[key] = smoother_a
+    consistency = agree / both if both else None
+    # Hold out a fifth of the patch pairs (by pair, both orders together) for evaluation.
+    rng = np.random.default_rng(7)
+    keys = sorted(seen)
+    held = set(map(tuple, np.array(keys)[rng.permutation(len(keys))[: len(keys) // 5]].tolist()))
+    train = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) not in held]
+    test = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) in held]
+    print(f"labels: {len(pairs)} answers, {len(train)} train / {len(test)} held out, self-consistency {consistency}")
+    return data["image"], train, test, consistency
+
+
+def label_levels(model, patches, ids):
+    """Texture reading per labelled patch, exactly as on any photo (whole patch valid)."""
+    img = patches[ids]
+    valid = torch.ones(img.shape[0], SIZE, SIZE, device=DEVICE)
+    k = HEADS.index("texture")
+    return masked_mean(model(network_input(img, valid)), area_mask(img, valid))[:, k]
+
+
+def label_loss(model, patches, pairs, gen, count=32):
+    """Bradley-Terry: the smoother patch must read lower texture; "about the same" pairs close."""
+    pick = torch.randint(len(pairs), (count,), device=DEVICE, generator=gen).tolist()
+    a = torch.tensor([pairs[i][0] for i in pick], device=DEVICE)
+    b = torch.tensor([pairs[i][1] for i in pick], device=DEVICE)
+    t = torch.tensor([pairs[i][2] for i in pick], device=DEVICE)
+    gap = label_levels(model, patches, b) - label_levels(model, patches, a)  # > 0: a smoother
+    return F.binary_cross_entropy_with_logits(gap * 4.0, t)
+
+
+def label_agreement(model, patches, pairs):
+    """Share of held-out clear answers (not "about the same") the model agrees with."""
+    clear = [p for p in pairs if p[2] != 0.5]
+    if not clear:
+        return None
+    right = 0
+    for start in range(0, len(clear), 64):
+        chunk = clear[start : start + 64]
+        a = torch.tensor([p[0] for p in chunk], device=DEVICE)
+        b = torch.tensor([p[1] for p in chunk], device=DEVICE)
+        gap = label_levels(model, patches, b) - label_levels(model, patches, a)
+        right += sum(int((g > 0) == (p[2] == 1.0)) for g, p in zip(gap.tolist(), chunk))
+    return right / len(clear)
+
+
 def real_photo_checks(model, images, valid):
     """Step 4 of the v5 plan, on untouched held-out real patches (no simulated effects): blurring
     must lower the texture reading clearly, brightness must barely move it, both measured against
@@ -607,6 +694,12 @@ def main():
     optimiser = torch.optim.Adam(model.parameters(), lr=2e-3)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, EPOCHS * STEPS)
     gen = torch.Generator(device=DEVICE).manual_seed(1)
+    labelled = None
+    if LABELS_DIR:
+        if "texture" not in HEADS:
+            raise SystemExit("--labels trains the texture head; add texture to --heads")
+        patches_np, label_train, label_test, consistency = load_labels(LABELS_DIR)
+        labelled = torch.tensor(patches_np, dtype=torch.float32).permute(0, 3, 1, 2).to(DEVICE)
     train_t = torch.tensor(train_ids, device=DEVICE)
     scale = 10.0
     for epoch in range(EPOCHS):
@@ -651,6 +744,8 @@ def main():
                 g = groups[sample]
                 means = torch.stack([level[g == k].mean(0) for k in range(4) if (g == k).any()])
                 loss = loss + 2.0 * ((means - means.mean(0)) ** 2).mean()
+            if labelled is not None and label_train:
+                loss = loss + label_loss(model, labelled, label_train, gen)
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
@@ -692,6 +787,14 @@ def main():
             }
         if PATCHES and "texture" in HEADS:
             report["real_photo_checks"] = real_photo_checks(model, images[torch.tensor(test_ids, device=DEVICE)], valid[torch.tensor(test_ids, device=DEVICE)])
+        if labelled is not None:
+            agreement = label_agreement(model, labelled, label_test)
+            report["labeller"] = {
+                "held_out_agreement": None if agreement is None else round(agreement, 3),
+                "labeller_self_consistency": None if consistency is None else round(consistency, 3),
+                "held_out_pairs": len(label_test),
+                "passes": agreement is not None and agreement >= 0.75,
+            }
     print(json.dumps(report, indent=2))
     # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
     # failed export or a runtime reset afterwards cannot lose the training.
