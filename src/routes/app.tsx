@@ -13,7 +13,15 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge, PageHeader, SectionCard } from "@/components/ui/bits";
+import { LineArt } from "@/components/art/line-art";
+import { Reveal } from "@/components/motion/reveal";
+import { useEnrolments } from "@/components/programmes/use-enrolments";
+import { WeekRibbon } from "@/components/programmes/week-ribbon";
+import { Badge, BUTTON_GHOST, BUTTON_PRIMARY, SectionCard } from "@/components/ui/bits";
+import { ScoreRing } from "@/components/ui/score-ring";
+import { dayKey } from "@/lib/engagement";
+import { guideOfTheDay } from "@/lib/guides";
+import { currentWeek, programmeById, weeklyCheckIns } from "@/lib/programmes";
 import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
 import { CheerCard } from "@/components/agent/cheer-card";
@@ -21,7 +29,7 @@ import { StreakCard } from "@/components/engagement/streak-card";
 import { TodayCard } from "@/components/engagement/today-card";
 import { briefing } from "@/lib/agent/agent";
 import { scanScore } from "@/lib/beauty";
-import { shortDate } from "@/lib/progress";
+import { longDate, shortDate } from "@/lib/progress";
 import { formatZar, PLANS, scansLeft } from "@/lib/plans";
 import { pageHead } from "@/lib/seo";
 
@@ -35,6 +43,11 @@ export const Route = createFileRoute("/app")({
     }),
   component: Dashboard,
 });
+
+const greeting = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+};
 
 const CATEGORY_LABEL: Record<string, string> = { skin: "Skin", hair: "Hair", nails: "Nails" };
 
@@ -52,6 +65,27 @@ function Dashboard() {
   const left = scansLeft(tier, usage.scans, rewards.bonusScans);
   const recent = [...scans].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3);
   const pendingSignoff = looks.filter((look) => look.status === "sent").length;
+  const real = scans.filter((scan) => !scan.demo);
+  const today = dayKey(new Date());
+  const tip = guideOfTheDay(brief.findings, today);
+  const { enrolments } = useEnrolments();
+  const activeProgramme = enrolments
+    .map((enrolment) => {
+      const programme = programmeById(enrolment.id);
+      if (!programme) return null;
+      const week = currentWeek(enrolment, today);
+      const plan = programme.weeks[Math.min(week, 3)];
+      const nextIndex = plan?.steps.findIndex(
+        (_, index) => !enrolment.ticks.includes(`${Math.min(week, 3)}-${index}`),
+      );
+      return {
+        programme,
+        week,
+        checkIns: weeklyCheckIns(programme, enrolment, scans),
+        next: plan && nextIndex !== undefined && nextIndex >= 0 ? plan.steps[nextIndex] : null,
+      };
+    })
+    .find((item) => item !== null && item.week < 4);
 
   const actions = [
     {
@@ -85,41 +119,148 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={`Welcome back, ${profile.display_name.split(" ")[0]}`}
-        subtitle="Your latest readings and what to do next."
-      />
+      <section className="surface-strong page-enter relative overflow-hidden p-6 sm:p-8">
+        <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
+          <ScoreRing
+            value={recent[0] ? scanScore(recent[0]) : null}
+            label={recent[0] ? `${CATEGORY_LABEL[recent[0].category]} score` : "No scans yet"}
+          />
+          <div>
+            <p className="label-tracking text-xs font-bold text-muted-foreground uppercase">
+              {longDate(new Date().toISOString())}
+            </p>
+            <h1 className="mt-2 font-display text-4xl leading-[1.05] font-semibold sm:text-5xl">
+              {greeting()}, {profile.display_name.split(" ")[0]}.
+            </h1>
+            <p className="mt-3 max-w-xl text-lg text-muted-foreground">{brief.headline}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/scan" className={BUTTON_PRIMARY}>
+                <ScanLine className="h-5 w-5" aria-hidden="true" />{" "}
+                {real.length ? "Scan now" : "Take your first scan"}
+              </Link>
+              <Link to="/agent" className={BUTTON_GHOST}>
+                <MessagesSquare className="h-5 w-5" aria-hidden="true" /> Ask your agent
+              </Link>
+            </div>
+            {topPick && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Suggested for you:{" "}
+                <span className="font-semibold text-foreground">{topPick.product.name}</span> ·{" "}
+                <span className="readout">{topPick.match}%</span> match
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
-      <Link to="/agent" className="surface-strong lift grid gap-6 p-6 sm:grid-cols-[auto_1fr]">
-        <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:justify-center">
-          <p className="font-display text-6xl leading-none font-semibold text-foreground">
-            {recent[0] ? scanScore(recent[0]) : "—"}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {recent[0]
-              ? `${CATEGORY_LABEL[recent[0].category]} score · ${shortDate(recent[0].created_at)}`
-              : "No scans yet"}
-          </p>
+      {real.length === 0 ? (
+        <section aria-labelledby="start" className="space-y-4">
+          <h2 id="start" className="font-display text-3xl font-semibold">
+            Three ways to begin
+          </h2>
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              {
+                to: "/scan" as const,
+                motif: "face" as const,
+                title: "Take your first scan",
+                body: "One photo of your skin, hair or nails, read on this phone.",
+              },
+              {
+                to: "/programmes" as const,
+                motif: "chart" as const,
+                title: "Pick a four-week goal",
+                body: "Calm redness, fade marks, keep your length or strengthen nails.",
+              },
+              {
+                to: "/guides" as const,
+                motif: "leaf" as const,
+                title: "Read a Glow Guide",
+                body: "Short, honest answers for every skin tone and hair type.",
+              },
+            ].map((item, index) => (
+              <Reveal key={item.to} delay={index * 90}>
+                <Link to={item.to} className="surface lift flex h-full flex-col gap-4 p-5">
+                  <LineArt motif={item.motif} className="h-16 w-16" />
+                  <span className="font-display text-xl font-semibold">{item.title}</span>
+                  <span className="text-sm text-muted-foreground">{item.body}</span>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="for-you" className="space-y-4">
+        <h2
+          id="for-you"
+          className="label-tracking text-xs font-bold text-muted-foreground uppercase"
+        >
+          For you today
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Reveal>
+            <Link
+              to="/guides/$id"
+              params={{ id: tip.guide.id }}
+              className="surface lift flex h-full items-start justify-between gap-4 p-5"
+            >
+              <span>
+                <span className="label-tracking block text-xs font-bold text-muted-foreground uppercase">
+                  {tip.why === "reading" ? "Because of your readings" : "Today's guide"}
+                </span>
+                <span className="mt-2 block font-display text-2xl font-semibold">
+                  {tip.guide.title}
+                </span>
+                <span className="mt-2 line-clamp-2 block text-sm text-muted-foreground">
+                  {tip.guide.body[0]}
+                </span>
+              </span>
+              <LineArt motif={tip.guide.motif} className="h-16 w-16 shrink-0" />
+            </Link>
+          </Reveal>
+          <Reveal delay={90}>
+            {activeProgramme ? (
+              <Link
+                to="/programmes/$id"
+                params={{ id: activeProgramme.programme.id }}
+                className="surface lift flex h-full flex-col justify-between gap-4 p-5"
+              >
+                <span>
+                  <span className="label-tracking block text-xs font-bold text-muted-foreground uppercase">
+                    Your programme · week {Math.min(activeProgramme.week + 1, 4)} of 4
+                  </span>
+                  <span className="mt-2 block font-display text-2xl font-semibold">
+                    {activeProgramme.programme.title}
+                  </span>
+                  {activeProgramme.next && (
+                    <span className="mt-2 block text-sm">Next: {activeProgramme.next}</span>
+                  )}
+                </span>
+                <WeekRibbon current={activeProgramme.week} checkIns={activeProgramme.checkIns} />
+              </Link>
+            ) : (
+              <Link
+                to="/programmes"
+                className="surface lift flex h-full items-start justify-between gap-4 p-5"
+              >
+                <span>
+                  <span className="label-tracking block text-xs font-bold text-muted-foreground uppercase">
+                    Programmes
+                  </span>
+                  <span className="mt-2 block font-display text-2xl font-semibold">
+                    Pick a four-week goal
+                  </span>
+                  <span className="mt-2 block text-sm text-muted-foreground">
+                    Three small steps a week, one check-in, and your own before and after.
+                  </span>
+                </span>
+                <LineArt motif="chart" className="h-16 w-16 shrink-0" />
+              </Link>
+            )}
+          </Reveal>
         </div>
-        <div className="flex flex-col justify-center">
-          <span className="flex items-center gap-2 text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">
-            <MessagesSquare className="h-4 w-4 text-accent" aria-hidden="true" /> Your care agent
-          </span>
-          <span className="mt-2 block font-display text-xl leading-snug font-semibold text-foreground">
-            {brief.headline}
-          </span>
-          {topPick && (
-            <span className="mt-2 block text-sm text-muted-foreground">
-              Suggested:{" "}
-              <span className="font-semibold text-foreground">{topPick.product.name}</span> ·{" "}
-              {topPick.match}% match
-            </span>
-          )}
-          <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">
-            Open your agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </span>
-        </div>
-      </Link>
+      </section>
 
       {recent[0] && <CheerCard scans={scans} area={recent[0].category} />}
 

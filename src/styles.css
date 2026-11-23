@@ -748,3 +748,22 @@ details[open] > .details-body {
     animation: none;
   }
 }
+
+/* Score ring: the arc sweeps to its value once (still under reduced motion). */
+.ring-sweep {
+  stroke-dashoffset: var(--ring-from);
+  animation: ring-sweep 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s forwards;
+}
+
+@keyframes ring-sweep {
+  to {
+    stroke-dashoffset: var(--ring-to);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-sweep {
+    animation: none;
+    stroke-dashoffset: var(--ring-to);
+  }
+}

@@ -70,3 +70,46 @@ export const relatedGuides = (guide: Guide, count = 3): Guide[] => {
     .sort((a, b) => Math.abs(GUIDES.indexOf(a) - index) - Math.abs(GUIDES.indexOf(b) - index))
     .slice(0, count);
 };
+
+/** Indicator label (lower case) to the guide that helps with it. */
+const GUIDE_FOR_FINDING: Record<string, string> = {
+  redness: "nose-redness",
+  texture: "texture-pores",
+  hydration: "ashy",
+  "even tone": "pigmentation",
+  porosity: "hair-dry",
+  shine: "shine",
+  "density variance": "thinning",
+  thinning: "thinning",
+  yellowness: "nail-yellow",
+  staining: "nail-yellow",
+  ridges: "nail-ridges",
+  "ridge texture": "nail-ridges",
+  spots: "nail-ridges",
+};
+
+const dayIndex = (day: string) => {
+  let hash = 0;
+  for (const char of day) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash;
+};
+
+/**
+ * Today's guide: the one for the person's weakest indicator that needs care, otherwise a guide
+ * that changes each day (the same all day).
+ */
+export const guideOfTheDay = (
+  findings: readonly { label: string; severity: string; health: number }[],
+  day: string,
+): { guide: Guide; why: "reading" | "daily" } => {
+  const needs = [...findings]
+    .filter((finding) => finding.severity !== "good")
+    .sort((a, b) => a.health - b.health);
+  for (const finding of needs) {
+    const guide = guideById(GUIDE_FOR_FINDING[finding.label.toLowerCase()] ?? "");
+    if (guide) return { guide, why: "reading" };
+  }
+  const daily = GUIDES[dayIndex(day) % GUIDES.length] ?? GUIDES[0];
+  if (!daily) throw new Error("No guides");
+  return { guide: daily, why: "daily" };
+};
