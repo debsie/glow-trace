@@ -24,6 +24,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as ReferRouteImport } from './routes/refer'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -114,6 +115,11 @@ const ProgressRoute = ProgressRouteImport.update({
 const ReferRoute = ReferRouteImport.update({
   id: '/refer',
   path: '/refer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoutineRoute = RoutineRouteImport.update({
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
+  '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
+  '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/refer': typeof ReferRoute
+  '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/progress'
     | '/refer'
+    | '/report'
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/progress'
     | '/refer'
+    | '/report'
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/progress'
     | '/refer'
+    | '/report'
     | '/routine'
     | '/scan'
     | '/sitemap.xml'
@@ -411,6 +423,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProgressRoute: typeof ProgressRoute
   ReferRoute: typeof ReferRoute
+  ReportRoute: typeof ReportRoute
   RoutineRoute: typeof RoutineRoute
   ScanRoute: typeof ScanRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -528,6 +541,13 @@ declare module '@tanstack/react-router' {
       path: '/refer'
       fullPath: '/refer'
       preLoaderRoute: typeof ReferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/routine': {
@@ -693,6 +713,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProgressRoute: ProgressRoute,
   ReferRoute: ReferRoute,
+  ReportRoute: ReportRoute,
   RoutineRoute: RoutineRoute,
   ScanRoute: ScanRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
