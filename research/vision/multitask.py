@@ -56,6 +56,13 @@ SIZE = int(sys.argv[sys.argv.index("--size") + 1]) if "--size" in sys.argv else 
 # camera effects. The texture label is measured, not assumed: the change in fine-scale contrast.
 PATCHES = "--patches" in sys.argv
 PATCHES_PER_PHOTO = 3
+# v6: a fifth input channel, fine detail. Skin texture is a 1-2% brightness change on top of a
+# far larger colour signal; in the 4-channel input the network could not even reproduce the
+# texture measure (r 0.27 on labelled patches). The detail channel (luma optical density minus its
+# 7x7 reflect-padded box mean, times DETAIL_GAIN) lifts that to r 0.95. The app builds the same
+# channel when the weights file says "detail" (src/lib/cv/area-model.ts).
+DETAIL_GAIN = 30.0 if PATCHES else 0.0
+IN_CHANNELS = 5 if DETAIL_GAIN else 4
 # v6: a person's "which patch is smoother" answers (make_label_page.py). --labels DIR holds
 # label_patches.npz and one or more glowtrace_labels_*.json files from the labelling page.
 LABELS_DIR = sys.argv[sys.argv.index("--labels") + 1] if "--labels" in sys.argv else None
@@ -246,7 +253,12 @@ def from_od(density):
 
 
 def network_input(rgb, mask):
-    return torch.cat([od(rgb) / 3.0, mask[:, None]], 1)
+    density = od(rgb)
+    parts = [density / 3.0]
+    if DETAIL_GAIN:
+        luma = density.mean(1, keepdim=True)
+        parts.append((luma - box(luma, 7)) * DETAIL_GAIN)
+    return torch.cat(parts + [mask[:, None]], 1)
 
 
 # ---------------------------------------------------------------- effect generators (per-pixel weights)
@@ -481,7 +493,7 @@ class UNet(nn.Module):
     def __init__(self, heads):
         super().__init__()
         conv = lambda i, o, s=1: nn.Sequential(nn.Conv2d(i, o, 3, s, 1), nn.ReLU())
-        self.e1, self.e2, self.e3 = conv(4, 16), conv(16, 32, 2), conv(32, 48, 2)
+        self.e1, self.e2, self.e3 = conv(IN_CHANNELS, 16), conv(16, 32, 2), conv(32, 48, 2)
         self.mid = conv(48, 48)
         self.d2, self.d1 = conv(80, 32), conv(48, 16)
         self.out = nn.Conv2d(16, heads, 1)
@@ -799,11 +811,11 @@ def main():
     # Weights first: they are all the app needs (the ONNX file can be rebuilt from them), so a
     # failed export or a runtime reset afterwards cannot lose the training.
     weights = {name: t.detach().cpu().numpy().round(6).tolist() for name, t in model.state_dict().items()}
-    json.dump({"area": AREA, "name": NAME, "heads": HEADS, "size": SIZE, "weights": weights, "evaluation": report}, open(f"{NAME}_weights.json", "w"))
+    json.dump({"area": AREA, "name": NAME, "heads": HEADS, "size": SIZE, "detail": DETAIL_GAIN, "weights": weights, "evaluation": report}, open(f"{NAME}_weights.json", "w"))
     json.dump(report, open(f"{NAME}_eval.json", "w"), indent=2)
     print(f"Wrote {NAME}_weights.json and {NAME}_eval.json", flush=True)
     try:
-        torch.onnx.export(model.cpu(), torch.zeros(1, 4, SIZE, SIZE), f"{NAME}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
+        torch.onnx.export(model.cpu(), torch.zeros(1, IN_CHANNELS, SIZE, SIZE), f"{NAME}_model.onnx", input_names=["input"], output_names=["maps"], opset_version=17, dynamo=False)
         print(f"Wrote {NAME}_model.onnx")
     except Exception as error:  # the weights file is enough
         print(f"ONNX export skipped ({error}); {NAME}_weights.json is all Glowtrace needs")

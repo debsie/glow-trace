@@ -34,6 +34,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-camera-guide: var(--camera-guide);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -65,6 +66,8 @@
   --popover-foreground: oklch(0.22 0.02 340);
   --primary: oklch(0.46 0.14 10);
   --primary-foreground: oklch(0.985 0.005 10);
+  /* Camera guide lines sit on a live photo, so they stay light in both themes. */
+  --camera-guide: oklch(0.985 0.005 10);
   --secondary: oklch(0.94 0.006 10);
   --secondary-foreground: oklch(0.22 0.02 340);
   --muted: oklch(0.94 0.006 10);

@@ -118,9 +118,9 @@ export const SectionCard = ({
   children: ReactNode;
   className?: string;
 }) => (
-  <section className={`surface p-5 ${className}`}>
+  <section className={`surface min-w-0 p-5 ${className}`}>
     {(title || action) && (
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {title && (
           <h2 className="label-tracking font-sans text-xs font-bold text-muted-foreground uppercase">
             {title}

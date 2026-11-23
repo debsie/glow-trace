@@ -22,6 +22,13 @@ DATASETS = {
         ("skinconcerns", "face-wrinkles-detection-xjlkr", "Wrinkles"),
         ("james-aiart", "acne-jcvgb", "Acne"),
         ("acne-severity", "clinic-data", "Acne severity"),
+        # Real selfies with marked pores, roughness, dryness, redness and oiliness (CC BY 4.0 on
+        # their pages; the licence check below still runs).
+        ("faceinc", "dryness-segm-good-selfies", "Selfies: pores, roughness, dryness, redness"),
+        ("faceinc", "dryness-segm-preprocessed-good-selfies", "Selfies, preprocessed"),
+        ("faceinc", "skin-type-classification", "Faces by skin type"),
+        ("frekkel", "facial-skin-analysis", "Facial skin analysis"),
+        ("virli", "face-skin", "Face skin"),
     ],
     "nails": [
         ("sergei-artiukhin-ohqpa", "nails-segmentation-yw1zl", "Nail segmentation"),
@@ -57,6 +64,9 @@ DATASETS = {
         ("major-project-s3rff", "hair-disease-detection-o2ok0", "Scalp conditions"),
     ],
 }
+
+# GLOWTRACE_UNSPLASH_ZIP and GLOWTRACE_FETCH_LIMIT exist only for rehearsing the notebook offline.
+FETCH_LIMIT = int(os.environ.get("GLOWTRACE_FETCH_LIMIT", "0")) or None
 
 NON_COMMERCIAL = ("non-commercial", "noncommercial", "-nc", " nc", "by-nc", "private", "research only")
 
@@ -106,19 +116,113 @@ def zenodo_scalp(credits):
     return credits
 
 
+def fairface(credits, per_group=min(450, FETCH_LIMIT or 450)):
+    """FairFace (CC BY 4.0): faces balanced across seven ethnic groups, many real lighting
+    conditions. Tight crops (0.25 padding), up to per_group faces per group."""
+    import io
+
+    import pandas as pd
+
+    target = os.path.join("data", "skin", "fairface")
+    link = "https://github.com/joojs/fairface"
+    try:
+        files = json.loads(urllib.request.urlopen("https://huggingface.co/api/datasets/HuggingFaceM4/FairFace/parquet", timeout=60).read())["0.25"]["train"]
+        os.makedirs(target, exist_ok=True)
+        counts, saved = {}, 0
+        for url in files:
+            frame = pd.read_parquet(io.BytesIO(urllib.request.urlopen(url, timeout=900).read()))
+            for _, row in frame.iterrows():
+                group = str(row.get("race", "unknown"))
+                if counts.get(group, 0) >= per_group:
+                    continue
+                image = row["image"]
+                data = image.get("bytes") if isinstance(image, dict) else None
+                if not data:
+                    continue
+                open(os.path.join(target, f"{group}_{counts.get(group, 0):04d}.jpg"), "wb").write(data)
+                counts[group] = counts.get(group, 0) + 1
+                saved += 1
+            if counts and min(counts.values()) >= per_group and len(counts) >= 7:
+                break
+        print(f"OK   skin: FairFace ({saved} faces, {len(counts)} groups, licence: CC BY 4.0)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "skin", "name": "FairFace", "what": "Faces balanced across seven ethnic groups",
+                        "link": link, "licence": "CC BY 4.0", "images": saved})
+    except Exception as error:
+        print(f"FAIL skin: FairFace ({str(error)[:120]})")
+    return credits
+
+
+UNSPLASH_LITE = os.environ.get("GLOWTRACE_UNSPLASH_ZIP", "https://unsplash.com/data/lite/latest")
+UNSPLASH_WORDS = {"selfie", "face", "headshot", "portrait", "skin", "close up", "closeup"}
+
+
+def unsplash_faces(credits, limit=min(1200, FETCH_LIMIT or 1200)):
+    """Unsplash Lite (Unsplash Dataset Terms: commercial training for internal business use,
+    never redistributed): photos tagged selfie, face, portrait, skin or close-up, 1024 px wide.
+    Training keeps only skin-rich patches, so non-face photos drop out on their own."""
+    import csv
+    import io
+    import zipfile
+    from concurrent.futures import ThreadPoolExecutor
+
+    target = os.path.join("data", "skin", "unsplash_lite")
+    link = "https://unsplash.com/data"
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(UNSPLASH_LITE, timeout=1800).read()))
+        csv.field_size_limit(10**8)
+        names = archive.namelist()
+        wanted = set()
+        with archive.open(next(n for n in names if n.startswith("keywords"))) as handle:
+            for row in csv.DictReader(io.TextIOWrapper(handle, "utf-8"), delimiter="\t"):
+                if row.get("keyword", "").lower() in UNSPLASH_WORDS:
+                    wanted.add(row["photo_id"])
+        urls = []
+        with archive.open(next(n for n in names if n.startswith("photos"))) as handle:
+            for row in csv.DictReader(io.TextIOWrapper(handle, "utf-8"), delimiter="\t"):
+                if row.get("photo_id") in wanted and row.get("photo_image_url"):
+                    urls.append((row["photo_id"], row["photo_image_url"] + "?w=1024&fm=jpg&q=90"))
+        urls = sorted(urls)[:limit]
+        os.makedirs(target, exist_ok=True)
+
+        def one(item):
+            try:
+                data = urllib.request.urlopen(item[1], timeout=60).read()
+                open(os.path.join(target, f"{item[0]}.jpg"), "wb").write(data)
+                return 1
+            except Exception:
+                return 0
+
+        with ThreadPoolExecutor(8) as pool:
+            saved = sum(pool.map(one, urls))
+        print(f"OK   skin: Unsplash Lite faces ({saved} of {len(urls)} photos, licence: Unsplash Dataset Terms, Lite)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "skin", "name": "Unsplash Lite (faces)", "what": "Selfies, portraits and skin close-ups",
+                        "link": link, "licence": "Unsplash Dataset Terms (Lite: commercial internal training, no redistribution)", "images": saved})
+    except Exception as error:
+        print(f"FAIL skin: Unsplash Lite ({str(error)[:120]})")
+    return credits
+
+
 def main():
     key = os.environ.get("ROBOFLOW_API_KEY")
-    if not key:
-        raise SystemExit("Set ROBOFLOW_API_KEY first (Colab: key icon > Secrets).")
-    from roboflow import Roboflow
+    # A missing or rejected key skips the Roboflow sets only; every other source still downloads.
+    rf = None
+    if key and not os.environ.get("GLOWTRACE_SKIP_ROBOFLOW"):
+        try:
+            from roboflow import Roboflow
 
-    rf = Roboflow(api_key=key)
+            rf = Roboflow(api_key=key)
+        except Exception as error:
+            print(f"FAIL roboflow: key rejected or service down ({str(error)[:120]}); skipping Roboflow sets")
+    else:
+        print("SKIP roboflow: no ROBOFLOW_API_KEY")
     areas = [a for a in sys.argv[1:] if a in DATASETS] or list(DATASETS)
     os.makedirs("data", exist_ok=True)
     credits_path = os.path.join("data", "credits.json")
     credits = json.load(open(credits_path)) if os.path.exists(credits_path) else []
     for area in areas:
-        for workspace, project, what in DATASETS[area]:
+        for workspace, project, what in DATASETS[area] if rf else []:
             link = f"https://universe.roboflow.com/{workspace}/{project}"
             target = os.path.join("data", area, f"{workspace}__{project}")
             try:
@@ -153,6 +257,9 @@ def main():
                 print(f"FAIL {area}: {project} ({str(error)[:120]})")
     if "hair" in areas:
         credits = zenodo_scalp(credits)
+    if "skin" in areas:
+        credits = fairface(credits)
+        credits = unsplash_faces(credits)
     json.dump(credits, open(credits_path, "w"), indent=2)
     print(f"\nCredits written to {credits_path}. Check any 'not reported' licence on its page before shipping.")
 

@@ -159,7 +159,10 @@ const Logo = ({ compact }: { compact: boolean }) => (
   >
     <LogoMark />
     {!compact && (
-      <span className="font-display text-xl font-semibold text-foreground">Glowtrace</span>
+      // The word hides on the narrowest phones so the top bar's buttons always fit.
+      <span className="font-display text-xl font-semibold text-foreground max-[359px]:sr-only">
+        Glowtrace
+      </span>
     )}
   </Link>
 );
@@ -367,7 +370,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile and tablet: slim top bar. */}
       <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2 lg:hidden print:hidden">
         <Logo compact={false} />
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 min-[360px]:gap-2">
           <ThemeToggle />
           <ProfileLink compact />
           <SignOutButton />

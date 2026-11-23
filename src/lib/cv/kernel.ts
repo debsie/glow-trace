@@ -145,10 +145,15 @@ export const reportToBiomarkers = (report: BiomarkerReport): Biomarkers => {
  * For the live camera: the same quality gate as a scan, on a small preview frame, so the
  * shutter only enables when the photo would be scored. Undefined means good to go.
  */
-export const frameHint = (image: PixelBuffer): string | undefined => {
+/**
+ * Live camera check on a small preview frame. `photoWidth` is the width the photo will actually
+ * have (the camera's own resolution): the preview is shrunk on purpose, so its width says nothing
+ * about the photo. Portrait cameras gave a 90 px wide preview and a false "Photo too small".
+ */
+export const frameHint = (image: PixelBuffer, photoWidth = image.width): string | undefined => {
   const planes = toPlanes(image);
   const sharpness = round1(clamp100((gradientEnergy(planes) / 14) * 100));
-  return qualityNotice(image.width, sharpness, meanLuma(planes));
+  return qualityNotice(photoWidth, sharpness, meanLuma(planes));
 };
 
 // Light coach: one side brighter than the other by this ratio reads as side light.

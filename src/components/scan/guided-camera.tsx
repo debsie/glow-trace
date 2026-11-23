@@ -89,7 +89,7 @@ export const GuidedCamera = ({
       if (!context) return;
       context.drawImage(el, 0, 0, canvas.width, canvas.height);
       const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-      const blocking = frameHint(frame);
+      const blocking = frameHint(frame, Math.min(el.videoWidth, el.videoHeight));
       setHint(blocking);
       setTip(blocking ? undefined : lightTip(frame));
     }, 500);
@@ -206,7 +206,7 @@ export const GuidedCamera = ({
                 fill="none"
                 strokeWidth="0.8"
                 strokeDasharray="3 2"
-                className={ready ? "stroke-primary-foreground" : "stroke-primary-foreground/60"}
+                className={ready ? "stroke-camera-guide" : "stroke-camera-guide/60"}
               >
                 {FRAMES[shot.overlay]}
               </g>
