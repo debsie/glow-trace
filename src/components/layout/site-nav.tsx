@@ -1,5 +1,8 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  BookOpen,
+  LogOut,
+  Target,
   CreditCard,
   Droplets,
   FlaskConical,
@@ -45,6 +48,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Tools",
     items: [
+      { to: "/programmes", label: "Programmes", icon: Target },
+      { to: "/guides", label: "Guides", icon: BookOpen },
       { to: "/ingredients", label: "Ingredients", icon: FlaskConical },
       { to: "/refer", label: "Earn", icon: Gift },
     ],
@@ -121,6 +126,26 @@ const ProfileLink = ({ compact }: { compact: boolean }) => {
         </span>
       )}
     </Link>
+  );
+};
+
+/** Sign out, for signed-in members (desktop sidebar and mobile top bar). */
+const SignOutButton = () => {
+  const { access, signOut } = useAuth();
+  const navigate = useNavigate();
+  if (access.kind !== "member") return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void signOut().then(() => navigate({ to: "/" }));
+      }}
+      aria-label="Sign out"
+      title="Sign out"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
+    >
+      <LogOut className="h-5 w-5" aria-hidden="true" />
+    </button>
   );
 };
 
@@ -343,6 +368,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <ProfileLink compact />
+          <SignOutButton />
         </div>
       </header>
 
@@ -389,6 +415,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
               <ProfileLink compact={collapsed} />
             </div>
             <ThemeToggle />
+            <SignOutButton />
           </div>
         </div>
       </aside>
