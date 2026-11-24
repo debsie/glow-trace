@@ -18,6 +18,8 @@ const RATINGS = [
 ];
 
 /** "Send feedback" on every app screen; it goes to the admin dashboard's triage list. */
+import { OPEN_FEEDBACK } from "@/lib/feedback-events";
+
 export const FeedbackButton = () => {
   const { access } = useAuth();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -27,6 +29,13 @@ export const FeedbackButton = () => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Settings (and anything else) can open this with window.dispatchEvent(new Event(OPEN_FEEDBACK)).
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener(OPEN_FEEDBACK, show);
+    return () => window.removeEventListener(OPEN_FEEDBACK, show);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

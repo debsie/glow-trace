@@ -27,6 +27,8 @@ import { useEffect, useState } from "react";
 import { AccessGate } from "@/components/auth/access-gate";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { Avatar } from "@/components/profile/avatar";
+import { usePrefs } from "@/components/profile/use-profile";
 import { Badge, LogoMark } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import { useAuth } from "@/context/auth";
@@ -114,25 +116,24 @@ const initialsOf = (name: string): string =>
 
 const ProfileLink = ({ compact }: { compact: boolean }) => {
   const { profile } = useAppState();
+  const prefs = usePrefs();
   const plan = PLANS[profile.subscription_tier].name;
   return (
     <Link
-      to="/pricing"
-      aria-label={`${profile.display_name}, ${plan} plan. View plans`}
+      to="/settings"
+      aria-label={`${profile.display_name}, ${plan} plan. Profile and settings`}
       title={compact ? `${profile.display_name} · ${plan}` : undefined}
       className={`flex min-h-[56px] items-center rounded-xl hover:bg-secondary ${
         compact ? "justify-center" : "gap-3 px-2"
       }`}
     >
-      <span className="bg-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
-        {initialsOf(profile.display_name)}
-      </span>
+      <Avatar name={profile.display_name} choice={prefs?.avatar} className="h-10 w-10 text-sm" />
       {!compact && (
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-foreground">
             {profile.display_name}
           </span>
-          <span className="block text-xs text-muted-foreground">{plan}</span>
+          <span className="block text-xs text-muted-foreground">{plan} · Settings</span>
         </span>
       )}
     </Link>

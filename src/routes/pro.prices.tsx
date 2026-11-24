@@ -6,6 +6,7 @@ import { LineArt } from "@/components/art/line-art";
 import { Reveal } from "@/components/motion/reveal";
 import { StudioGate } from "@/components/studio/studio-gate";
 import { BUTTON_GHOST, BUTTON_PRIMARY, GhostButton } from "@/components/ui/bits";
+import { usePrefs } from "@/components/profile/use-profile";
 import { useAppState } from "@/context/app-state";
 import { pageHead } from "@/lib/seo";
 import type { Service } from "@/lib/studio";
@@ -48,7 +49,8 @@ function PricesPage() {
     setServices(next);
     saveServices(next);
   };
-  const artist = profile.display_name || "Your artist";
+  const prefs = usePrefs();
+  const artist = prefs?.business.name || profile.display_name || "Your artist";
 
   return (
     <div className="space-y-8">

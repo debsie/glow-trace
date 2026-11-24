@@ -5,6 +5,7 @@ import { DEFAULT_PROFILE, recoverySteps, removalSteps } from "@/lib/makeup-day";
 import { BUTTON_GHOST, PageHeader, PrimaryButton } from "@/components/ui/bits";
 import { MessageCircle } from "lucide-react";
 import { briefText, whatsappTo } from "@/lib/studio";
+import { usePrefs } from "@/components/profile/use-profile";
 import { useAppState } from "@/context/app-state";
 import { findingsFor } from "@/lib/agent/agent";
 import { longDate } from "@/lib/progress";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/pro/clients/$id/brief")({
 function ClientBrief() {
   const { id } = Route.useParams();
   const { clients, scans, looks, profile } = useAppState();
+  const prefs = usePrefs();
   const client = clients.find((item) => item.id === id);
   if (!client) return <PageHeader title="Client not found" />;
 
@@ -40,7 +42,7 @@ function ClientBrief() {
               client.contact_info,
               briefText({
                 client: client.client_name,
-                artist: profile.display_name || "your artist",
+                artist: prefs?.business.name || profile.display_name || "your artist",
                 occasion: look?.occasion,
                 focus: attention.slice(0, 3).map((finding) => finding.label.toLowerCase()),
                 prep: [

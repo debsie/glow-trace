@@ -28,6 +28,7 @@ import { Route as ReferRouteImport } from './routes/refer'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as RoutineRouteImport } from './routes/routine'
 import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShelfRouteImport } from './routes/shelf'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SkinAnalysisAppRouteImport } from './routes/skin-analysis-app'
@@ -141,6 +142,11 @@ const ScanRoute = ScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShelfRoute = ShelfRouteImport.update({
   id: '/shelf',
   path: '/shelf',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/settings': typeof SettingsRoute
   '/shelf': typeof ShelfRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/settings': typeof SettingsRoute
   '/shelf': typeof ShelfRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/report': typeof ReportRoute
   '/routine': typeof RoutineRoute
   '/scan': typeof ScanRoute
+  '/settings': typeof SettingsRoute
   '/shelf': typeof ShelfRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/routine'
     | '/scan'
+    | '/settings'
     | '/shelf'
     | '/sitemap.xml'
     | '/skin-analysis-app'
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/routine'
     | '/scan'
+    | '/settings'
     | '/shelf'
     | '/sitemap.xml'
     | '/skin-analysis-app'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/routine'
     | '/scan'
+    | '/settings'
     | '/shelf'
     | '/sitemap.xml'
     | '/skin-analysis-app'
@@ -475,6 +487,7 @@ export interface RootRouteChildren {
   ReportRoute: typeof ReportRoute
   RoutineRoute: typeof RoutineRoute
   ScanRoute: typeof ScanRoute
+  SettingsRoute: typeof SettingsRoute
   ShelfRoute: typeof ShelfRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SkinAnalysisAppRoute: typeof SkinAnalysisAppRoute
@@ -621,6 +634,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/scan'
       preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shelf': {
@@ -797,6 +817,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportRoute: ReportRoute,
   RoutineRoute: RoutineRoute,
   ScanRoute: ScanRoute,
+  SettingsRoute: SettingsRoute,
   ShelfRoute: ShelfRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SkinAnalysisAppRoute: SkinAnalysisAppRoute,

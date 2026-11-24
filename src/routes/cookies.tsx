@@ -73,6 +73,13 @@ const ITEMS: Item[] = [
     kept: "Until you delete them or clear this site's data",
   },
   {
+    name: "Profile picture and settings",
+    where:
+      'Browser database (IndexedDB, "glowtrace", photo "profile:avatar") and local storage (glowtrace:profile:v1)',
+    why: "Your profile photo or illustrated face, studio details (business name, WhatsApp, Instagram, area) and the early-access switch. Your name is kept with your account.",
+    kept: "Until you change them or clear this site's data",
+  },
+  {
     name: "Offline copy of the app",
     where: "Browser cache storage (glowtrace-v1)",
     why: "Lets the app open and scan without a connection. Holds app pages and files, nothing about you.",

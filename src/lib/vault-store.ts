@@ -55,6 +55,10 @@ export const putPhoto = async (id: string, photo: Blob): Promise<void> => {
   await requestToPromise((await store(PHOTO_STORE, "readwrite")).put(photo, id));
 };
 
+export const deletePhoto = async (id: string): Promise<void> => {
+  await requestToPromise((await store(PHOTO_STORE, "readwrite")).delete(id));
+};
+
 export const getPhotos = async (ids: readonly string[]): Promise<Map<string, Blob>> => {
   const photos = await store(PHOTO_STORE, "readonly");
   const entries = await Promise.all(
@@ -65,13 +69,16 @@ export const getPhotos = async (ids: readonly string[]): Promise<Map<string, Blo
   return result;
 };
 
-/** Remove photos that no saved scan points at any more. */
+/** Photo ids that belong to the person, not to a scan (the profile picture); never pruned. */
+export const PROFILE_PHOTO_ID = "profile:avatar";
+
+/** Remove photos that no saved scan points at any more (the profile picture always stays). */
 export const prunePhotos = async (keep: ReadonlySet<string>): Promise<void> => {
   const photos = await store(PHOTO_STORE, "readwrite");
   const keys = await requestToPromise(photos.getAllKeys());
   await Promise.all(
     keys
-      .filter((key) => typeof key === "string" && !keep.has(key))
+      .filter((key) => typeof key === "string" && !keep.has(key) && !key.startsWith("profile:"))
       .map((key) => requestToPromise(photos.delete(key))),
   );
 };
