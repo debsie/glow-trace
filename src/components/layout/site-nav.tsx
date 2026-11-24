@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BookOpen,
   ClipboardCheck,
+  Library,
   LogOut,
   Target,
   CreditCard,
@@ -43,6 +44,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/scan", label: "Scan", icon: ScanLine, mobile: true },
       { to: "/agent", label: "Agent", icon: MessagesSquare, mobile: true },
       { to: "/routine", label: "Routine", icon: Droplets, mobile: true },
+      { to: "/shelf", label: "Shelf", icon: Library },
       { to: "/progress", label: "Progress", icon: LineChart, mobile: true },
       { to: "/report", label: "Report card", icon: ClipboardCheck },
     ],
