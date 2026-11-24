@@ -41,6 +41,7 @@ import { getSupabase } from "@/integrations/supabase/client";
 import { weeklyStreak } from "@/lib/engagement";
 import type { LengthBand } from "@/lib/hair-length";
 import { bandMidpoint } from "@/lib/hair-length";
+import { currentWeather } from "@/lib/weather-client";
 import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
 import type { SamplePhotos } from "@/lib/vault";
 import { buildExport, fromVault, parseVault, toVault } from "@/lib/vault";
@@ -380,6 +381,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         ...(input.demo ? { demo: true } : {}),
       };
       setScans((current) => [scan, ...current]);
+      // Your own scans (not a client's) remember the day's weather for "weather and your skin".
+      if (!input.client_id && !input.demo) {
+        void currentWeather().then((weather) => {
+          if (weather) {
+            setScans((current) =>
+              current.map((item) => (item.id === id ? { ...item, weather } : item)),
+            );
+          }
+        });
+      }
       setAccount((current) => {
         const live = currentUsage(current.usage, new Date());
         return { ...current, usage: { ...live, scans: live.scans + 1 } };

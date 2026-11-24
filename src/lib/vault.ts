@@ -28,6 +28,13 @@ const storedScanSchema = z.object({
   created_at: z.string().datetime(),
   report: biomarkerReportSchema.optional(),
   demo: z.boolean().optional(),
+  weather: z
+    .object({
+      temperature: z.number().min(-60).max(60),
+      humidity: z.number().min(0).max(100),
+      uvMax: z.number().min(0).max(20).nullable(),
+    })
+    .optional(),
   /** Bundled sample photo for seed scans; null when the photo is in the photo store. */
   sample_photo: z.enum(["skin", "hair", "nails"]).nullable(),
 });

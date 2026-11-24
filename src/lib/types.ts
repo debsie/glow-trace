@@ -94,7 +94,11 @@ export type ScanRecord = {
   report?: ScanReport | undefined;
   /** True when the photo couldn't be scored and sample values were shown instead. */
   demo?: boolean | undefined;
+  /** The day's weather where the person was, when skin weather is on (weather-trends.ts). */
+  weather?: ScanWeather | undefined;
 };
+
+export type ScanWeather = { temperature: number; humidity: number; uvMax: number | null };
 
 export type ProductCategory = "skincare" | "haircare" | "nailcare" | "makeup";
 

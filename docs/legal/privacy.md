@@ -66,7 +66,9 @@ If you turn on skin weather, you pick your town from a world list that is search
 The town's position (rounded to about 1 km) goes to Glowtrace's own weather service, which asks the
 Norwegian Meteorological Institute (MET Norway) for that position's forecast. Your phone never
 contacts MET Norway, and nothing about you goes with the request: no name, account, readings or
-photos. Your chosen town and the latest forecast are kept on your device. We never use your
+photos. Your chosen town and the latest forecast are kept on your device, and the day's
+temperature, humidity and UV are saved with your own scans there (never with a client's), so
+Progress can show how weather moves your readings. We never use your
 phone's location (GPS). Weather data is from MET Norway under CC BY 4.0; the skin tips are ours.
 
 ### Sensitive information

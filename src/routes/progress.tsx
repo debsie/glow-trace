@@ -6,6 +6,7 @@ import { BeforeAfter } from "@/components/progress/before-after";
 import { FaceMap } from "@/components/progress/face-map";
 import { IndicatorTrends } from "@/components/progress/indicator-trends";
 import { ScoreChart } from "@/components/progress/score-chart";
+import { WeatherTrendsCard } from "@/components/progress/weather-trends-card";
 import { Badge, BUTTON_PRIMARY, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import type { Verdict } from "@/lib/progress";
@@ -174,6 +175,8 @@ function ProgressPage() {
               <IndicatorTrends series={indicators} />
             </section>
           )}
+
+          <WeatherTrendsCard scans={scans} area={area} />
 
           {zones && (
             <SectionCard title="Redness by zone">
