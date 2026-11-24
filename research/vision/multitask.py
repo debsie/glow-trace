@@ -358,11 +358,16 @@ def skin_texture(img, mask, gen, amount):
     return img, change[:, None, None] * mask
 
 
-def phone(img, gen):
-    """Phone camera processing on some photos (--patches only): resampling softness, sharpening
-    and JPEG compression, each at random strength. Nuisances the texture head must ignore."""
+def optics(img, gen):
+    """Lens and phone processing (--patches only): blur, resampling softness and sharpening, each
+    at random strength. Applied to the base photo BEFORE the effects, so both views share it and the
+    measured texture label already includes it. v6 applied these to each view separately and
+    unlabelled, which taught the texture head to ignore blur (real-photo blur check -0.02)."""
     n = img.shape[0]
     pick = lambda p: torch.rand(n, device=DEVICE, generator=gen) < p
+    blur = pick(0.4)
+    if blur.any():
+        img[blur] = box(img[blur], 3)
     soft = pick(0.3)
     if soft.any():
         small = F.interpolate(img[soft], scale_factor=0.6, mode="bilinear", align_corners=False)
@@ -371,14 +376,19 @@ def phone(img, gen):
     if sharp.any():
         amount_ = rand((int(sharp.sum()), 1, 1, 1), gen, 0.2, 1.0)
         img[sharp] = img[sharp] + amount_ * (img[sharp] - box(img[sharp], 3))
+    return img.clamp(0, 255)
+
+
+def jpeg(img, qualities):
+    """JPEG at a given quality per photo (0 = none); both views use the same qualities."""
     try:
         from torchvision.io import decode_jpeg, encode_jpeg
     except ImportError:
         return img
-    for i in torch.nonzero(pick(0.5)).flatten().tolist():
-        quality = int(rand((1,), gen, 45, 95).item())
-        data = encode_jpeg(img[i].clamp(0, 255).round().to(torch.uint8).cpu(), quality=quality)
-        img[i] = decode_jpeg(data).float().to(DEVICE)
+    for i, quality in enumerate(qualities):
+        if quality:
+            data = encode_jpeg(img[i].clamp(0, 255).round().to(torch.uint8).cpu(), quality=quality)
+            img[i] = decode_jpeg(data).float().to(DEVICE)
     return img
 
 
@@ -456,13 +466,14 @@ def add_effects(rgb, mask, gen):
     return img, torch.stack([maps[h] for h in ALL_HEADS], 1)
 
 
-def camera(rgb, gen):
-    """Random light colour, exposure, blur and sensor noise."""
+def camera(rgb, gen, qualities=None):
+    """Random light colour, exposure, blur and sensor noise. With --patches, blur lives in
+    optics() (shared by both views) and JPEG uses the shared `qualities`."""
     n = rgb.shape[0]
     gains = torch.exp(0.07 * torch.randn(n, 3, 1, 1, device=DEVICE, generator=gen))
     gains = gains * torch.exp(0.15 * torch.randn(n, 1, 1, 1, device=DEVICE, generator=gen))
     img = rgb * gains
-    blur = torch.rand(n, device=DEVICE, generator=gen) < 0.4
+    blur = torch.rand(n, device=DEVICE, generator=gen) < (0.0 if PATCHES else 0.4)
     if blur.any():
         img[blur] = F.avg_pool2d(F.pad(img[blur], (1, 1, 1, 1), mode="replicate"), 3, 1)
     if AREA == "hair":
@@ -472,18 +483,23 @@ def camera(rgb, gen):
         img = img + glare[:, None] * 255
     sigma = rand((n, 1, 1, 1), gen, 0.5, 3.0)
     img = (img + torch.randn(img.shape, device=DEVICE, generator=gen) * sigma).clamp(0, 255)
-    if PATCHES:
-        img = phone(img, gen).clamp(0, 255)
+    if PATCHES and qualities is not None:
+        img = jpeg(img, qualities).clamp(0, 255)
     return img.round()
 
 
 def make_batch(images, valid, gen):
+    qualities = None
+    if PATCHES:
+        images = optics(images.clone(), gen)
+        pick = (torch.rand(images.shape[0], device=DEVICE, generator=gen) < 0.5).tolist()
+        qualities = [int(rand((1,), gen, 45, 95).item()) if p else 0 for p in pick]
     mask = area_mask(images, valid)
     with_effects, targets = add_effects(images, mask, gen)
-    a, b = camera(images, gen), camera(with_effects, gen)
+    a, b = camera(images, gen, qualities), camera(with_effects, gen, qualities)
     # The 4th channel is the valid-photo mask, exactly what the app feeds.
     seen = (valid > 0).float()
-    return network_input(a, seen), network_input(b, seen), targets, mask
+    return network_input(a, seen), network_input(b, seen), targets, mask, images
 
 
 # ---------------------------------------------------------------- model
@@ -727,7 +743,7 @@ def main():
                 idx = torch.cat(parts)
             else:
                 idx = train_t[torch.randint(len(train_t), (40,), device=DEVICE, generator=gen)]
-            xa, xb, every, mask = make_batch(images[idx], valid[idx], gen)
+            xa, xb, every, mask, base = make_batch(images[idx], valid[idx], gen)
             targets = every[:, OWN]
             out_a = model(xa)
             diff = model(xb) - out_a
@@ -741,7 +757,7 @@ def main():
                 # head's level on view A tracks that photo's own fine contrast (anchor), and every
                 # clear change must at least point the right way (ranking).
                 k = HEADS.index("texture")
-                own = hp_contrast(images[idx], mask) * scale
+                own = hp_contrast(base, mask) * scale
                 level = masked_mean(out_a, mask)[:, k]
                 loss = loss + 0.5 * ((level - own) ** 2).mean() / (own**2).mean().clamp(min=1e-3)
                 change = masked_mean(diff, mask)[:, k]
@@ -773,7 +789,7 @@ def main():
         diffs, truths, bands = [], [], []
         for start in range(0, len(reps), 64):
             idx = reps[start : start + 64]
-            xa, xb, every, mask = make_batch(images[idx], valid[idx], egen)
+            xa, xb, every, mask, _ = make_batch(images[idx], valid[idx], egen)
             diffs.append(masked_mean(model(xb) - model(xa), mask))
             truths.append(masked_mean(every, mask))
             bands.append(groups[idx])
