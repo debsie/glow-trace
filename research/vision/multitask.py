@@ -584,8 +584,20 @@ def load_labels(folder):
     label can never be joined to the wrong patch. Returns the patches, train and held-out pairs as
     (a, b, target) with target 1 = a smoother, 0 = b smoother, 0.5 = about the same, and the
     labeller's own consistency on the repeated pairs."""
-    data = np.load(os.path.join(folder, "label_patches.npz"))
-    set_id = str(data["set_id"])
+    # Every labelling round is its own patch file (label_patches*.npz, anywhere in the folder);
+    # answers join the round whose set id they carry, with patch numbers offset into one array.
+    sets = {}
+    images = []
+    for npz in sorted(glob.glob(os.path.join(folder, "**", "label_patches*.npz"), recursive=True)):
+        data = np.load(npz)
+        sid = str(data["set_id"])
+        if sid in sets:
+            continue
+        sets[sid] = sum(len(i) for i in images)
+        images.append(data["image"])
+    if not sets:
+        raise SystemExit(f"--labels {folder}: no label_patches*.npz found")
+    set_id = ", ".join(sets)
     pairs = []
     for path in sorted(glob.glob(os.path.join(folder, "**", "*.json"), recursive=True)):
         try:
@@ -595,26 +607,33 @@ def load_labels(folder):
             continue
         if not isinstance(answers, dict) or answers.get("format") != "glowtrace-labels-v1":
             continue
-        if answers.get("setId") != set_id:
-            print(f"labels: skipped {path}, made for patch set {answers.get('setId')} not {set_id}")
+        offset = sets.get(str(answers.get("setId")))
+        if offset is None:
+            print(f"labels: skipped {path}, made for patch set {answers.get('setId')} (have {set_id})")
             continue
         for item in answers.get("answers", []):
             target = {"a": 1.0, "b": 0.0, "same": 0.5}.get(item.get("choice"))
             if target is not None:
-                pairs.append((int(item["a"]), int(item["b"]), target))
+                pairs.append((int(item["a"]) + offset, int(item["b"]) + offset, target))
     if not pairs:
         raise SystemExit(f"--labels {folder}: no answers for patch set {set_id}")
     # Consistency: pairs answered twice (once each way round) should agree.
-    seen, agree, both = {}, 0, 0
+    # Strict: the same answer both times. Not contradicting: never A one time and B the other
+    # ("about the same" plus a choice means the two patches were close, not that she disagreed).
+    seen, agree, opposite, both = {}, 0, 0, 0
     for a, b, t in pairs:
         key = (min(a, b), max(a, b))
         smoother_a = t if a == key[0] else 1 - t
         if key in seen:
             both += 1
             agree += seen[key] == smoother_a
+            opposite += {seen[key], smoother_a} == {0.0, 1.0}
         else:
             seen[key] = smoother_a
     consistency = agree / both if both else None
+    if both:
+        print(f"labels: repeats {both}, same answer {agree}, opposite {opposite} "
+              f"(not contradicting {1 - opposite / both:.2f})")
     # Hold out a fifth of the patch pairs (by pair, both orders together) for evaluation.
     rng = np.random.default_rng(7)
     keys = sorted(seen)
@@ -622,7 +641,7 @@ def load_labels(folder):
     train = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) not in held]
     test = [p for p in pairs if (min(p[0], p[1]), max(p[0], p[1])) in held]
     print(f"labels: {len(pairs)} answers, {len(train)} train / {len(test)} held out, self-consistency {consistency}")
-    return data["image"], train, test, consistency
+    return np.concatenate(images), train, test, consistency
 
 
 def label_levels(model, patches, ids):

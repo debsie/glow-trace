@@ -54,3 +54,24 @@ shrunk-photo scale. `--patches` (`train_glowtrace_v5_kaggle.ipynb`) changes four
   smoothing gives a negative label and every effect shares one unit.
 - An anchor term (a single photo's reading tracks its own fine contrast) and a ranking term (every
   clear change points the right way), so readings mean something on one photo, not only as changes.
+
+## Labelling rounds
+
+Each round of "which is smoother" answers has its own `label_patches*.npz` (set id = hash of the
+pixels) and answer files; training reads every round in the `--labels` folder and joins answers to
+their own round by set id. Round 1: 457 Google SCIN close-ups (many show rashes, so 44% were "can't
+tell"). Round 2: face skin from Unsplash Lite portraits and the consented team photos, cut by the
+app's own face guide and `skinPatches` (wide shots cropped around the face first), sorted into ITA
+bands, with dark patches shown brighter on the page only (`--lift`).
+
+## Datasets added 2026-11-24 (licences checked at the source)
+
+- **Skin and fingernails, Yakimov et al. 2024** (figshare 25867432, CC0): 252 hand photos of bare
+  nails. Boxes are `[top, left, bottom, right]` on the photo as stored (EXIF rotation not applied);
+  cut into 750 nail tiles with a 15% margin. Verified by eye on a contact sheet.
+- **Open Images V7 validation, "Human hair" boxes**: images CC BY 2.0 only (per-image licence
+  checked), annotations CC BY 4.0; per-image author and source in `attribution.csv`. Open Images
+  has no hair, face or head masks (not among its 350 segmentation classes), so hair areas come
+  from the hair guide like every other hair photo.
+- **Not used:** LaPa (non-commercial licence), Fitzpatrick17k (CC BY-NC-SA 3.0), the Kaggle
+  "skintone-dataset" (licence not confirmed).

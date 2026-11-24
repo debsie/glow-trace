@@ -393,3 +393,21 @@ skin; otherwise the v1.1 gradient formula is used as before.
   photos' own measured detail 1.23 (pass <= 1.3x). Every photo gave 4-7 tiles through the app path.
 - **Parity.** `src/test/skin-surface-model.test.ts` checks the TypeScript forward pass against
   PyTorch's reference means to 1e-4, and that rougher skin reads higher.
+
+## v2.8 (`mojocv-v2.8.0-ts`): nail polish check
+
+Each nail tile is checked for polish (`src/lib/cv/polish.ts`) before its readings are kept. The nail
+centre (an ellipse 25% x 22% of the tile) and the skin ring (the outer 6%) are compared in CIELAB:
+
+- chroma above 35 (bare nails never exceed 29): bright polish;
+- chroma above 10 with a hue outside 0-85 or 350-360 degrees (skin and nail hues): blue, green,
+  purple polish;
+- lightness below 45 and at least 10 below the surrounding skin: dark polish (the skin comparison
+  keeps dim photos and deep skin from being flagged);
+- lightness above 90 with chroma below 6: white polish.
+
+Calibrated on 750 bare nail tiles from the CC0 figshare set and the same tiles painted: 1 bare
+nail flagged in normal light (14 at 55% brightness); red, coral, pink, purple, black and navy
+caught every time; white 76%; nude polish not caught (it looks like a bare nail), which the result
+note says. A painted nail keeps its tile and outline but its report is marked unusable with the
+notice "Polish on this nail, so its readings are paused", so no polish reading enters a trend.
