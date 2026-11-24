@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { bandFor, growthPerMonth, hairEndRow, lengthPosition } from "@/lib/hair-length";
+import {
+  ALL_BANDS,
+  bandFor,
+  bandMidpoint,
+  growthPerMonth,
+  hairEndRow,
+  lengthPosition,
+} from "@/lib/hair-length";
 
 const marks = { ear: 0.1, chin: 0.18, shoulders: 0.25, hips: 0.85 };
 
@@ -30,6 +37,26 @@ describe("Hair length", () => {
     expect(hairEndRow(mask, w, h, 0.5)).toBeCloseTo(0.62, 2);
   });
 
+  it("starts at the head, so trees or sky above a person are never read as hair", () => {
+    const w = 50;
+    const h = 100;
+    const mask = new Uint8Array(w * h);
+    // Dark leaves at the top of the photo, then the person's hair from the ears (row 30) down.
+    for (let y = 0; y < 12; y += 1) for (let x = 0; x < w; x += 1) mask[y * w + x] = 1;
+    for (let y = 30; y < 55; y += 1) for (let x = 18; x < 32; x += 1) mask[y * w + x] = 1;
+    expect(hairEndRow(mask, w, h, 0.5, 0.2, 0.12, 0.3)).toBeCloseTo(0.55, 2);
+    // No hair near the ears at all (a background patch lower down only): no reading.
+    const stray = new Uint8Array(w * h);
+    for (let y = 70; y < 80; y += 1) for (let x = 18; x < 32; x += 1) stray[y * w + x] = 1;
+    expect(hairEndRow(stray, w, h, 0.5, 0.2, 0.12, 0.3)).toBeNull();
+  });
+
+  it("gives no reading for a tiny person or an impossible length", () => {
+    expect(lengthPosition(0.4, { ear: 0.3, chin: 0.32, shoulders: 0.35, hips: 0.45 })).toBeNull();
+    expect(lengthPosition(0.02, marks)).toBeNull();
+    expect(lengthPosition(0.25 + 0.6 * 1.9, marks)).toBeNull();
+  });
+
   it("measures growth only between readings of the same state", () => {
     const a = {
       at: "2026-01-01",
@@ -41,5 +68,14 @@ describe("Hair length", () => {
     } as const;
     expect(growthPerMonth(a, b)).toBeCloseTo(1.1, 1);
     expect(growthPerMonth(a, { ...b, reading: { ...b.reading, state: "natural" } })).toBeNull();
+  });
+});
+
+describe("hair length correction", () => {
+  it("places a corrected band in the middle of that band", () => {
+    const m = { ear: 0.1, chin: 0.18, shoulders: 0.25, hips: 0.85 };
+    for (const band of ALL_BANDS) {
+      expect(bandFor(bandMidpoint(band), m)).toBe(band);
+    }
   });
 });

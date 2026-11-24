@@ -96,7 +96,9 @@ const hairModel = once(async () => {
     baseOptions: { modelAssetPath: "/mediapipe/hair_segmenter.tflite", delegate: "CPU" },
     runningMode: "IMAGE",
     outputCategoryMask: true,
-    outputConfidenceMasks: false,
+    // Hair length reads hair only where the segmenter is confident (dark jackets and dark ground
+    // next to hair passed the category mask on real photos).
+    outputConfidenceMasks: true,
   });
 });
 
@@ -128,6 +130,9 @@ export const measureHairLength = async (
       return points.length ? points.reduce((sum, p) => sum + p.x, 0) / points.length : NaN;
     };
     // Pose points: 7 and 8 ears, 9 and 10 mouth corners, 11 and 12 shoulders, 23 and 24 hips.
+    // Shoulders and hips must be clearly in view (not guessed behind a crop or another person).
+    const seen = [11, 12, 23, 24].every((i) => (pose[i]?.visibility ?? 1) >= 0.5);
+    if (!seen) return null;
     const ear = y(7, 8);
     const mouth = y(9, 10);
     const shoulders = y(11, 12);
@@ -137,13 +142,56 @@ export const measureHairLength = async (
       shoulders,
       hips: y(23, 24),
     };
-    const segment = (await hairModel()).segment(detectOn).categoryMask;
+    // Upright and facing the camera: shoulders level and the hips under them. Lying down or
+    // turned side-on, the body marks don't describe a length (seen on real photos).
+    const torso = marks.hips - marks.shoulders;
+    const tilt = Math.abs((pose[11]?.y ?? 0) - (pose[12]?.y ?? 0));
+    const drift = Math.abs(x(23, 24) - x(11, 12));
+    if (!(torso > 0) || tilt > torso * 0.25 || drift > torso * 0.5) return null;
+    const result = (await hairModel()).segment(detectOn);
+    const hairProbability = result.confidenceMasks?.[1];
+    const segment = result.categoryMask;
     if (!segment) return null;
-    const mask = segment.getAsUint8Array().map((value) => (value > 0 ? 1 : 0));
+    const confident = hairProbability?.getAsFloat32Array();
+    const mask = confident
+      ? Uint8Array.from(confident, (p) => (p > 0.6 ? 1 : 0))
+      : segment.getAsUint8Array().map((value) => (value > 0 ? 1 : 0));
+    for (const extra of result.confidenceMasks ?? []) extra.close();
     // Hair brought forward falls over either shoulder: search the whole shoulder width, with a
     // lower share because each side is only part of that width.
     const span = Math.abs((pose[11]?.x ?? 0) - (pose[12]?.x ?? 0));
-    const end = hairEndRow(mask, segment.width, segment.height, x(11, 12), 0.08, span * 0.75);
+    const end = hairEndRow(
+      mask,
+      segment.width,
+      segment.height,
+      x(11, 12),
+      0.08,
+      span * 0.75,
+      marks.ear,
+    );
+    // Hair brought forward falls over the shoulders, not down the middle of the chest: if the
+    // strip under the chin reads as hair almost all the way to the "end", it's a dark top.
+    if (end !== null) {
+      const w = segment.width;
+      const h = segment.height;
+      const cx = Math.round(x(11, 12) * w);
+      const halfStrip = Math.max(1, Math.round(span * 0.12 * w));
+      const fromRow = Math.round(((marks.chin + marks.shoulders) / 2) * h);
+      const toRow = Math.round(end * h);
+      let rows = 0;
+      let solid = 0;
+      for (let row = fromRow; row < toRow; row += 1) {
+        let hair = 0;
+        for (let col = cx - halfStrip; col < cx + halfStrip; col += 1)
+          hair += mask[row * w + col] ?? 0;
+        rows += 1;
+        if (hair / (2 * halfStrip) > 0.6) solid += 1;
+      }
+      if (rows > h * 0.05 && solid / rows > 0.7) {
+        segment.close();
+        return null;
+      }
+    }
     segment.close();
     // Only when the hips and the hair's end are both in the photo: a selfie cut off at the chest
     // otherwise guesses the hips and reads the frame's edge as the end (seen on real photos).

@@ -70,6 +70,7 @@ export type ScanReport = {
           | "past-hip";
         position: number;
         state: "stretched" | "natural";
+        confirmed?: boolean | undefined;
       }
     | undefined;
   metrics: {

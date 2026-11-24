@@ -411,3 +411,23 @@ nail flagged in normal light (14 at 55% brightness); red, coral, pink, purple, b
 caught every time; white 76%; nude polish not caught (it looks like a bare nail), which the result
 note says. A painted nail keeps its tile and outline but its report is marked unusable with the
 notice "Polish on this nail, so its readings are paused", so no polish reading enters a trend.
+
+## v2.9 (`mojocv-v2.9.0-ts`): hair length on real photos, confirmed by the person
+
+Checked on 300 real portraits (Unsplash Lite) with the result drawn on each photo. Before: 46 of
+150 photos gave a length, many impossible (above the ears, twice the torso past the hips),
+because the hair-end search started at the top of the photo and counted trees, sky and dark
+backgrounds as hair. Changes:
+
+- The search starts at the ears and the hair must begin within 5% of the photo below them.
+- Shoulders and hips must be clearly visible (pose visibility >= 0.5), the torso at least 20% of
+  the photo, shoulders level (tilt < 25% of the torso) and hips under them (drift < 50%).
+- Hair counts only where the segmenter is more than 60% confident (not its category mask).
+- A centre strip under the chin that is solid "hair" almost to the end means a dark top: no reading.
+- Lengths above the ears or beyond 1.8 torso lengths are refused.
+
+Result on uncontrolled photos: 24 of 300 read, about six in ten right by eye (misses: dark clothes
+or backgrounds, several people, hair tied up). So every length is shown with "Is this where your
+hair ends?": the person confirms or picks the band (a corrected band takes its middle position,
+`bandMidpoint`), and only confirmed lengths count towards growth. The guided length shot (front,
+hair forward, full torso) is far easier than these photos.

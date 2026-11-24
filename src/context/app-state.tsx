@@ -39,6 +39,8 @@ import { z } from "zod";
 import { useAuth } from "@/context/auth";
 import { getSupabase } from "@/integrations/supabase/client";
 import { weeklyStreak } from "@/lib/engagement";
+import type { LengthBand } from "@/lib/hair-length";
+import { bandMidpoint } from "@/lib/hair-length";
 import { clearAccount, defaultAccount, loadAccount, saveAccount } from "@/lib/storage";
 import type { SamplePhotos } from "@/lib/vault";
 import { buildExport, fromVault, parseVault, toVault } from "@/lib/vault";
@@ -91,6 +93,7 @@ type AppState = {
   /** Returns the blocking gate when restoring would exceed the active-client cap. */
   restoreClient: (clientId: string) => Gate;
   /** Returns the blocking gate instead of a scan when this month's check-ins are used up. */
+  confirmHairLength: (scanId: string, band: LengthBand) => void;
   addScan: (input: {
     category: ScanCategory;
     biomarkers: Biomarkers;
@@ -322,6 +325,31 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     [inventory, tier, shelfCount, me.id],
   );
 
+  /**
+   * The person confirms the hair length Glowtrace measured, or picks the right band; only
+   * confirmed lengths count towards growth. A corrected band takes that band's middle position.
+   */
+  const confirmHairLength = useCallback((scanId: string, band: LengthBand) => {
+    setScans((current) =>
+      current.map((scan) => {
+        const reading = scan.report?.hairLength;
+        if (scan.id !== scanId || !scan.report || !reading) return scan;
+        return {
+          ...scan,
+          report: {
+            ...scan.report,
+            hairLength: {
+              ...reading,
+              band,
+              position: band === reading.band ? reading.position : bandMidpoint(band),
+              confirmed: true,
+            },
+          },
+        };
+      }),
+    );
+  }, []);
+
   const addScan = useCallback(
     (input: {
       category: ScanCategory;
@@ -501,6 +529,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setWorkspace,
       addClient,
       addScan,
+      confirmHairLength,
       updateLook,
       sendLookForClient,
       approveLookForClient,
@@ -534,6 +563,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       looks,
       addClient,
       addScan,
+      confirmHairLength,
       updateLook,
       sendLookForClient,
       approveLookForClient,
