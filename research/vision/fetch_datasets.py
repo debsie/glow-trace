@@ -68,6 +68,28 @@ DATASETS = {
 # GLOWTRACE_UNSPLASH_ZIP and GLOWTRACE_FETCH_LIMIT exist only for rehearsing the notebook offline.
 FETCH_LIMIT = int(os.environ.get("GLOWTRACE_FETCH_LIMIT", "0")) or None
 
+def fetch_bytes(url, timeout=600, tries=4):
+    """GET with retries: busy servers (HTTP 429 or 5xx) and dropped connections get three more
+    tries after 30 s, 60 s and 120 s, honouring a Retry-After header when the server sends one."""
+    import time
+    import urllib.error
+
+    for attempt in range(tries):
+        try:
+            return urllib.request.urlopen(url, timeout=timeout).read()
+        except urllib.error.HTTPError as error:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == tries - 1:
+                raise
+            wait = int(error.headers.get("Retry-After") or 0) or 30 * 2**attempt
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == tries - 1:
+                raise
+            wait = 30 * 2**attempt
+        print(f"     busy, retrying in {min(wait, 300)} s: {url[:80]}", flush=True)
+        time.sleep(min(wait, 300))
+    raise RuntimeError("unreachable")
+
+
 NON_COMMERCIAL = ("non-commercial", "noncommercial", "-nc", " nc", "by-nc", "private", "research only")
 
 
@@ -99,12 +121,12 @@ def zenodo_scalp(credits):
     target = os.path.join("data", "hair", "zenodo__scalphairlabels")
     link = "https://zenodo.org/records/23433121"
     try:
-        record = json.loads(urllib.request.urlopen(ZENODO_SCALP, timeout=60).read())
+        record = json.loads(fetch_bytes(ZENODO_SCALP, timeout=60))
         os.makedirs(target, exist_ok=True)
         for entry in record.get("files", []):
             if "tiles" not in entry["key"]:
                 continue
-            data = urllib.request.urlopen(entry["links"]["self"], timeout=600).read()
+            data = fetch_bytes(entry["links"]["self"])
             zipfile.ZipFile(io.BytesIO(data)).extractall(target)
         count = sum(1 for _, _, files in os.walk(target) for f in files if f.lower().endswith((".jpg", ".jpeg", ".png")))
         print(f"OK   hair: ScalpHairLabels v1 ({count} tiles, licence: CC BY 4.0, source photos CC0)")
@@ -126,11 +148,11 @@ def fairface(credits, per_group=min(450, FETCH_LIMIT or 450)):
     target = os.path.join("data", "skin", "fairface")
     link = "https://github.com/joojs/fairface"
     try:
-        files = json.loads(urllib.request.urlopen("https://huggingface.co/api/datasets/HuggingFaceM4/FairFace/parquet", timeout=60).read())["0.25"]["train"]
+        files = json.loads(fetch_bytes("https://huggingface.co/api/datasets/HuggingFaceM4/FairFace/parquet", timeout=60))["0.25"]["train"]
         os.makedirs(target, exist_ok=True)
         counts, saved = {}, 0
         for url in files:
-            frame = pd.read_parquet(io.BytesIO(urllib.request.urlopen(url, timeout=900).read()))
+            frame = pd.read_parquet(io.BytesIO(fetch_bytes(url, timeout=900)))
             for _, row in frame.iterrows():
                 group = str(row.get("race", "unknown"))
                 if counts.get(group, 0) >= per_group:
@@ -170,7 +192,7 @@ def figshare_nails(credits):
     target = os.path.join("data", "nails", "figshare_haemoglobin")
     link = "https://doi.org/10.6084/m9.figshare.25867432.v1"
     try:
-        archive = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(FIGSHARE_NAILS, timeout=600).read()))
+        archive = zipfile.ZipFile(io.BytesIO(fetch_bytes(FIGSHARE_NAILS)))
         rows = list(csv.DictReader(io.TextIOWrapper(archive.open("metadata.csv"), "utf-8")))
         os.makedirs(target, exist_ok=True)
         saved = 0
@@ -216,9 +238,9 @@ def open_images_hair(credits, limit=min(1500, FETCH_LIMIT or 1500)):
     target = os.path.join("data", "hair", "openimages")
     link = "https://storage.googleapis.com/openimages/web/index.html"
     try:
-        boxes = urllib.request.urlopen(OPEN_IMAGES_BOXES, timeout=600).read().decode()
+        boxes = fetch_bytes(OPEN_IMAGES_BOXES).decode()
         with_hair = {r["ImageID"] for r in csv.DictReader(io.StringIO(boxes)) if r["LabelName"] == HUMAN_HAIR}
-        meta = urllib.request.urlopen(OPEN_IMAGES_META, timeout=600).read().decode()
+        meta = fetch_bytes(OPEN_IMAGES_META).decode()
         rows = [
             r for r in csv.DictReader(io.StringIO(meta))
             if r["ImageID"] in with_hair and r["License"].rstrip("/").endswith("licenses/by/2.0")
@@ -266,7 +288,7 @@ def unsplash_faces(credits, limit=min(1200, FETCH_LIMIT or 1200)):
     target = os.path.join("data", "skin", "unsplash_lite")
     link = "https://unsplash.com/data"
     try:
-        archive = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(UNSPLASH_LITE, timeout=1800).read()))
+        archive = zipfile.ZipFile(io.BytesIO(fetch_bytes(UNSPLASH_LITE, timeout=1800)))
         csv.field_size_limit(10**8)
         names = archive.namelist()
         wanted = set()
