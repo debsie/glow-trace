@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { StudioGate } from "@/components/studio/studio-gate";
 import { Badge, BUTTON_PRIMARY } from "@/components/ui/bits";
+import { usePrefs } from "@/components/profile/use-profile";
 import { useAppState } from "@/context/app-state";
 import { pageHead } from "@/lib/seo";
 import type { Booking, Service } from "@/lib/studio";
@@ -122,7 +123,8 @@ function BookingsPage() {
   const overlaps = useMemo(() => clashes(bookings, services), [bookings, services]);
   const client = (id: string) => clients.find((c) => c.id === id);
   const service = (id: string) => services.find((s) => s.id === id);
-  const artist = profile.display_name || "your artist";
+  const prefs = usePrefs();
+  const artist = prefs?.business.name || profile.display_name || "your artist";
   const shift = (delta: number) =>
     setView(({ year, month }) => {
       const m = month + delta;

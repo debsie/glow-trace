@@ -23,6 +23,8 @@ type Auth = {
   requestAccess: (name: string, note: string) => Promise<Result>;
   /** Permanently delete the signed-in account (profile included). */
   deleteAccount: () => Promise<Result>;
+  /** Change the name Glowtrace calls you (saved to your profile; row-level security: own row). */
+  rename: (name: string) => Promise<Result>;
 };
 
 const AuthContext = createContext<Auth | null>(null);
@@ -162,6 +164,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { ok: true };
   }, []);
 
+  const rename = useCallback(
+    async (name: string): Promise<Result> => {
+      const clean = name.trim().replace(/\s+/g, " ").slice(0, 60);
+      if (!clean) return { ok: false, reason: "Add a name." };
+      if (access.kind !== "member") return { ok: false, reason: "Sign in to change your name." };
+      const supabase = getSupabase();
+      if (!supabase) return { ok: false, reason: "Can't reach Glowtrace right now." };
+      const { error } = await supabase
+        .from("profiles")
+        .update({ display_name: clean })
+        .eq("id", access.userId);
+      if (error) return { ok: false, reason: friendly(error.message) };
+      setAccess({ ...access, displayName: clean });
+      return { ok: true };
+    },
+    [access],
+  );
+
   const value = useMemo<Auth>(
     () => ({
       access,
@@ -171,8 +191,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       requestAccess,
       deleteAccount,
+      rename,
     }),
-    [access, isAdmin, sendEmailLink, signInWithGoogle, signOut, requestAccess, deleteAccount],
+    [
+      access,
+      isAdmin,
+      sendEmailLink,
+      signInWithGoogle,
+      signOut,
+      requestAccess,
+      deleteAccount,
+      rename,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

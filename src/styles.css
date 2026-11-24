@@ -35,6 +35,10 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-camera-guide: var(--camera-guide);
+  --color-avatar-tone-1: var(--avatar-tone-1);
+  --color-avatar-tone-2: var(--avatar-tone-2);
+  --color-avatar-tone-3: var(--avatar-tone-3);
+  --color-avatar-tone-4: var(--avatar-tone-4);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -68,6 +72,11 @@
   --primary-foreground: oklch(0.985 0.005 10);
   /* Camera guide lines sit on a live photo, so they stay light in both themes. */
   --camera-guide: oklch(0.985 0.005 10);
+  /* Illustrated profile faces: four skin tones, light to deep, the same in both themes. */
+  --avatar-tone-1: oklch(0.9 0.04 60);
+  --avatar-tone-2: oklch(0.76 0.08 55);
+  --avatar-tone-3: oklch(0.6 0.09 45);
+  --avatar-tone-4: oklch(0.42 0.07 40);
   --secondary: oklch(0.94 0.006 10);
   --secondary-foreground: oklch(0.22 0.02 340);
   --muted: oklch(0.94 0.006 10);
@@ -823,6 +832,52 @@ details[open] > .details-body {
   .cal-cell,
   .timeline-item,
   .ticket {
+    animation: none;
+  }
+}
+
+/* Edit-profile sheet: scrim fades, the panel slides up on phones and rises on larger screens,
+   avatars pop in one after another. All still under reduced motion. */
+.sheet-scrim {
+  animation: scrim-in 200ms ease-out both;
+}
+.sheet-panel {
+  animation: sheet-up 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 640px) {
+  .sheet-panel {
+    animation-name: sheet-rise;
+  }
+}
+.avatar-pop {
+  animation: avatar-pop 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sheet-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+@keyframes avatar-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-scrim,
+  .sheet-panel,
+  .avatar-pop {
     animation: none;
   }
 }
