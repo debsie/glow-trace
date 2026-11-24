@@ -24,10 +24,19 @@ if (!weightsPath || pairs.length < 3) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto("http://127.0.0.1:8091/", { waitUntil: "networkidle" });
-  const weights = JSON.parse(fs.readFileSync(weightsPath, "utf8"));
-  await page.evaluate(async (weights) => {
+  // Several weights files, comma-separated, are read as one model by averaging their readings.
+  const weights = weightsPath.split(",").map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
+  await page.evaluate(async (all) => {
     const { createAreaModel } = await import("/src/lib/cv/area-model.ts");
-    window.__gate = createAreaModel(weights, "", "texture");
+    const models = all.map((w) => createAreaModel(w, "", "texture"));
+    window.__gate = {
+      signal: (patch, mask) => {
+        const values = models.map((m) => m.signal(patch, mask)).filter((v) => v !== null);
+        return values.length === models.length
+          ? values.reduce((a, b) => a + b, 0) / values.length
+          : null;
+      },
+    };
   }, weights);
 
   const rows = [];
