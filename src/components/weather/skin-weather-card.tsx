@@ -5,8 +5,10 @@ import { LineArt } from "@/components/art/line-art";
 import { BUTTON_GHOST } from "@/components/ui/bits";
 import type { Finding } from "@/lib/agent/agent";
 import type { Forecast, Place, PlacesFile } from "@/lib/weather";
-import { searchPlaces, skinWeather } from "@/lib/weather";
-import { fetchForecast, loadPlace, loadPlaces, savePlace } from "@/lib/weather-client";
+import { hourLabel, searchPlaces, skinWeather, UV_REAPPLY, uvWindow } from "@/lib/weather";
+import { loadPlaces } from "@/lib/weather-client";
+
+import { useSkinWeather } from "./use-skin-weather";
 
 const UV_WORD = {
   low: "Low",
@@ -86,42 +88,60 @@ const Picker = ({ onPick }: { onPick: (place: Place) => void }) => {
   );
 };
 
+/** The next 12 hours of clear-sky UV as bars, with the hours to reapply sunscreen named in words. */
+const UvStrip = ({ forecast }: { forecast: Forecast }) => {
+  const hours = forecast.hours.slice(0, 12).filter((hour) => hour.uv !== null);
+  if (hours.length < 2) return null;
+  const window = uvWindow(forecast);
+  const top = Math.max(11, ...hours.map((hour) => hour.uv ?? 0));
+  return (
+    <div className="mt-5">
+      <p className="text-sm font-semibold">
+        {window
+          ? `Reapply sunscreen outdoors ${hourLabel(window.start)} to ${hourLabel(window.end)}`
+          : "UV stays low today"}
+        {window && (
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            · peak <span className="readout">{window.peak.toFixed(1)}</span> at{" "}
+            {hourLabel(window.peakAt)}
+          </span>
+        )}
+      </p>
+      <div className="mt-3 flex h-16 items-end gap-1" aria-hidden="true">
+        {hours.map((hour, index) => (
+          <div key={hour.time} className="flex h-full min-w-0 flex-1 flex-col justify-end">
+            <div
+              className={`uv-bar w-full rounded-t-sm ${(hour.uv ?? 0) >= UV_REAPPLY ? "bg-primary" : "bg-secondary"}`}
+              style={{
+                height: `${Math.max(4, ((hour.uv ?? 0) / top) * 100)}%`,
+                animationDelay: `${index * 40}ms`,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div
+        className="mt-1 flex justify-between text-[11px] text-muted-foreground"
+        aria-hidden="true"
+      >
+        <span>{hourLabel(hours[0]?.time ?? "")}</span>
+        <span>{hourLabel(hours[hours.length - 1]?.time ?? "")}</span>
+      </div>
+    </div>
+  );
+};
+
 /**
  * Skin weather on Home: today's clear-sky UV, humidity and temperature for the person's town, with
  * up to three tips aimed at their own flagged indicators. Hidden when the service is switched off.
  */
 export const SkinWeatherCard = ({ findings }: { findings: readonly Finding[] }) => {
-  const [place, setPlace] = useState<Place | null>(null);
+  const { place, ready, forecast, note, off, setPlace } = useSkinWeather();
   const [picking, setPicking] = useState(false);
-  const [forecast, setForecast] = useState<Forecast | null>(null);
-  const [note, setNote] = useState("");
-  const [off, setOff] = useState(false);
-
   useEffect(() => {
-    const saved = loadPlace();
-    setPlace(saved);
-    setPicking(!saved);
-  }, []);
-
-  useEffect(() => {
-    if (!place) return;
-    let live = true;
-    setNote("Getting today's weather");
-    void fetchForecast(place).then((reply) => {
-      if (!live) return;
-      if ("forecast" in reply) {
-        setForecast(reply.forecast);
-        setNote("");
-      } else {
-        setForecast(null);
-        setOff(reply.off === true);
-        setNote(reply.error);
-      }
-    });
-    return () => {
-      live = false;
-    };
-  }, [place]);
+    if (ready && !place) setPicking(true);
+  }, [ready, place]);
 
   const concerns = findings
     .filter((finding) => finding.severity !== "good")
@@ -169,6 +189,8 @@ export const SkinWeatherCard = ({ findings }: { findings: readonly Finding[] }) 
         </dl>
       )}
 
+      {forecast && <UvStrip forecast={forecast} />}
+
       {today && today.tips.length > 0 && (
         <ul className="mt-4 space-y-2 text-sm">
           {today.tips.map((tip) => (
@@ -189,7 +211,6 @@ export const SkinWeatherCard = ({ findings }: { findings: readonly Finding[] }) 
       {picking ? (
         <Picker
           onPick={(picked) => {
-            savePlace(picked);
             setPlace(picked);
             setPicking(false);
           }}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Forecast, PlacesFile } from "@/lib/weather";
-import { fold, searchPlaces, skinWeather, uvBand } from "@/lib/weather";
+import { fold, searchPlaces, skinWeather, uvBand, uvWindow, weatherSteps } from "@/lib/weather";
 
 const file: PlacesFile = {
   source: "test",
@@ -69,5 +69,38 @@ describe("skin weather", () => {
 
   it("folds accents", () => {
     expect(fold(" Zürich ")).toBe("zurich");
+  });
+});
+
+describe("peak UV and weather routine steps", () => {
+  const day = (uvs: (number | null)[], humidity = 50, temperature = 22): Forecast => ({
+    updatedAt: "2026-11-24T06:00:00Z",
+    hours: uvs.map((uv, i) => ({
+      time: `2026-11-24T${String(6 + i).padStart(2, "0")}:00:00Z`,
+      temperature,
+      humidity,
+      uv,
+    })),
+  });
+
+  it("finds the hours when sunscreen should be reapplied, and the peak", () => {
+    const window = uvWindow(day([0.5, 1.5, 3.2, 6, 8.4, 7, 4, 2, 0.5]));
+    expect(window?.start).toBe("2026-11-24T08:00:00Z");
+    expect(window?.end).toBe("2026-11-24T12:00:00Z");
+    expect(window?.peak).toBe(8.4);
+    expect(window?.peakAt).toBe("2026-11-24T10:00:00Z");
+  });
+
+  it("has no window on a low-UV day or without UV", () => {
+    expect(uvWindow(day([0.5, 1, 2, 1]))).toBeNull();
+    expect(uvWindow(day([null, null]))).toBeNull();
+  });
+
+  it("adds SPF and a midday reapply on a strong day, and barrier care on a dry one", () => {
+    const strong = weatherSteps(skinWeather(day([2, 5, 9, 7])));
+    expect(strong.map((s) => s.step).join(" ")).toMatch(/SPF 30/);
+    expect(strong.map((s) => s.step).join(" ")).toMatch(/reapply at midday/);
+    const dry = weatherSteps(skinWeather(day([1, 1, 1], 20, 15)));
+    expect(dry.filter((s) => s.when === "pm")[0]?.step).toMatch(/Skip exfoliating/);
   });
 });
