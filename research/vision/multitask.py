@@ -760,6 +760,12 @@ def main():
                 own = hp_contrast(base, mask) * scale
                 level = masked_mean(out_a, mask)[:, k]
                 loss = loss + 0.5 * ((level - own) ** 2).mean() / (own**2).mean().clamp(min=1e-3)
+                # The same rule on a blurred copy of the same photo, with its own measured detail:
+                # the head sees directly that one photo, softened, reads smoother.
+                soft = box(base, 3)
+                soft_own = hp_contrast(soft, mask) * scale
+                soft_level = masked_mean(model(network_input(soft, (valid[idx] > 0).float())), mask)[:, k]
+                loss = loss + 0.5 * ((soft_level - soft_own) ** 2).mean() / (own**2).mean().clamp(min=1e-3)
                 change = masked_mean(diff, mask)[:, k]
                 truth = masked_mean(targets, mask)[:, k] * scale
                 clear = truth.abs() > 0.05
