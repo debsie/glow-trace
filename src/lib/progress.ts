@@ -107,3 +107,85 @@ export const compareScans = (before: ScanRecord, after: ScanRecord): MetricChang
     ];
   });
 };
+
+export type IndicatorSeries = {
+  key: string;
+  label: string;
+  higherIsBetter: boolean;
+  points: { id: string; date: string; value: number }[];
+  /** Latest minus first, one decimal; null with fewer than two readings. */
+  change: number | null;
+  verdict: Verdict | null;
+};
+
+/** Every indicator's readings over time for one area, oldest first, in the latest scan's order. */
+export const indicatorSeries = (
+  scans: readonly ScanRecord[],
+  category: ScanCategory,
+): IndicatorSeries[] => {
+  const own = scans
+    .filter((scan) => scan.category === category && !scan.demo)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const byKey = new Map<string, IndicatorSeries>();
+  for (const scan of own) {
+    for (const reading of readings(scan)) {
+      const entry = byKey.get(reading.key) ?? {
+        key: reading.key,
+        label: reading.label,
+        higherIsBetter: reading.higherIsBetter,
+        points: [],
+        change: null,
+        verdict: null,
+      };
+      entry.label = reading.label;
+      entry.points.push({ id: scan.id, date: scan.created_at, value: reading.value });
+      byKey.set(reading.key, entry);
+    }
+  }
+  const latest = own[own.length - 1];
+  const order = latest ? readings(latest).map((reading) => reading.key) : [];
+  return [...byKey.values()]
+    .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    .map((entry) => {
+      const first = entry.points[0];
+      const last = entry.points[entry.points.length - 1];
+      if (!first || !last || entry.points.length < 2) return entry;
+      const change = Math.round((last.value - first.value) * 10) / 10;
+      const improved = entry.higherIsBetter ? change > 0 : change < 0;
+      return {
+        ...entry,
+        change,
+        verdict: Math.abs(change) < NOISE ? "same" : improved ? "better" : "worse",
+      };
+    });
+};
+
+export type ZoneKey = "forehead" | "leftCheek" | "rightCheek" | "chin";
+export type ZoneChange = {
+  zone: ZoneKey;
+  before: number | null;
+  after: number;
+  delta: number | null;
+};
+
+/**
+ * Redness by face zone for the face map: the latest zoned skin scan against the earliest one.
+ * Higher means more redness. Null when no skin scan has zones yet.
+ */
+export const zoneChanges = (scans: readonly ScanRecord[]): ZoneChange[] | null => {
+  const zoned = scans
+    .filter((scan) => scan.category === "skin" && !scan.demo && scan.report?.zones)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const last = zoned[zoned.length - 1]?.report?.zones;
+  if (!last) return null;
+  const first = zoned.length > 1 ? zoned[0]?.report?.zones : undefined;
+  return (["forehead", "leftCheek", "rightCheek", "chin"] as const).map((zone) => {
+    const before = first ? first[zone] : null;
+    return {
+      zone,
+      before,
+      after: last[zone],
+      delta: before === null ? null : Math.round((last[zone] - before) * 10) / 10,
+    };
+  });
+};

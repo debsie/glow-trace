@@ -2,11 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { BeforeAfter } from "@/components/progress/before-after";
+import { FaceMap } from "@/components/progress/face-map";
+import { IndicatorTrends } from "@/components/progress/indicator-trends";
 import { ScoreChart } from "@/components/progress/score-chart";
 import { Badge, BUTTON_PRIMARY, PageHeader, SectionCard } from "@/components/ui/bits";
 import { useAppState } from "@/context/app-state";
 import type { Verdict } from "@/lib/progress";
-import { compareScans, longDate, scoreChange, seriesFor } from "@/lib/progress";
+import {
+  compareScans,
+  indicatorSeries,
+  longDate,
+  scoreChange,
+  seriesFor,
+  zoneChanges,
+} from "@/lib/progress";
 import { pageHead } from "@/lib/seo";
 import type { ScanCategory } from "@/lib/types";
 
@@ -44,6 +54,8 @@ function ProgressPage() {
   const [showTable, setShowTable] = useState(false);
   const series = useMemo(() => seriesFor(scans, area), [scans, area]);
   const change = scoreChange(series);
+  const indicators = useMemo(() => indicatorSeries(scans, area), [scans, area]);
+  const zones = useMemo(() => (area === "skin" ? zoneChanges(scans) : null), [scans, area]);
   const label = AREAS.find((item) => item.id === area)?.label ?? "Skin";
 
   const [beforeId, setBeforeId] = useState<string | null>(null);
@@ -151,6 +163,27 @@ function ProgressPage() {
             )}
           </SectionCard>
 
+          {indicators.length > 0 && (
+            <section aria-labelledby="every-indicator" className="space-y-3">
+              <h2
+                id="every-indicator"
+                className="label-tracking text-xs font-bold text-muted-foreground uppercase"
+              >
+                Every indicator
+              </h2>
+              <IndicatorTrends series={indicators} />
+            </section>
+          )}
+
+          {zones && (
+            <SectionCard title="Redness by zone">
+              <FaceMap zones={zones} />
+              <p className="mt-4 text-xs text-muted-foreground">
+                Deeper colour means more redness. Changes are against your first face-guided scan.
+              </p>
+            </SectionCard>
+          )}
+
           <SectionCard title="Compare two scans">
             {series.length < 2 ? (
               <p className="text-sm text-muted-foreground">
@@ -181,16 +214,19 @@ function ProgressPage() {
                           ))}
                         </select>
                       </label>
-                      {scan && (
-                        <img
-                          src={scan.image_url}
-                          alt={`${label} photo, ${name.toLowerCase()}`}
-                          className="mt-3 aspect-[4/3] w-full rounded-2xl object-cover"
-                        />
-                      )}
                     </div>
                   ))}
                 </div>
+                {before && after && before.id !== after.id && (
+                  <div className="mt-4">
+                    <BeforeAfter
+                      before={before.image_url}
+                      after={after.image_url}
+                      beforeLabel={longDate(before.created_at)}
+                      afterLabel={longDate(after.created_at)}
+                    />
+                  </div>
+                )}
                 {changes.length > 0 ? (
                   <ul className="mt-5 divide-y divide-border border-t border-border">
                     {changes.map((item) => {
