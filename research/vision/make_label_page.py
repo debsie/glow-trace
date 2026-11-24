@@ -33,6 +33,24 @@ import numpy as np
 from PIL import Image
 
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "label_page_template.html")
+# What the person is asked. "smoothness" is the texture rounds' question (set ids are the plain
+# pixel hash, as in rounds 1 and 2); any other attribute is mixed into the set id, so a redness
+# round on the same patches can never be joined to texture answers.
+ATTRIBUTES = {
+    "smoothness": {
+        "title": "Which skin looks smoother?",
+        "intro": "Two close-up patches of skin at a time. Tap the one whose surface looks smoother: fewer\n        visible pores, bumps or roughness. Ignore colour, redness, spots of colour and lighting.\n        Darker patches are shown a little brighter so their texture is easier to see. Go with your\n        first impression; most pairs take a couple of seconds.",
+        "a": "A is smoother",
+        "b": "B is smoother",
+    },
+    "redness": {
+        "title": "Which skin looks redder?",
+        "intro": "Two close-up patches of skin at a time. Tap the one that looks redder: more pink or red\n        flush in the skin itself. Ignore texture, pores, shadows and how light or deep the skin tone\n        is; compare the redness. Colours are shown exactly as photographed. Go with your first\n        impression; most pairs take a couple of seconds.",
+        "a": "A is redder",
+        "b": "B is redder",
+    },
+}
+
 REPEAT_SHARE = 0.1  # pairs shown twice, swapped, to measure consistency
 SAME_BAND_SHARE = 0.8  # most pairs within one skin-tone band, some across
 
@@ -115,7 +133,13 @@ def main():
     images, groups = data["image"], data["group"]
     if images.ndim != 4 or images.shape[1:] != (128, 128, 3) or images.dtype != np.uint8:
         raise SystemExit(f"Expected N x 128 x 128 x 3 uint8 patches, got {images.shape} {images.dtype}")
-    set_id = hashlib.sha256(images.tobytes()).hexdigest()[:16]
+    attribute = args[args.index("--attribute") + 1] if "--attribute" in args else "smoothness"
+    if attribute not in ATTRIBUTES:
+        raise SystemExit(f"--attribute must be one of {sorted(ATTRIBUTES)}")
+    digest = hashlib.sha256(images.tobytes())
+    if attribute != "smoothness":
+        digest.update(attribute.encode())
+    set_id = digest.hexdigest()[:16]
     pairs = pick_pairs(groups, count)
 
     lift = "--lift" in args
@@ -128,12 +152,17 @@ def main():
 
     payload = json.dumps({"setId": set_id, "pairs": pairs, "patches": patches}, separators=(",", ":"))
     template = open(TEMPLATE, encoding="utf-8").read()
+    copy = ATTRIBUTES[attribute]
+    for key, old in ATTRIBUTES["smoothness"].items():
+        if template.count(old) != 1:
+            raise SystemExit(f"Template text for {key!r} not found exactly once")
+        template = template.replace(old, copy[key])
     if template.count("__GLOWTRACE_DATA__") != 1:
         raise SystemExit("Template must contain __GLOWTRACE_DATA__ exactly once")
     os.makedirs(out, exist_ok=True)
     page = os.path.join(out, "glowtrace_labelling.html")
     open(page, "w", encoding="utf-8").write(template.replace("__GLOWTRACE_DATA__", payload))
-    np.savez_compressed(os.path.join(out, "label_patches.npz"), image=images, group=groups, set_id=set_id, pairs=np.array(pairs))
+    np.savez_compressed(os.path.join(out, "label_patches.npz"), image=images, group=groups, set_id=set_id, pairs=np.array(pairs), attribute=attribute)
     size = os.path.getsize(page) / 1e6
     print(f"set {set_id}: {len(images)} patches, {len(pairs)} pairs, page {size:.1f} MB -> {out}")
 
