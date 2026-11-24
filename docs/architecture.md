@@ -4,21 +4,23 @@ Where each feature lives. Read this first, then open only the files you need.
 
 ## Pages (`src/routes/`, file-based; `routeTree.gen.ts` is generated)
 
-| Route                                           | File                | Notes                                                     |
-| ----------------------------------------------- | ------------------- | --------------------------------------------------------- |
-| `/`                                             | `index.tsx`         | Marketing landing page; own header and footer             |
-| `/pricing`, `/refer`, `/affiliates`, `/cookies` | same names          | Public; SEO metadata via `lib/seo.ts`                     |
-| `/login`                                        | `login.tsx`         | Email link and Google sign-in                             |
-| `/app`                                          | `app.tsx`           | Dashboard                                                 |
-| `/scan`                                         | `scan.tsx`          | Photo analysis with `lib/cv`                              |
-| `/routine`                                      | `routine.tsx`       | Routines, shelf, plan gates                               |
-| `/ingredients`                                  | `ingredients.tsx`   | Paste INCI lists, find actives and clashes (Pro)          |
-| `/agent`                                        | `agent.tsx`         | Care agent UI over `lib/agent`                            |
-| `/progress`                                     | `progress.tsx`      | Charts (`components/progress/score-chart.tsx`)            |
-| `/privacy`                                      | `privacy.tsx`       | Your Data: download, delete, sign out                     |
-| `/admin`                                        | `admin.tsx`         | Beta dashboard: feedback, requests, testers, grant, audit |
-| `/pro/clients/*`                                | `pro.clients.*.tsx` | MUA Studio client roster and lookbooks                    |
-| `/sitemap.xml`                                  | `sitemap[.]xml.ts`  | Server route                                              |
+| Route                                           | File                | Notes                                                       |
+| ----------------------------------------------- | ------------------- | ----------------------------------------------------------- |
+| `/`                                             | `index.tsx`         | Marketing landing page; own header and footer               |
+| `/pricing`, `/refer`, `/affiliates`, `/cookies` | same names          | Public; SEO metadata via `lib/seo.ts`                       |
+| `/login`                                        | `login.tsx`         | Email link and Google sign-in                               |
+| `/app`                                          | `app.tsx`           | Dashboard                                                   |
+| `/scan`                                         | `scan.tsx`          | Photo analysis with `lib/cv`                                |
+| `/routine`                                      | `routine.tsx`       | Routines, shelf, plan gates                                 |
+| `/ingredients`                                  | `ingredients.tsx`   | Paste INCI lists, find actives and clashes (Pro)            |
+| `/shelf`                                        | `shelf.tsx`         | Shelf score, product insights, barcode add (`lib/shelf.ts`) |
+| `/report`                                       | `report.tsx`        | Monthly report card (`lib/report-card.ts`)                  |
+| `/agent`                                        | `agent.tsx`         | Care agent UI over `lib/agent`                              |
+| `/progress`                                     | `progress.tsx`      | Charts (`components/progress/score-chart.tsx`)              |
+| `/privacy`                                      | `privacy.tsx`       | Your Data: download, delete, sign out                       |
+| `/admin`                                        | `admin.tsx`         | Beta dashboard: feedback, requests, testers, grant, audit   |
+| `/pro/clients/*`                                | `pro.clients.*.tsx` | MUA Studio client roster and lookbooks                      |
+| `/sitemap.xml`                                  | `sitemap[.]xml.ts`  | Server route                                                |
 
 `__root.tsx` holds site-wide head tags and providers. `components/layout/site-nav.tsx` is the app
 shell, the access gate placement and navigation.
