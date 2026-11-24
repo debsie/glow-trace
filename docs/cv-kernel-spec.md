@@ -431,3 +431,13 @@ or backgrounds, several people, hair tied up). So every length is shown with "Is
 hair ends?": the person confirms or picks the band (a corrected band takes its middle position,
 `bandMidpoint`), and only confirmed lengths count towards growth. The guided length shot (front,
 hair forward, full torso) is far easier than these photos.
+
+## v2.10 (`mojocv-v2.10.0-ts`): skin texture from v7 and v8 averaged
+
+Each skin patch is read by both skin-surface models (v7, `skin-surface-weights.json`; v8, trained
+also on the labeller's 257 round-2 answers, `skin-surface-v8-weights.json`) and the two readings
+are averaged; the score mapping is unchanged. v8 alone failed the same-person check (1.92 against
+1.6). The average passes every real-photo check (blur 105% of the ideal, exposure 0.07, same person
+1.32) and agrees with the labeller on 69% of held-out clear pairs (75% on face skin), against 63%
+for v7 and 66% for v8. Still short of the 70% release bar (`docs/release-readiness.md`). Parity is
+tested for both models. Reading time roughly doubles (two forward passes per patch).

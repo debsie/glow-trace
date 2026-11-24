@@ -1,5 +1,6 @@
 import { createAreaModel } from "./area-model";
 import weightsJson from "./skin-surface-weights.json";
+import v8WeightsJson from "./skin-surface-v8-weights.json";
 import type { PixelBuffer } from "./types";
 
 /**
@@ -10,6 +11,16 @@ import type { PixelBuffer } from "./types";
  * steadier than the photos' own detail. Shine and breakouts have not passed the shipping rule.
  */
 const surface = createAreaModel(weightsJson, "/models/skin-surface.onnx", "texture");
+/**
+ * Kernel v2.10: v8 (trained also on 257 answers on real face skin) read alongside v7, averaged.
+ * Alone v8 failed the same-person check (1.92); the average passes every real-photo check (blur
+ * 105% of ideal, brightness 0.07, same person 1.32 against 1.6) and agrees with the labeller most
+ * (69% of held-out pairs, 75% on face skin, against v7's 63% and 65%).
+ */
+const surfaceV8 = createAreaModel(v8WeightsJson, "/models/skin-surface-v8.onnx", "texture");
+const both = <T>(read: (model: typeof surface) => T) => [read(surface), read(surfaceV8)];
+const mean2 = (a: number | null, b: number | null) =>
+  a === null || b === null ? null : (a + b) / 2;
 
 const PATCH = 128;
 /** Face skin scaled to about this width, as in training's patch scale and the real-photo gate. */
@@ -96,7 +107,8 @@ const average = (values: number[]) =>
 export const skinTextureSignal = (image: PixelBuffer, mask: Uint8Array): number | null =>
   average(
     skinPatches(image, mask).flatMap(({ patch, mask: m }) => {
-      const v = surface.signal(patch, m);
+      const [a = null, b = null] = both((model) => model.signal(patch, m));
+      const v = mean2(a, b);
       return v === null ? [] : [v];
     }),
   );
@@ -108,7 +120,8 @@ export const skinTextureSignalFast = async (
 ): Promise<number | null> => {
   const values: number[] = [];
   for (const { patch, mask: m } of skinPatches(image, mask)) {
-    const v = await surface.signalFast(patch, m);
+    const [a = null, b = null] = await Promise.all(both((model) => model.signalFast(patch, m)));
+    const v = mean2(a, b);
     if (v !== null) values.push(v);
   }
   return average(values);
@@ -116,3 +129,5 @@ export const skinTextureSignalFast = async (
 
 export const skinSurfaceParity = () => surface.parity();
 export const skinSurfaceHeadMeans = (canvas: Float32Array) => surface.headMeans(canvas);
+export const skinSurfaceV8Parity = () => surfaceV8.parity();
+export const skinSurfaceV8HeadMeans = (canvas: Float32Array) => surfaceV8.headMeans(canvas);
