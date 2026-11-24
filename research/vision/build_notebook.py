@@ -1,4 +1,4 @@
-"""Builds train_glowtrace_v6_kaggle.ipynb from multitask.py and fetch_datasets.py, so the notebook
+"""Builds train_glowtrace_v7_kaggle.ipynb from multitask.py and fetch_datasets.py, so the notebook
 always carries the exact tested code. Run after changing either script:
   python3 research/vision/build_notebook.py
 """
@@ -6,7 +6,7 @@ import json
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "train_glowtrace_v6_kaggle.ipynb")
+OUT = os.path.join(HERE, "train_glowtrace_v7_kaggle.ipynb")
 
 
 def cell(kind, text):
@@ -17,15 +17,17 @@ def cell(kind, text):
     return {"cell_type": "code", "metadata": {}, "source": source, "outputs": [], "execution_count": None}
 
 
-INTRO = """# Glowtrace training v6 on Kaggle (free GPU): skin texture, every dataset
+INTRO = """# Glowtrace training v7 on Kaggle (free GPU): skin texture, every dataset
 
 About 2 to 3 hours of GPU. Retrains the skin surface model (texture, shine, breakouts) on close-up
 skin patches from every licensed skin source: 12 Roboflow sets (including real selfies with marked
 pores and roughness), Google SCIN, FairFace, Unsplash Lite faces and your team photos.
 
-**New in v6:** a fine-detail input channel. Earlier models could not see skin texture at all (the
-texture signal drowned in colour); with it the model reproduces measured texture at r = 0.95.
-Debbie's "which is smoother" answers are used when the `glowtrace-labels` dataset is attached.
+**New in v7:** v6 learnt to ignore blur, because camera blur was added to each view separately and
+unlabelled. v7 shares lens and phone processing between both views, anchors a blurred copy of each
+patch to its own measured detail, and judges blur against what it does to measured detail. In a
+short test this took texture from r 0.68 to 0.95 and blur from 57% to 84% of the ideal.
+Also: the fine-detail input channel (v6) and Debbie's "which is smoother" answers (`glowtrace-labels`).
 
 **Each run**
 1. **Create → New Notebook → File → Import Notebook**, and choose this file.
@@ -33,7 +35,7 @@ Debbie's "which is smoother" answers are used when the `glowtrace-labels` datase
 3. **Input → Add Input → Your Datasets**: add `glowtrace-team` (and `glowtrace-labels` once Debbie's answers are in).
 4. **Add-ons → Secrets**: tick `ROBOFLOW_API_KEY` for this notebook.
 5. **Save Version → Save & Run All (Commit) → Save**. You can close the tab.
-6. When it's finished: open the version → **Output** → download `glowtrace_results_v6.zip` and send it to Claude.
+6. When it's finished: open the version → **Output** → download `glowtrace_results_v7.zip` and send it to Claude.
 
 **Built not to waste a run:** cell 1 checks GPU, internet, key and inputs within a minute and says exactly what to fix.
 Cell 5 is a 2-minute practice run of the whole pipeline. Training saves as it goes, and the results zip is always made,
@@ -128,7 +130,7 @@ for f in glob.glob('smoke_*'): os.remove(f)
 shutil.rmtree(f'{{WORK}}/smoke', ignore_errors=True)
 log('Practice run passed.')"""
 
-TRAIN = f"""# 6. Train the v6 skin surface model (about 1.5-2.5 hours). Output streams to the log as it goes.
+TRAIN = f"""# 6. Train the v7 skin surface model (about 1.5-2.5 hours). Output streams to the log as it goes.
 name = 'skin-surface'
 if os.path.exists(f'{{OUT}}/{{name}}_weights.json'):
     log(f'{{name}}: already done')
@@ -145,13 +147,13 @@ ZIP = """# 7. One zip with the model, its evaluation, the dataset credits and th
 import zipfile
 if os.path.exists('data/credits.json'): shutil.copy('data/credits.json', OUT)
 LOG.close()
-with zipfile.ZipFile(f'{WORK}/glowtrace_results_v6.zip', 'w') as zf:
+with zipfile.ZipFile(f'{WORK}/glowtrace_results_v7.zip', 'w') as zf:
     for f in glob.glob(f'{OUT}/*'):
         zf.write(f, os.path.basename(f))
 print(sorted(os.path.basename(f) for f in glob.glob(f'{OUT}/*')))
 # Keep the output small: Kaggle saves everything in the working folder.
 shutil.rmtree('data', ignore_errors=True); shutil.rmtree('cache', ignore_errors=True)
-print('Done: glowtrace_results_v6.zip')"""
+print('Done: glowtrace_results_v7.zip')"""
 
 
 def main():

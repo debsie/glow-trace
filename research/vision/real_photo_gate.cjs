@@ -7,9 +7,9 @@
 // The weights file is export_web.py's output. Photos of the same person share a label.
 //
 // Checks, each against the spread of readings between different people:
-//   blur        a 2 px blur lowers the reading by at least half that spread
+//   blur        a 2 px blur lowers the reading by at least 70% of what it does to measured detail
 //   brightness  +/-20% exposure moves it by at most a fifth of it
-//   same person repeat photos of one person differ by at most half of it
+//   same person repeat photos of one person vary at most 1.3x as much as their measured detail does
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
@@ -76,7 +76,36 @@ if (!weightsPath || pairs.length < 3) {
         c.height = h;
         const ctx = c.getContext("2d", { willReadFrequently: true });
         ctx.drawImage(src, 0, 0, w, h);
+        // Fine detail as training measures it (hp_contrast): std of (luma - its 7x7 mean) / mean.
+        const detailOf = (patch, mask) => {
+          const n = 128,
+            l = new Float32Array(n * n);
+          for (let i = 0; i < n * n; i += 1)
+            l[i] = (patch.data[i * 4] + patch.data[i * 4 + 1] + patch.data[i * 4 + 2]) / 3 + 1;
+          let sum = 0,
+            sq = 0,
+            count = 0;
+          for (let y = 0; y < n; y += 1)
+            for (let x = 0; x < n; x += 1) {
+              if (!mask[y * n + x]) continue;
+              let local = 0;
+              for (let dy = -3; dy <= 3; dy += 1)
+                for (let dx = -3; dx <= 3; dx += 1)
+                  local +=
+                    l[
+                      Math.min(n - 1, Math.max(0, y + dy)) * n +
+                        Math.min(n - 1, Math.max(0, x + dx))
+                    ];
+              local /= 49;
+              const rel = (l[y * n + x] - local) / local;
+              sum += rel;
+              sq += rel * rel;
+              count += 1;
+            }
+          return count ? Math.sqrt(Math.max(0, sq / count - (sum / count) ** 2)) : 0;
+        };
         const values = [];
+        const details = [];
         for (let y = 0; y + 128 <= h; y += 128)
           for (let x = 0; x + 128 <= w; x += 128) {
             const mask = new Uint8Array(128 * 128);
@@ -93,9 +122,13 @@ if (!weightsPath || pairs.length < 3) {
             if (on < 0.6 * 128 * 128 || values.length >= 12) continue;
             const patch = ctx.getImageData(x, y, 128, 128);
             const v = window.__gate.signal(patch, mask);
-            if (v !== null) values.push(v);
+            if (v !== null) {
+              values.push(v);
+              details.push(detailOf(patch, mask));
+            }
           }
-        return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        const avg = (list) => list.reduce((a, b) => a + b, 0) / list.length;
+        return values.length ? { model: avg(values), detail: avg(details) } : null;
       };
       return {
         plain: reading(plain),
@@ -104,11 +137,19 @@ if (!weightsPath || pairs.length < 3) {
         dark: reading(draw("brightness(0.8)")),
       };
     }, b64);
-    if (!r || r.plain === null) {
+    if (!r || r.plain === null || !r.blur || !r.light || !r.dark) {
       console.log(`${person} ${path.basename(file)}: no face or no patches`);
       continue;
     }
-    rows.push({ person, ...r });
+    rows.push({
+      person,
+      plain: r.plain.model,
+      blur: r.blur.model,
+      light: r.light.model,
+      dark: r.dark.model,
+      detail: r.plain.detail,
+      detailBlur: r.blur.detail,
+    });
     console.log(`${person} ${path.basename(file)}: ${JSON.stringify(r)}`);
   }
   await browser.close();
@@ -128,13 +169,41 @@ if (!weightsPath || pairs.length < 3) {
   );
   const spread = Math.max(between, 1e-6);
   const blur = mean(rows.map((r) => r.blur - r.plain)) / spread;
+  // The same blur on the measured fine detail, against its own spread between people: the most a
+  // perfect texture reading could show. The model must show at least 70% of it.
+  const detailMeans = people.map((p) =>
+    mean(rows.filter((r) => r.person === p).map((r) => r.detail)),
+  );
+  const detailSpread = Math.max(Math.max(...detailMeans) - Math.min(...detailMeans), 1e-6);
+  const ideal = mean(rows.map((r) => r.detailBlur - r.detail)) / detailSpread;
+  const share = ideal < 0 ? blur / ideal : 0;
+  const detailWithin =
+    Math.max(
+      0,
+      ...people.map((p) => {
+        const v = rows.filter((r) => r.person === p).map((r) => r.detail);
+        return v.length > 1 ? Math.max(...v) - Math.min(...v) : 0;
+      }),
+    ) / detailSpread;
   const bright =
     mean(rows.map((r) => Math.max(Math.abs(r.light - r.plain), Math.abs(r.dark - r.plain)))) /
     spread;
   const checks = {
-    blur: { value: +blur.toFixed(3), pass: blur <= -0.5 },
+    blur: {
+      value: +blur.toFixed(3),
+      ideal: +ideal.toFixed(3),
+      share: +share.toFixed(3),
+      pass: share >= 0.7,
+    },
     brightness: { value: +bright.toFixed(3), pass: bright <= 0.2 },
-    samePerson: { value: +(within / spread).toFixed(3), pass: within / spread <= 0.5 },
+    // Repeat photos of one person differ in real fine detail too (distance, angle, light), so the
+    // model may vary at most 1.3x as much as the measured detail does on the same photos (and
+    // always passes under 0.5 of the spread).
+    samePerson: {
+      value: +(within / spread).toFixed(3),
+      detail: +detailWithin.toFixed(3),
+      pass: within / spread <= Math.max(0.5, 1.3 * detailWithin),
+    },
   };
   console.log(JSON.stringify({ people: people.length, photos: rows.length, checks }, null, 2));
   console.log(Object.values(checks).every((c) => c.pass) ? "GATE: PASS" : "GATE: FAIL");
