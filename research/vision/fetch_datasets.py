@@ -153,6 +153,103 @@ def fairface(credits, per_group=min(450, FETCH_LIMIT or 450)):
     return credits
 
 
+FIGSHARE_NAILS = "https://ndownloader.figshare.com/files/49504041"
+
+
+def figshare_nails(credits):
+    """Skin and fingernails for haemoglobin assessment (Yakimov et al., Scientific Data 2024;
+    figshare 25867432, CC0): 252 hand photos of bare nails with nail boxes. Each nail is cut out
+    with a 15% margin, the way the nail models read nail tiles."""
+    import ast
+    import csv
+    import io
+    import zipfile
+
+    from PIL import Image
+
+    target = os.path.join("data", "nails", "figshare_haemoglobin")
+    link = "https://doi.org/10.6084/m9.figshare.25867432.v1"
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(FIGSHARE_NAILS, timeout=600).read()))
+        rows = list(csv.DictReader(io.TextIOWrapper(archive.open("metadata.csv"), "utf-8")))
+        os.makedirs(target, exist_ok=True)
+        saved = 0
+        for row in rows:
+            name = f"photo/{row['PATIENT_ID']}.jpg"
+            if name not in archive.namelist():
+                continue
+            # Boxes are [top, left, bottom, right] on the photo as stored (checked by eye on a contact
+            # sheet: every crop is a nail); don't apply the EXIF rotation.
+            photo = Image.open(io.BytesIO(archive.read(name))).convert("RGB")
+            for k, box in enumerate(ast.literal_eval(row["NAIL_BOUNDING_BOXES"])):
+                y0, y1 = sorted((box[0], box[2]))
+                x0, x1 = sorted((box[1], box[3]))
+                if x1 - x0 < 8 or y1 - y0 < 8 or x1 > photo.width or y1 > photo.height:
+                    continue
+                mx, my = int((x1 - x0) * 0.15), int((y1 - y0) * 0.15)
+                tile = photo.crop((max(0, x0 - mx), max(0, y0 - my), min(photo.width, x1 + mx), min(photo.height, y1 + my)))
+                tile.save(os.path.join(target, f"{row['PATIENT_ID']}_{k}.jpg"), quality=92)
+                saved += 1
+        print(f"OK   nails: figshare haemoglobin nails ({saved} nail tiles, licence: CC0)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "nails", "name": "Skin and fingernails (Yakimov et al. 2024)", "what": "Bare nail tiles from hand photos",
+                        "link": link, "licence": "CC0 1.0", "images": saved})
+    except Exception as error:
+        print(f"FAIL nails: figshare haemoglobin nails ({str(error)[:120]})")
+    return credits
+
+
+OPEN_IMAGES_BOXES = "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv"
+OPEN_IMAGES_META = "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv"
+HUMAN_HAIR = "/m/03q69"
+
+
+def open_images_hair(credits, limit=min(1500, FETCH_LIMIT or 1500)):
+    """Open Images V7 validation photos with a "Human hair" box (annotations CC BY 4.0). Only images
+    whose own licence is CC BY 2.0 are kept; the author and source are recorded per image in
+    data/hair/openimages/attribution.csv. Open Images has no hair masks, so hair areas come from
+    the hair guide during training, as for every other hair photo."""
+    import csv
+    import io
+    from concurrent.futures import ThreadPoolExecutor
+
+    target = os.path.join("data", "hair", "openimages")
+    link = "https://storage.googleapis.com/openimages/web/index.html"
+    try:
+        boxes = urllib.request.urlopen(OPEN_IMAGES_BOXES, timeout=600).read().decode()
+        with_hair = {r["ImageID"] for r in csv.DictReader(io.StringIO(boxes)) if r["LabelName"] == HUMAN_HAIR}
+        meta = urllib.request.urlopen(OPEN_IMAGES_META, timeout=600).read().decode()
+        rows = [
+            r for r in csv.DictReader(io.StringIO(meta))
+            if r["ImageID"] in with_hair and r["License"].rstrip("/").endswith("licenses/by/2.0")
+        ]
+        rows = sorted(rows, key=lambda r: r["ImageID"])[:limit]
+        os.makedirs(target, exist_ok=True)
+
+        def one(row):
+            try:
+                url = f"https://open-images-dataset.s3.amazonaws.com/validation/{row['ImageID']}.jpg"
+                open(os.path.join(target, f"{row['ImageID']}.jpg"), "wb").write(urllib.request.urlopen(url, timeout=60).read())
+                return row
+            except Exception:
+                return None
+
+        with ThreadPoolExecutor(8) as pool:
+            kept = [r for r in pool.map(one, rows) if r]
+        with open(os.path.join(target, "attribution.csv"), "w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["image", "author", "source", "licence"])
+            for r in kept:
+                writer.writerow([f"{r['ImageID']}.jpg", r["Author"], r["OriginalLandingURL"], r["License"]])
+        print(f"OK   hair: Open Images hair ({len(kept)} of {len(rows)} photos, licence: CC BY 2.0 images, CC BY 4.0 annotations)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "hair", "name": "Open Images V7 (Human hair)", "what": "Photos with hair, per-image credits in attribution.csv",
+                        "link": link, "licence": "Images CC BY 2.0; annotations CC BY 4.0", "images": len(kept)})
+    except Exception as error:
+        print(f"FAIL hair: Open Images hair ({str(error)[:120]})")
+    return credits
+
+
 UNSPLASH_LITE = os.environ.get("GLOWTRACE_UNSPLASH_ZIP", "https://unsplash.com/data/lite/latest")
 UNSPLASH_WORDS = {"selfie", "face", "headshot", "portrait", "skin", "close up", "closeup"}
 
@@ -257,6 +354,10 @@ def main():
                 print(f"FAIL {area}: {project} ({str(error)[:120]})")
     if "hair" in areas:
         credits = zenodo_scalp(credits)
+    if "nails" in areas:
+        credits = figshare_nails(credits)
+    if "hair" in areas:
+        credits = open_images_hair(credits)
     if "skin" in areas:
         credits = fairface(credits)
         credits = unsplash_faces(credits)

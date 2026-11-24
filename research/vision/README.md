@@ -63,3 +63,15 @@ their own round by set id. Round 1: 457 Google SCIN close-ups (many show rashes,
 tell"). Round 2: face skin from Unsplash Lite portraits and the consented team photos, cut by the
 app's own face guide and `skinPatches` (wide shots cropped around the face first), sorted into ITA
 bands, with dark patches shown brighter on the page only (`--lift`).
+
+## Datasets added 2026-11-24 (licences checked at the source)
+
+- **Skin and fingernails, Yakimov et al. 2024** (figshare 25867432, CC0): 252 hand photos of bare
+  nails. Boxes are `[top, left, bottom, right]` on the photo as stored (EXIF rotation not applied);
+  cut into 750 nail tiles with a 15% margin. Verified by eye on a contact sheet.
+- **Open Images V7 validation, "Human hair" boxes**: images CC BY 2.0 only (per-image licence
+  checked), annotations CC BY 4.0; per-image author and source in `attribution.csv`. Open Images
+  has no hair, face or head masks (not among its 350 segmentation classes), so hair areas come
+  from the hair guide like every other hair photo.
+- **Not used:** LaPa (non-commercial licence), Fitzpatrick17k (CC BY-NC-SA 3.0), the Kaggle
+  "skintone-dataset" (licence not confirmed).
