@@ -16,6 +16,7 @@ import { longDate } from "@/lib/progress";
 import type { BlockedGate, RoutineMode } from "@/lib/plans";
 import { PLANS, routineModeGate } from "@/lib/plans";
 import { routineModeSpec } from "@/lib/routines";
+import { WeatherSteps } from "@/components/weather/weather-steps";
 import { pageHead } from "@/lib/seo";
 import { listAsText, loadList, saveList, toggleItem } from "@/lib/shopping-list";
 import type { ListItem } from "@/lib/shopping-list";
@@ -271,6 +272,8 @@ function RoutinePage() {
       </div>
 
       {blocked && <UpgradeCard gate={blocked} onDismiss={() => setBlocked(null)} />}
+
+      {(tab === "am" || tab === "pm") && <WeatherSteps when={tab} />}
 
       {tab === "makeup" ? (
         <MakeupDayPanel report={latestSkin?.report ?? null} tier={tier} />

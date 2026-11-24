@@ -163,3 +163,79 @@ export const skinWeather = (forecast: Forecast, concerns: readonly string[] = []
             : "Gentle day for skin";
   return { uvMax, uvBand: band, humidity, temperature, headline, tips: tips.slice(0, 3) };
 };
+
+/** UV at or above this needs sunscreen reapplied outdoors (WHO "moderate" and up). */
+export const UV_REAPPLY = 3;
+
+/**
+ * The run of hours today when UV is at or above `threshold`: start and end as ISO times (end is the
+ * last such hour), and the peak. Null when the forecast has no UV or it never gets that high.
+ */
+export const uvWindow = (
+  forecast: Forecast,
+  threshold = UV_REAPPLY,
+): { start: string; end: string; peak: number; peakAt: string } | null => {
+  const next = forecast.hours.slice(0, 16);
+  const strong = next.filter((hour) => hour.uv !== null && hour.uv >= threshold);
+  const first = strong[0];
+  const last = strong[strong.length - 1];
+  if (!first || !last) return null;
+  const top = strong.reduce((a, b) => ((b.uv ?? 0) > (a.uv ?? 0) ? b : a));
+  return { start: first.time, end: last.time, peak: top.uv ?? 0, peakAt: top.time };
+};
+
+export type WeatherStep = { when: "am" | "pm"; step: string; why: string };
+
+/** Routine changes for today's weather, shown in the morning and evening routines. */
+export const weatherSteps = (today: SkinWeather): WeatherStep[] => {
+  const steps: WeatherStep[] = [];
+  if (today.uvBand && today.uvBand !== "low") {
+    steps.push({
+      when: "am",
+      step: "SPF 30 or more as your last skincare step",
+      why: `UV reaches ${today.uvMax?.toFixed(1)} today`,
+    });
+  }
+  if (today.uvBand === "high" || today.uvBand === "very high" || today.uvBand === "extreme") {
+    steps.push({
+      when: "am",
+      step: "Pack sunscreen to reapply at midday",
+      why: "Strong sun from late morning",
+    });
+  }
+  if (today.humidity < 30) {
+    steps.push({
+      when: "am",
+      step: "Hydrating serum under a richer moisturiser",
+      why: `Air is dry (${today.humidity}%)`,
+    });
+    steps.push({
+      when: "pm",
+      step: "Skip exfoliating acids tonight; seal in moisture instead",
+      why: "Dry air weakens the skin barrier",
+    });
+  } else if (today.humidity > 75) {
+    steps.push({
+      when: "am",
+      step: "Swap to a light gel moisturiser",
+      why: `Humid air (${today.humidity}%)`,
+    });
+  }
+  if (today.temperature >= 30) {
+    steps.push({
+      when: "pm",
+      step: "Double cleanse to lift sweat and sunscreen",
+      why: `Hot day (${today.temperature.toFixed(0)}°)`,
+    });
+  } else if (today.temperature <= 8) {
+    steps.push({
+      when: "pm",
+      step: "Barrier cream on face and hands",
+      why: `Cold air (${today.temperature.toFixed(0)}°)`,
+    });
+  }
+  return steps;
+};
+
+/** "10:00" in the phone's own time; client only (never rendered on the server). */
+export const hourLabel = (iso: string) => `${String(new Date(iso).getHours()).padStart(2, "0")}:00`;
