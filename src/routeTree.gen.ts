@@ -33,7 +33,9 @@ import { Route as SkinAnalysisAppRouteImport } from './routes/skin-analysis-app'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as GuidesIndexRouteImport } from './routes/guides.index'
 import { Route as GuidesIdRouteImport } from './routes/guides.$id'
+import { Route as ProBookingsRouteImport } from './routes/pro.bookings'
 import { Route as ProClientsRouteImport } from './routes/pro.clients'
+import { Route as ProPricesRouteImport } from './routes/pro.prices'
 import { Route as ProgrammesIndexRouteImport } from './routes/programmes.index'
 import { Route as ProgrammesIdRouteImport } from './routes/programmes.$id'
 import { Route as ProClientsIndexRouteImport } from './routes/pro.clients.index'
@@ -163,9 +165,19 @@ const GuidesIdRoute = GuidesIdRouteImport.update({
   path: '/guides/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProBookingsRoute = ProBookingsRouteImport.update({
+  id: '/pro/bookings',
+  path: '/pro/bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProClientsRoute = ProClientsRouteImport.update({
   id: '/pro/clients',
   path: '/pro/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProPricesRoute = ProPricesRouteImport.update({
+  id: '/pro/prices',
+  path: '/pro/prices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgrammesIndexRoute = ProgrammesIndexRouteImport.update({
@@ -233,7 +245,9 @@ export interface FileRoutesByFullPath {
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/welcome': typeof WelcomeRoute
   '/guides/$id': typeof GuidesIdRoute
+  '/pro/bookings': typeof ProBookingsRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
+  '/pro/prices': typeof ProPricesRoute
   '/programmes/$id': typeof ProgrammesIdRoute
   '/guides/': typeof GuidesIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
@@ -268,6 +282,8 @@ export interface FileRoutesByTo {
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/welcome': typeof WelcomeRoute
   '/guides/$id': typeof GuidesIdRoute
+  '/pro/bookings': typeof ProBookingsRoute
+  '/pro/prices': typeof ProPricesRoute
   '/programmes/$id': typeof ProgrammesIdRoute
   '/guides': typeof GuidesIndexRoute
   '/programmes': typeof ProgrammesIndexRoute
@@ -302,7 +318,9 @@ export interface FileRoutesById {
   '/skin-analysis-app': typeof SkinAnalysisAppRoute
   '/welcome': typeof WelcomeRoute
   '/guides/$id': typeof GuidesIdRoute
+  '/pro/bookings': typeof ProBookingsRoute
   '/pro/clients': typeof ProClientsRouteWithChildren
+  '/pro/prices': typeof ProPricesRoute
   '/programmes/$id': typeof ProgrammesIdRoute
   '/guides/': typeof GuidesIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
@@ -339,7 +357,9 @@ export interface FileRouteTypes {
     | '/skin-analysis-app'
     | '/welcome'
     | '/guides/$id'
+    | '/pro/bookings'
     | '/pro/clients'
+    | '/pro/prices'
     | '/programmes/$id'
     | '/guides/'
     | '/programmes/'
@@ -374,6 +394,8 @@ export interface FileRouteTypes {
     | '/skin-analysis-app'
     | '/welcome'
     | '/guides/$id'
+    | '/pro/bookings'
+    | '/pro/prices'
     | '/programmes/$id'
     | '/guides'
     | '/programmes'
@@ -407,7 +429,9 @@ export interface FileRouteTypes {
     | '/skin-analysis-app'
     | '/welcome'
     | '/guides/$id'
+    | '/pro/bookings'
     | '/pro/clients'
+    | '/pro/prices'
     | '/programmes/$id'
     | '/guides/'
     | '/programmes/'
@@ -443,7 +467,9 @@ export interface RootRouteChildren {
   SkinAnalysisAppRoute: typeof SkinAnalysisAppRoute
   WelcomeRoute: typeof WelcomeRoute
   GuidesIdRoute: typeof GuidesIdRoute
+  ProBookingsRoute: typeof ProBookingsRoute
   ProClientsRoute: typeof ProClientsRouteWithChildren
+  ProPricesRoute: typeof ProPricesRoute
   ProgrammesIdRoute: typeof ProgrammesIdRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProgrammesIndexRoute: typeof ProgrammesIndexRoute
@@ -619,11 +645,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuidesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pro/bookings': {
+      id: '/pro/bookings'
+      path: '/pro/bookings'
+      fullPath: '/pro/bookings'
+      preLoaderRoute: typeof ProBookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pro/clients': {
       id: '/pro/clients'
       path: '/pro/clients'
       fullPath: '/pro/clients'
       preLoaderRoute: typeof ProClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pro/prices': {
+      id: '/pro/prices'
+      path: '/pro/prices'
+      fullPath: '/pro/prices'
+      preLoaderRoute: typeof ProPricesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programmes/': {
@@ -741,7 +781,9 @@ const rootRouteChildren: RootRouteChildren = {
   SkinAnalysisAppRoute: SkinAnalysisAppRoute,
   WelcomeRoute: WelcomeRoute,
   GuidesIdRoute: GuidesIdRoute,
+  ProBookingsRoute: ProBookingsRoute,
   ProClientsRoute: ProClientsRouteWithChildren,
+  ProPricesRoute: ProPricesRoute,
   ProgrammesIdRoute: ProgrammesIdRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProgrammesIndexRoute: ProgrammesIndexRoute,
