@@ -618,16 +618,22 @@ def load_labels(folder):
     if not pairs:
         raise SystemExit(f"--labels {folder}: no answers for patch set {set_id}")
     # Consistency: pairs answered twice (once each way round) should agree.
-    seen, agree, both = {}, 0, 0
+    # Strict: the same answer both times. Not contradicting: never A one time and B the other
+    # ("about the same" plus a choice means the two patches were close, not that she disagreed).
+    seen, agree, opposite, both = {}, 0, 0, 0
     for a, b, t in pairs:
         key = (min(a, b), max(a, b))
         smoother_a = t if a == key[0] else 1 - t
         if key in seen:
             both += 1
             agree += seen[key] == smoother_a
+            opposite += {seen[key], smoother_a} == {0.0, 1.0}
         else:
             seen[key] = smoother_a
     consistency = agree / both if both else None
+    if both:
+        print(f"labels: repeats {both}, same answer {agree}, opposite {opposite} "
+              f"(not contradicting {1 - opposite / both:.2f})")
     # Hold out a fifth of the patch pairs (by pair, both orders together) for evaluation.
     rng = np.random.default_rng(7)
     keys = sorted(seen)
