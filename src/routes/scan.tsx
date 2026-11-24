@@ -696,7 +696,9 @@ function ScanPage() {
                             </span>
                           </span>
                         ))}
-                        {!nail.report.quality.usable && <span>not readable</span>}
+                        {!nail.report.quality.usable && (
+                          <span>{nail.report.quality.notice ?? "not readable"}</span>
+                        )}
                       </span>
                     </li>
                   ))}

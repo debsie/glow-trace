@@ -55,14 +55,14 @@ study), **context** (asked, not measured).
 
 ## Nails
 
-| Indicator                        | Status                  | Signal                                          |
-| -------------------------------- | ----------------------- | ----------------------------------------------- |
-| Yellowing                        | live                    | trained nails model                             |
-| Spots, ridges, cuticles          | train-sim               | v4 nails models                                 |
-| Polish or nail art               | build, then train-label | colour and gloss check; painted vs bare dataset |
-| Nail length                      | build                   | tip past the fingertip from hand landmarks      |
-| Peeling and breakage             | own-data                |                                                 |
-| After acrylics or gel (thinning) | context                 | logged, readings compared before and after      |
+| Indicator                        | Status                        | Signal                                            |
+| -------------------------------- | ----------------------------- | ------------------------------------------------- |
+| Yellowing                        | live                          | trained nails model                               |
+| Spots, ridges, cuticles          | train-sim                     | v4 nails models                                   |
+| Polish or nail art               | live (v2.8), then train-label | colour check vs surrounding skin; pauses readings |
+| Nail length                      | build                         | tip past the fingertip from hand landmarks        |
+| Peeling and breakage             | own-data                      |                                                   |
+| After acrylics or gel (thinning) | context                       | logged, readings compared before and after        |
 
 ## Context (asked, stays on the device)
 

@@ -10,6 +10,7 @@ import { hairTextureSignalFast } from "./hair-model";
 import { skinTextureSignalFast, TEXTURE_PHOTO_DIM } from "./skin-surface-model";
 import { analyzeBiomarkers } from "./kernel";
 import { nailYellowingSignalFast } from "./nails-model";
+import { POLISH_NOTE, POLISH_NOTICE, polishReason } from "./polish";
 import { cropTile } from "./nail-tiles";
 import type { Finger } from "./nail-tiles";
 import { parseBiomarkerReport } from "./schemas";
@@ -106,17 +107,31 @@ export const analyseShot = async (
     const nails: NailReading[] = [];
     for (const box of boxes) {
       const tile = cropTile(large, box, NAIL_TILE_PX);
-      const nailYellowing = await nailYellowingSignalFast(tile);
+      const report = analyzeBiomarkers("nails", tile, null, {
+        nailYellowing: await nailYellowingSignalFast(tile),
+      });
+      // Polish hides the nail: its readings would describe the polish, so they pause.
+      const painted = report.quality.usable && polishReason(tile) !== null;
       nails.push({
         finger: box.finger,
-        report: parseBiomarkerReport(analyzeBiomarkers("nails", tile, null, { nailYellowing })),
+        report: parseBiomarkerReport(
+          painted
+            ? {
+                ...report,
+                quality: { ...report.quality, usable: false, notice: POLISH_NOTICE },
+                metrics: [],
+              }
+            : report,
+        ),
       });
     }
     // The thumb shot is for the thumb; the flat-hand shot for the other four.
     const wanted = nails.filter((nail) => (shot.id === "thumb") === (nail.finger === "thumb"));
     const kept = wanted.length > 0 ? wanted : nails;
     const keptFingers = new Set(kept.map((nail) => nail.finger));
+    const allPainted = kept.every((nail) => nail.report.quality.notice === POLISH_NOTICE);
     return {
+      ...(allPainted ? { note: POLISH_NOTE } : {}),
       shotId: shot.id,
       reports: kept.map((nail) => nail.report),
       nails: kept,
