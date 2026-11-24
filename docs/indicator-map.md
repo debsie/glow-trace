@@ -37,7 +37,7 @@ study), **context** (asked, not measured).
 
 | Indicator                                  | Status                         | Signal                                               |
 | ------------------------------------------ | ------------------------------ | ---------------------------------------------------- |
-| Length band (ear to hip, APL, BSL)         | live (preview)                 | pose landmarks + hair mask, front photo hair forward |
+| Length band (ear to hip, APL, BSL)         | live (v2.9, confirmed by you)  | pose landmarks + hair mask, front photo hair forward |
 | Growth and length retention                | build                          | trend of length over time                            |
 | Stretched or natural (shrinkage)           | live (asked)                   | asked with each length photo; only like with like    |
 | Hair today (out, braids, wig, weave, locs) | live (asked), then train-label | pauses hair readings during protective styles        |

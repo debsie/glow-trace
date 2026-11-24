@@ -60,6 +60,8 @@ export const biomarkerReportSchema = z.object({
       ]),
       position: z.number().min(-2).max(3),
       state: z.enum(["stretched", "natural"]),
+      /** The person confirmed (or corrected) the band on the result screen. */
+      confirmed: z.boolean().optional(),
     })
     .optional(),
 });

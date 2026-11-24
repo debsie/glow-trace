@@ -2,8 +2,9 @@ import { z } from "zod";
 
 import { getSupabase } from "@/integrations/supabase/client";
 
+import type { ScanWeather } from "./types";
 import type { Forecast, Place, PlacesFile } from "./weather";
-import { forecastSchema, PLACE_KEY, placeSchema, placesFileSchema } from "./weather";
+import { forecastSchema, PLACE_KEY, placeSchema, placesFileSchema, skinWeather } from "./weather";
 
 /** The chosen town, kept on this device. */
 export const loadPlace = (): Place | null => {
@@ -82,4 +83,17 @@ export const fetchForecast = async (place: Place): Promise<WeatherReply> => {
     // Not cached; fine.
   }
   return { forecast: parsed.data };
+};
+
+/**
+ * Today's weather at the chosen town as saved with a scan (weather-trends.ts), or null when skin
+ * weather isn't set up. Uses the hour-long cache, so a scan rarely adds a request.
+ */
+export const currentWeather = async (): Promise<ScanWeather | null> => {
+  const place = loadPlace();
+  if (!place) return null;
+  const reply = await fetchForecast(place).catch(() => null);
+  if (!reply || !("forecast" in reply)) return null;
+  const today = skinWeather(reply.forecast);
+  return { temperature: today.temperature, humidity: today.humidity, uvMax: today.uvMax };
 };
