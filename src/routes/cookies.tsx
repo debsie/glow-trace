@@ -55,6 +55,18 @@ const ITEMS: Item[] = [
     kept: "Until you clear this site's data",
   },
   {
+    name: "Skin weather town and forecast",
+    where: "Browser local storage (glowtrace:weather-place:v1, glowtrace:weather-cache:v1)",
+    why: "The town you picked for skin weather and its latest forecast, so the card loads without asking again for an hour.",
+    kept: "Until you change town or clear this site's data",
+  },
+  {
+    name: "Shelf products you added",
+    where: "Browser local storage (glowtrace:shelf-added:v1)",
+    why: "Products you added to your shelf by barcode or by hand.",
+    kept: "Until you take them off your shelf or clear this site's data",
+  },
+  {
     name: "Offline copy of the app",
     where: "Browser cache storage (glowtrace-v1)",
     why: "Lets the app open and scan without a connection. Holds app pages and files, nothing about you.",
@@ -73,7 +85,7 @@ function CookiesPage() {
       </Link>
       <PageHeader
         title="Cookies and Storage"
-        subtitle="Glowtrace sets no cookies, runs no analytics and loads no ads. The only outside script is a bot check on the sign-in page. A barcode scan asks Open Beauty Facts for the product's ingredients, sending only the number."
+        subtitle="Glowtrace sets no cookies, runs no analytics and loads no ads. The only outside script is a bot check on the sign-in page. A barcode scan asks Open Beauty Facts for the product's ingredients, sending only the number. Skin weather sends only your chosen town's position to Glowtrace's own weather service; the town and forecast are kept on your device."
       />
 
       <SectionCard>
