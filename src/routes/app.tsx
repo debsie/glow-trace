@@ -16,6 +16,7 @@ import {
 import { LineArt } from "@/components/art/line-art";
 import { Reveal } from "@/components/motion/reveal";
 import { SkinWeatherCard } from "@/components/weather/skin-weather-card";
+import { LightingInvite } from "@/components/engagement/lighting-invite";
 import { useEnrolments } from "@/components/programmes/use-enrolments";
 import { WeekRibbon } from "@/components/programmes/week-ribbon";
 import { Badge, BUTTON_GHOST, BUTTON_PRIMARY, SectionCard } from "@/components/ui/bits";
@@ -263,6 +264,9 @@ function Dashboard() {
         </div>
         <Reveal className="mt-3">
           <SkinWeatherCard findings={brief.findings} />
+        </Reveal>
+        <Reveal className="mt-3">
+          <LightingInvite />
         </Reveal>
       </section>
 
