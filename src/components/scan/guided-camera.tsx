@@ -1,9 +1,17 @@
-import { Camera, ImageIcon, Timer, X } from "lucide-react";
+import { Camera, Check, ImageIcon, Timer, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { GhostButton, PrimaryButton } from "@/components/ui/bits";
 import { measureSubject } from "@/lib/cv/guides";
+import type { ScanReference } from "@/lib/cv/consistency";
+import {
+  centreLook,
+  compareToReference,
+  loadReferences,
+  matchHint,
+  saveReference,
+} from "@/lib/cv/consistency";
 import { frameHint, lightTip } from "@/lib/cv/kernel";
 import { subjectHint, subjectKind } from "@/lib/cv/subject-check";
 import type { Overlay, Shot } from "@/lib/scan-session";
@@ -49,6 +57,11 @@ export const GuidedCamera = ({
   const [subject, setSubject] = useState<string | undefined>("Getting the guide ready");
   const [waitedLong, setWaitedLong] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  // Steadier scans: last time's distance, brightness and light colour for this shot, and now's.
+  const [reference, setReference] = useState<ScanReference | null>(null);
+  const [light, setLight] = useState<{ luma: number; warmth: number } | null>(null);
+  const [faceShare, setFaceShare] = useState<number | null>(null);
+  useEffect(() => setReference(loadReferences()[shot.id] ?? null), [shot.id]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -89,6 +102,7 @@ export const GuidedCamera = ({
       if (!context) return;
       context.drawImage(el, 0, 0, canvas.width, canvas.height);
       const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+      setLight(centreLook(frame));
       const blocking = frameHint(frame, Math.min(el.videoWidth, el.videoHeight));
       setHint(blocking);
       setTip(blocking ? undefined : lightTip(frame));
@@ -114,7 +128,9 @@ export const GuidedCamera = ({
       busy = true;
       void measureSubject(kind, context.getImageData(0, 0, canvas.width, canvas.height))
         .then((measure) => {
-          if (!stopped) setSubject(measure ? subjectHint(shot.id, measure) : undefined);
+          if (stopped) return;
+          setSubject(measure ? subjectHint(shot.id, measure) : undefined);
+          setFaceShare(measure?.kind === "face" && measure.found ? measure.share : null);
         })
         .finally(() => {
           busy = false;
@@ -141,8 +157,10 @@ export const GuidedCamera = ({
       context.scale(-1, 1);
     }
     context.drawImage(el, 0, 0);
+    // Remember how this photo was taken, so the next scan of this shot can match it.
+    if (light) saveReference(shot.id, { share: faceShare ?? reference?.share ?? 0, ...light });
     canvas.toBlob((blob) => blob && onCapture(blob), "image/jpeg", 0.92);
-  }, [onCapture, shot.camera]);
+  }, [onCapture, shot.camera, shot.id, light, faceShare, reference]);
 
   useEffect(() => {
     if (countdown === null) return;
@@ -155,7 +173,16 @@ export const GuidedCamera = ({
     return () => window.clearTimeout(timer);
   }, [countdown, capture]);
 
-  const blocking = hint ?? subject;
+  // Distance only for faces (the guide measures it); light and colour for every shot.
+  const match =
+    reference && light
+      ? compareToReference(
+          { share: faceShare ?? reference.share, ...light },
+          faceShare === null ? { ...reference, share: reference.share } : reference,
+        )
+      : null;
+  const steady = match ? matchHint(match) : undefined;
+  const blocking = hint ?? subject ?? steady;
   const ready = blocking === undefined;
 
   // Rendered on <body>: the page wrapper animates, and a transformed parent would trap a fixed
@@ -235,6 +262,36 @@ export const GuidedCamera = ({
             <span className="text-muted-foreground">{blocking}</span>
           )}
         </p>
+        {match && !failed && (
+          <ul
+            className="flex flex-wrap justify-center gap-2 text-xs"
+            aria-label="Compared with your last photo"
+          >
+            <li className="text-muted-foreground">Same as last time:</li>
+            {(
+              [
+                ["Distance", faceShare === null ? "ok" : match.distance],
+                ["Light", match.light],
+                ["Colour", match.colour],
+              ] as const
+            ).map(([label, state]) => (
+              <li
+                key={label}
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${
+                  state === "ok"
+                    ? "border-success text-success"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {label}
+                {state === "ok" && <Check className="ml-1 inline h-3 w-3" aria-hidden="true" />}
+                <span className="sr-only">
+                  {state === "ok" ? " matches" : " doesn't match yet"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-center text-xs text-muted-foreground">
           {shot.steps[0]}. No filters or beauty mode.
         </p>

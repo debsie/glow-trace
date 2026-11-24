@@ -12,26 +12,26 @@ study), **context** (asked, not measured).
 
 ## Skin
 
-| Indicator                                    | Status                    | Signal                                                   |
-| -------------------------------------------- | ------------------------- | -------------------------------------------------------- |
-| Redness, overall                             | live                      | trained redness model (v2)                               |
-| Redness by zone (forehead, cheeks, chin)     | live                      | face zones                                               |
-| Redness on the nose                          | live                      | nose zone from face landmarks                            |
-| Dark circles                                 | live (provisional scale)  | under-eye vs own cheekbone lightness (fair across tones) |
-| Pigmentation, melasma, dark spots            | live (formula), train-sim | pigment map, by zone                                     |
-| Even tone                                    | live                      | hue variance                                             |
-| Breakouts (count and where)                  | train-sim, train-label    | acne datasets (CC BY)                                    |
-| Texture and pores                            | live (formula), train-sim |                                                          |
-| Shine and skin type (oily, combination, dry) | live (provisional)        | T-zone shine vs cheek shine                              |
-| Ashy skin (grey dry cast on deeper tones)    | build                     | lightness up and colour down vs own baseline             |
-| Dryness and flaking                          | train-sim                 |                                                          |
-| Fine lines (forehead, eyes)                  | train-label               | wrinkle datasets (CC BY)                                 |
-| Lips dryness                                 | build                     | texture inside the lips outline                          |
-| Makeup and your skin                         | build                     | readings after Makeup Day vs bare days                   |
-| Makeup left on overnight                     | context                   | Makeup Day removal check-in                              |
-| Under-eye puffiness                          | own-data                  | needs depth or side light                                |
-| Sun exposure effect                          | build                     | pigment trend with sunscreen use from the routine        |
-| Shade and undertone                          | live                      | ITA and hue angle                                        |
+| Indicator                                    | Status                     | Signal                                                   |
+| -------------------------------------------- | -------------------------- | -------------------------------------------------------- |
+| Redness, overall                             | live                       | trained redness model (v2)                               |
+| Redness by zone (forehead, cheeks, chin)     | live                       | face zones                                               |
+| Redness on the nose                          | live                       | nose zone from face landmarks                            |
+| Dark circles                                 | live (provisional scale)   | under-eye vs own cheekbone lightness (fair across tones) |
+| Pigmentation, melasma, dark spots            | live (formula), train-sim  | pigment map, by zone                                     |
+| Even tone                                    | live                       | hue variance                                             |
+| Breakouts (count and where)                  | train-sim, train-label     | acne datasets (CC BY)                                    |
+| Texture and pores                            | live (trained model, v2.7) | v7 skin-surface model on face skin patches               |
+| Shine and skin type (oily, combination, dry) | live (provisional)         | T-zone shine vs cheek shine                              |
+| Ashy skin (grey dry cast on deeper tones)    | build                      | lightness up and colour down vs own baseline             |
+| Dryness and flaking                          | train-sim                  |                                                          |
+| Fine lines (forehead, eyes)                  | train-label                | wrinkle datasets (CC BY)                                 |
+| Lips dryness                                 | build                      | texture inside the lips outline                          |
+| Makeup and your skin                         | build                      | readings after Makeup Day vs bare days                   |
+| Makeup left on overnight                     | context                    | Makeup Day removal check-in                              |
+| Under-eye puffiness                          | own-data                   | needs depth or side light                                |
+| Sun exposure effect                          | build                      | pigment trend with sunscreen use from the routine        |
+| Shade and undertone                          | live                       | ITA and hue angle                                        |
 
 ## Hair
 

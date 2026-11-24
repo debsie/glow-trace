@@ -7,6 +7,7 @@ import type { Detections } from "./detections";
 import { findFace, findHairMask, findNails, measureHairLength } from "./guides";
 import { loadImageData, MAX_DIM, PHOTO_DIM } from "./image";
 import { hairTextureSignalFast } from "./hair-model";
+import { skinTextureSignalFast, TEXTURE_PHOTO_DIM } from "./skin-surface-model";
 import { analyzeBiomarkers } from "./kernel";
 import { nailYellowingSignalFast } from "./nails-model";
 import { cropTile } from "./nail-tiles";
@@ -17,6 +18,22 @@ import type { BiomarkerReport } from "./types";
 /** Nails are small, so they are found on a larger copy of the photo. */
 const NAIL_DETECT_DIM = 1280;
 const NAIL_TILE_PX = 128;
+
+type FoundFace = NonNullable<Awaited<ReturnType<typeof findFace>>>;
+
+/**
+ * Skin texture from the trained model (kernel v2.7), read from a larger copy of the photo so an
+ * upright selfie's face still gives enough skin patches. Null falls back to the v1.1 formula.
+ */
+const textureOf = async (photo: Blob, face: FoundFace): Promise<number | null> => {
+  try {
+    const big = await loadImageData(photo, TEXTURE_PHOTO_DIM);
+    const skin = face.skinAt(big.width, big.height);
+    return skin ? await skinTextureSignalFast(big, skin) : null;
+  } catch {
+    return null;
+  }
+};
 
 export type NailReading = { finger: Finger; report: BiomarkerReport };
 export type ShotAnalysis = ShotResult & {
@@ -152,7 +169,10 @@ export const analyseShot = async (
             mask,
             category === "hair"
               ? { hairTexture: await hairTextureSignalFast(pixels, mask) }
-              : { faceAreas: face?.areasAt(pixels.width, pixels.height) ?? null },
+              : {
+                  faceAreas: face?.areasAt(pixels.width, pixels.height) ?? null,
+                  skinTexture: face ? await textureOf(photo, face) : null,
+                },
           ),
           check,
         ),
