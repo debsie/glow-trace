@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BookOpen,
+  CalendarDays,
+  Tag,
   ClipboardCheck,
   Library,
   LogOut,
@@ -60,7 +62,11 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Studio",
-    items: [{ to: "/pro/clients", label: "Clients", icon: Users, mobile: true }],
+    items: [
+      { to: "/pro/clients", label: "Clients", icon: Users, mobile: true },
+      { to: "/pro/bookings", label: "Bookings", icon: CalendarDays },
+      { to: "/pro/prices", label: "Price list", icon: Tag },
+    ],
   },
 ];
 

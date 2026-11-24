@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { MakeupPrepPanel } from "@/components/makeup/makeup-prep-panel";
 import { DEFAULT_PROFILE, recoverySteps, removalSteps } from "@/lib/makeup-day";
-import { PageHeader, PrimaryButton } from "@/components/ui/bits";
+import { BUTTON_GHOST, PageHeader, PrimaryButton } from "@/components/ui/bits";
+import { MessageCircle } from "lucide-react";
+import { briefText, whatsappTo } from "@/lib/studio";
 import { useAppState } from "@/context/app-state";
 import { findingsFor } from "@/lib/agent/agent";
 import { longDate } from "@/lib/progress";
@@ -32,7 +34,29 @@ function ClientBrief() {
           title="Client brief"
           subtitle="Print this page or choose Save as PDF in the print dialog."
         />
-        <PrimaryButton onClick={() => window.print()}>Print or save as PDF</PrimaryButton>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={whatsappTo(
+              client.contact_info,
+              briefText({
+                client: client.client_name,
+                artist: profile.display_name || "your artist",
+                occasion: look?.occasion,
+                focus: attention.slice(0, 3).map((finding) => finding.label.toLowerCase()),
+                prep: [
+                  ...(look?.skin_prep ?? []).slice(0, 4),
+                  ...attention.slice(0, 2).map((finding) => finding.habit),
+                ],
+              }),
+            )}
+            target="_blank"
+            rel="noreferrer"
+            className={BUTTON_GHOST}
+          >
+            <MessageCircle className="h-5 w-5" aria-hidden="true" /> Send on WhatsApp
+          </a>
+          <PrimaryButton onClick={() => window.print()}>Print or save as PDF</PrimaryButton>
+        </div>
       </div>
 
       <article className="surface space-y-5 p-6 print:border-0 print:p-0">

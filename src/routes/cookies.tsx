@@ -67,6 +67,12 @@ const ITEMS: Item[] = [
     kept: "Until you take them off your shelf or clear this site's data",
   },
   {
+    name: "MUA Studio price list and bookings",
+    where: "Browser local storage (glowtrace:studio-prices:v1, glowtrace:studio-bookings:v1)",
+    why: "Your services and prices, and your bookings with their reminder status. Calendar files you export are made on this device.",
+    kept: "Until you delete them or clear this site's data",
+  },
+  {
     name: "Offline copy of the app",
     where: "Browser cache storage (glowtrace-v1)",
     why: "Lets the app open and scan without a connection. Holds app pages and files, nothing about you.",

@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge, PageHeader, PrimaryButton, SectionCard, StatusBadge } from "@/components/ui/bits";
+import { ClientGallery } from "@/components/studio/client-gallery";
 import { useAppState } from "@/context/app-state";
 import { scanScore } from "@/lib/beauty";
 
@@ -103,6 +104,10 @@ function ClientDetail() {
           <p className="text-sm text-muted-foreground">{client.notes}</p>
         </SectionCard>
       )}
+
+      <SectionCard title="Photo gallery">
+        <ClientGallery scans={clientScans} />
+      </SectionCard>
 
       <div className="grid gap-3 lg:grid-cols-2">
         <SectionCard title="Past scans">
