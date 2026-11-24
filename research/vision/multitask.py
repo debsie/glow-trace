@@ -590,6 +590,9 @@ def load_labels(folder):
     images = []
     for npz in sorted(glob.glob(os.path.join(folder, "**", "label_patches*.npz"), recursive=True)):
         data = np.load(npz)
+        # Texture learns from smoothness rounds only (older files have no attribute: smoothness).
+        if "attribute" in data and str(data["attribute"]) != "smoothness":
+            continue
         sid = str(data["set_id"])
         if sid in sets:
             continue
