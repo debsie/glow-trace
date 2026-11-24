@@ -54,3 +54,12 @@ shrunk-photo scale. `--patches` (`train_glowtrace_v5_kaggle.ipynb`) changes four
   smoothing gives a negative label and every effect shares one unit.
 - An anchor term (a single photo's reading tracks its own fine contrast) and a ranking term (every
   clear change points the right way), so readings mean something on one photo, not only as changes.
+
+## Labelling rounds
+
+Each round of "which is smoother" answers has its own `label_patches*.npz` (set id = hash of the
+pixels) and answer files; training reads every round in the `--labels` folder and joins answers to
+their own round by set id. Round 1: 457 Google SCIN close-ups (many show rashes, so 44% were "can't
+tell"). Round 2: face skin from Unsplash Lite portraits and the consented team photos, cut by the
+app's own face guide and `skinPatches` (wide shots cropped around the face first), sorted into ITA
+bands, with dark patches shown brighter on the page only (`--lift`).
