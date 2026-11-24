@@ -93,6 +93,11 @@ see them. We use them only to train and test Glowtrace's analysis. They are kept
 most. Withdrawing deletes every photo you shared; deleting your account does too. Our legal basis
 is your explicit consent, which you can withdraw at any time.
 
+The optional lighting challenge works the same way: you take three selfies (daylight, indoor light
+and dim light) and choose whether to share them. Each shared photo also records which of the three
+lights it was taken in and a random set number linking the three, so the analysis can learn how the
+same skin looks under different light. No readings are attached to these photos.
+
 ## 3. Why we use your information, and our legal grounds
 
 | Purpose                                                                     | Legal ground (GDPR / POPIA)                       |

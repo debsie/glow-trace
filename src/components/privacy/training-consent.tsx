@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { GhostButton, PrimaryButton, SectionCard } from "@/components/ui/bits";
@@ -48,6 +49,12 @@ export const TrainingConsent = () => {
               You're helping. {status.shared} {status.shared === 1 ? "photo" : "photos"} shared so
               far. Thank you.
             </p>
+            <Link
+              to="/lighting-challenge"
+              className="inline-flex min-h-[50px] items-center font-semibold text-primary hover:underline"
+            >
+              Take the lighting challenge: three selfies, three lights
+            </Link>
             <GhostButton
               onClick={() => {
                 if (busy) return;

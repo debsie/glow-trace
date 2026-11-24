@@ -17,6 +17,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as GlowlapseRouteImport } from './routes/glowlapse'
 import { Route as IngredientsRouteImport } from './routes/ingredients'
+import { Route as LightingChallengeRouteImport } from './routes/lighting-challenge'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MakeupArtistAppRouteImport } from './routes/makeup-artist-app'
 import { Route as MakeupDayRouteImport } from './routes/makeup-day'
@@ -83,6 +84,11 @@ const GlowlapseRoute = GlowlapseRouteImport.update({
 const IngredientsRoute = IngredientsRouteImport.update({
   id: '/ingredients',
   path: '/ingredients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LightingChallengeRoute = LightingChallengeRouteImport.update({
+  id: '/lighting-challenge',
+  path: '/lighting-challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -230,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/cookies': typeof CookiesRoute
   '/glowlapse': typeof GlowlapseRoute
   '/ingredients': typeof IngredientsRoute
+  '/lighting-challenge': typeof LightingChallengeRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/makeup-day': typeof MakeupDayRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/glowlapse': typeof GlowlapseRoute
   '/ingredients': typeof IngredientsRoute
+  '/lighting-challenge': typeof LightingChallengeRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/makeup-day': typeof MakeupDayRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/cookies': typeof CookiesRoute
   '/glowlapse': typeof GlowlapseRoute
   '/ingredients': typeof IngredientsRoute
+  '/lighting-challenge': typeof LightingChallengeRoute
   '/login': typeof LoginRoute
   '/makeup-artist-app': typeof MakeupArtistAppRoute
   '/makeup-day': typeof MakeupDayRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/glowlapse'
     | '/ingredients'
+    | '/lighting-challenge'
     | '/login'
     | '/makeup-artist-app'
     | '/makeup-day'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/glowlapse'
     | '/ingredients'
+    | '/lighting-challenge'
     | '/login'
     | '/makeup-artist-app'
     | '/makeup-day'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/glowlapse'
     | '/ingredients'
+    | '/lighting-challenge'
     | '/login'
     | '/makeup-artist-app'
     | '/makeup-day'
@@ -452,6 +464,7 @@ export interface RootRouteChildren {
   CookiesRoute: typeof CookiesRoute
   GlowlapseRoute: typeof GlowlapseRoute
   IngredientsRoute: typeof IngredientsRoute
+  LightingChallengeRoute: typeof LightingChallengeRoute
   LoginRoute: typeof LoginRoute
   MakeupArtistAppRoute: typeof MakeupArtistAppRoute
   MakeupDayRoute: typeof MakeupDayRoute
@@ -531,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/ingredients'
       fullPath: '/ingredients'
       preLoaderRoute: typeof IngredientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lighting-challenge': {
+      id: '/lighting-challenge'
+      path: '/lighting-challenge'
+      fullPath: '/lighting-challenge'
+      preLoaderRoute: typeof LightingChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -766,6 +786,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiesRoute: CookiesRoute,
   GlowlapseRoute: GlowlapseRoute,
   IngredientsRoute: IngredientsRoute,
+  LightingChallengeRoute: LightingChallengeRoute,
   LoginRoute: LoginRoute,
   MakeupArtistAppRoute: MakeupArtistAppRoute,
   MakeupDayRoute: MakeupDayRoute,

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { KERNEL_VERSION } from "./cv/types";
+
 import { getSupabase } from "@/integrations/supabase/client";
 
 import type { ScanReport } from "./types";
@@ -98,8 +100,18 @@ const reencode = async (photo: Blob): Promise<Blob> => {
   );
 };
 
-/** Shares one photo with its readings. The database refuses it without active consent. */
-export const shareTrainingPhoto = async (photo: Blob, report: ScanReport): Promise<boolean> => {
+export type Lighting = "daylight" | "indoor" | "dim";
+
+/**
+ * Shares one photo with its readings (or none, for the lighting challenge), optionally tagged with
+ * the light it was taken in and a set id joining photos taken together. The database refuses it
+ * without active consent.
+ */
+export const shareTrainingPhoto = async (
+  photo: Blob,
+  report: ScanReport | null,
+  extra: { lighting?: Lighting; setId?: string } = {},
+): Promise<boolean> => {
   const supabase = getSupabase();
   const me = (await supabase?.auth.getSession())?.data.session?.user.id;
   if (!supabase || !me) return false;
@@ -109,12 +121,16 @@ export const shareTrainingPhoto = async (photo: Blob, report: ScanReport): Promi
     .from(BUCKET)
     .upload(path, jpeg, { contentType: "image/jpeg", upsert: false });
   if (upload.error) return false;
-  const scores = Object.fromEntries(report.metrics.map((metric) => [metric.key, metric.value]));
+  const scores = report
+    ? Object.fromEntries(report.metrics.map((metric) => [metric.key, metric.value]))
+    : {};
   const { error } = await supabase.from("training_photos").insert({
     path,
-    area: report.category,
-    kernel_version: report.kernelVersion,
+    area: report?.category ?? "skin",
+    kernel_version: report?.kernelVersion ?? KERNEL_VERSION,
     scores,
+    ...(extra.lighting ? { lighting: extra.lighting } : {}),
+    ...(extra.setId ? { set_id: extra.setId } : {}),
   });
   if (error) await supabase.storage.from(BUCKET).remove([path]);
   return !error;
