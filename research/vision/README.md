@@ -33,7 +33,9 @@ robustness tests. Skin redness must also beat the shipped redness model.
 Skin texture (v5 onwards) must also pass two real-photo gates:
 
 1. `real_photo_checks` in the training eval (held-out real patches, no simulated effects): a blur
-   lowers the reading by at least half the between-photo spread (`blur <= -0.5`), and +/-20%
+   lowers the reading by at least 70% of what it does to the measured fine detail of the same patches
+   (`blur_share_of_ideal >= 0.7`; v5 and v6 asked for `blur <= -0.5`, which even the measured detail
+   itself misses at about -0.49), and +/-20%
    exposure moves it by at most a fifth (`brightness <= 0.2`).
 2. `real_photo_gate.cjs` on this machine, through the app's own face finder, with consented photos
    of at least two people: the same blur and brightness checks, and repeat photos of one person
