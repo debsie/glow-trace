@@ -366,3 +366,30 @@ Not shipped from training v3.2 (rule: r ≥ 0.7, leak ≤ 0.3, even across tone 
   grey and blonde hair); face centring is looser vertically (selfies hold the face high).
 - Seen, not yet fixed: one hand photo (hand flat, pointing down) found no hand; ITA read -18 on a
   fair face in shade, so shade matching should ask for daylight.
+
+## v2.7 (`mojocv-v2.7.0-ts`): trained skin texture
+
+Skin texture now comes from the v7 skin-surface model (`src/lib/cv/skin-surface-model.ts`,
+`skin-surface-weights.json`, `public/models/skin-surface.onnx`) whenever the face guide finds enough
+skin; otherwise the v1.1 gradient formula is used as before.
+
+- **Model.** The `multitask.py` U-Net with a fifth input channel: luma optical density minus its 7x7
+  reflect-padded box mean, times 30 (`area-model.ts` builds it when the weights file says `detail`).
+  Trained (`train_glowtrace_v7_kaggle.ipynb`) on 16,878 real skin photos in all four ITA bands, as
+  close-up 128 px patches with measured texture labels (change in fine-scale contrast), camera
+  processing shared between both views, a blurred-copy anchor, and 169 "which is smoother" answers
+  from a professional make-up artist. Texture head only: r 0.891 (0.87-0.92 by tone band), leak
+  -0.12, blur 84% of the ideal, labeller agreement 81% (her own consistency 79%). Shine (r 0.46) and
+  breakouts (leak 0.23) are not used.
+- **Reading.** The photo is loaded at 1280 px, the face-guide skin mask is taken at that size, the
+  photo is scaled (never enlarged, area-averaged) so the skin is about 360 px wide, and the 128 px
+  tiles that are at least 60% skin (up to 12) are read; their mean is the signal. Fewer than two
+  tiles falls back to the formula. Fast path: ONNX Runtime Web per tile, about 0.5-1.2 s a photo.
+- **Score.** `texture = clamp(signal / 0.1 * 100)`; real selfies of three adults read 37-56,
+  the same range the v1.1 formula gave.
+- **Real-photo gate** (`research/vision/real_photo_gate.cjs`, consented photos on the developer's
+  machine): blur 72% of the measured-detail effect (pass >= 70%), brightness +/-20% moves it 0.07
+  of the between-person spread (pass <= 0.2), repeat photos of one person vary 0.87 against the
+  photos' own measured detail 1.23 (pass <= 1.3x). Every photo gave 4-7 tiles through the app path.
+- **Parity.** `src/test/skin-surface-model.test.ts` checks the TypeScript forward pass against
+  PyTorch's reference means to 1e-4, and that rougher skin reads higher.

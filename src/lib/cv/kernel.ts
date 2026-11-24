@@ -55,6 +55,8 @@ export const analyzeBiomarkers = (
     hairTexture?: number | null;
     nailYellowing?: number | null;
     faceAreas?: FaceAreas | null;
+    /** Skin-surface model texture over the face's skin patches (skin-surface-model.ts). */
+    skinTexture?: number | null;
   } = {},
 ): BiomarkerReport => {
   const planes = toPlanes(image);
@@ -77,7 +79,7 @@ export const analyzeBiomarkers = (
   const area = areaMask ? toPlanes(image, areaMask) : planes;
   const metrics =
     category === "skin"
-      ? analyzeSkin(area, image)
+      ? analyzeSkin(area, image, precomputed.skinTexture ?? null)
       : category === "hair"
         ? analyzeHair(area, image, areaMask, precomputed.hairTexture)
         : analyzeNails(area, precomputed.nailYellowing);

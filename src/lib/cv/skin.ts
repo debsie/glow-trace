@@ -32,10 +32,21 @@ export const erythema = (image: PixelBuffer, mask: Uint8Array | null = null): Bi
   description: "How much blood colour the skin shows, separated from skin tone and light.",
 });
 
-export const skinTexture = (planes: Planes): BiomarkerMetric => ({
+// Kernel v2.7: the trained skin-surface model's texture (training units, about 0.03-0.06 on real
+// selfies) maps to 0-100 as signal / 0.1, which keeps scores in the range the v1.1 formula gave.
+const MODEL_TEXTURE_SPAN = 0.1;
+
+/**
+ * Texture from the trained skin-surface model when the face guide found enough skin (`signal`
+ * from skin-surface-model.ts), otherwise the v1.1 gradient formula on the whole area.
+ */
+export const skinTexture = (planes: Planes, signal: number | null = null): BiomarkerMetric => ({
   key: "texture",
   label: "Texture Coarseness",
-  value: score((gradientEnergy(planes) / TEXTURE_SPAN) * 100),
+  value:
+    signal === null
+      ? score((gradientEnergy(planes) / TEXTURE_SPAN) * 100)
+      : score((signal / MODEL_TEXTURE_SPAN) * 100),
   higherMeans: "more",
   description: "How uneven the surface looks.",
 });
@@ -83,9 +94,13 @@ export const skinTone = (planes: Planes): { ita: number; hueAngle: number } | nu
   return { ita: round1(median(ita)), hueAngle: round1(median(hue)) };
 };
 
-export const analyzeSkin = (planes: Planes, image: PixelBuffer): BiomarkerMetric[] => [
+export const analyzeSkin = (
+  planes: Planes,
+  image: PixelBuffer,
+  textureSignal: number | null = null,
+): BiomarkerMetric[] => [
   erythema(image, planes.mask),
-  skinTexture(planes),
+  skinTexture(planes, textureSignal),
   hydration(planes),
   discoloration(planes),
 ];
