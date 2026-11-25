@@ -40,6 +40,23 @@ Every indicator shown with a number must pass all that apply:
 | Nail spots, ridges                             | formulas                                              | Documented                                         | Not run                                                       | Not run                                                 | No labels                             | Not yet               | Preview at launch unless checked     |
 | Polish check (gate)                            | colour rule (v2.8)                                    | 1 in 750 false alarms; colours caught; nude missed | n/a                                                           | n/a                                                     | n/a                                   | Tested on many tones  | Shippable                            |
 
+## Skin-tone bands (ITA): redness against the labeller, kernel v2.12
+
+| Band         | Patches | Clear pairs | Agrees       |
+| ------------ | ------- | ----------- | ------------ |
+| 0 (lightest) | 79      | 28          | 24 (86%)     |
+| 1            | 22      | 39          | 37 (95%)     |
+| 2            | 32      | 27          | 20 (74%)     |
+| 3 (deepest)  | 101     | 42          | **28 (67%)** |
+
+Deep skin is under the bar, and the labeller skipped half its pairs. Tuning the tone term (powers 0
+to 1.5) moves band 3 only between 27 and 30 of 42, so the limit is the evidence, not the formula:
+the public deep-skin patches are often dim or low contrast. Fix: a deep-skin labelling round from
+well-lit selfies (lighting challenge, bands 2 and 3 first), ideally with a second labeller who
+works with deep skin every day. ITA bands describe skin colour, not origin: North African and
+Middle Eastern skin falls mostly in bands 1-2, sub-Saharan skin mostly in bands 2-3, and every
+group spans more than one band.
+
 ## What's left, in order
 
 1. **More real people for the real-photo set**: at least 5 per skin-tone band, each with three

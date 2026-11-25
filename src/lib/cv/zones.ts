@@ -90,11 +90,21 @@ const lightness = (image: PixelBuffer, mask: Uint8Array) => {
   return { mean: n ? sum / n : 0, n, values };
 };
 
-// Dark circles: how much darker the skin just under the lid is than the cheekbone just below it,
-// in L* units. Measured on the reference selfie: L* climbs from about 60 at the lid to about 82 on
-// the lit cheekbone, so ordinary shading already gives about 15. Span 30 puts that near 50.
+/** Mean linear luminance (CIE Y, 0-1) from L* values. */
+const luminance = (values: number[]) => {
+  if (values.length === 0) return 0;
+  let sum = 0;
+  for (const L of values) sum += L > 8 ? ((L + 16) / 116) ** 3 : L / 903.3;
+  return sum / values.length;
+};
+
+// Dark circles (kernel v2.13): how much less light the skin just under the lid returns than the
+// cheekbone below it, as 1 - (under-eye luminance / cheek luminance). A ratio of linear luminance
+// cancels the photo's exposure, which the v1 L* difference did not (it moved 6.4 points under
+// +/-20% exposure on real photos, against a noise floor of 2). Ordinary shading on the reference
+// selfie (L* about 67 against 82) gives 0.4; span 0.8 keeps that near 50, as before.
 // Provisional until calibrated on real dark-circle photos: the change over time is what counts.
-const DARK_CIRCLE_SPAN = 30;
+const DARK_CIRCLE_SPAN = 0.8;
 // Shine: share of pixels at least this many L* above the zone's own median (highlights).
 const SHINE_LIFT = 12;
 // Skin type thresholds on shine share (provisional, from the reference selfie).
@@ -121,7 +131,8 @@ export const faceDetails = (image: PixelBuffer, areas: FaceAreas | null): FaceDe
   const cheek = lightness(image, merge(areas.cheekLeft, areas.cheekRight));
   const nose = lightness(image, areas.nose);
   if (under.n < 60 || cheek.n < 60 || nose.n < 60) return null;
-  const darker = Math.max(0, cheek.mean - under.mean);
+  const cheekY = luminance(cheek.values);
+  const darker = cheekY > 0 ? Math.max(0, 1 - luminance(under.values) / cheekY) : 0;
   const tZone = shineShare(nose);
   const cheeks = shineShare(cheek);
   const skinType: FaceDetails["skinType"] =

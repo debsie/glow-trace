@@ -74,6 +74,22 @@ describe("Face details", () => {
     expect(dark).toBeGreaterThan(even + 30);
   });
 
+  it("reads dark circles the same in a brighter or darker photo (v2.13)", () => {
+    const scale = (image: PixelBuffer, gain: number): PixelBuffer => {
+      const data = new Uint8ClampedArray(image.data);
+      for (let i = 0; i < data.length; i += 4) {
+        for (let c = 0; c < 3; c += 1) data[i + c] = (data[i + c] ?? 0) * gain;
+      }
+      return { ...image, data };
+    };
+    const photo = shaded(0.8, false);
+    const plain = faceDetails(photo, areas)?.darkCircles ?? NaN;
+    for (const gain of [0.8, 1.15]) {
+      const moved = faceDetails(scale(photo, gain), areas)?.darkCircles ?? NaN;
+      expect(Math.abs(moved - plain)).toBeLessThan(2);
+    }
+  });
+
   it("calls a shiny nose with matte cheeks combination skin", () => {
     expect(faceDetails(shaded(1, true), areas)?.skinType).toBe("combination");
     expect(faceDetails(shaded(1, false), areas)?.skinType).toBe("balanced");
