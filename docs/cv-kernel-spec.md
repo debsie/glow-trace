@@ -480,3 +480,13 @@ now `cv/redness.ts`:
   removed; its research stays in `research/redness/`.
 - Tests: `redness.test.ts`; `robustness.test.ts` (light changes within the redness noise floor of
   8, equal blood within 10 points across tones) unchanged and passing.
+
+## v2.13 (`mojocv-v2.13.0-ts`): dark circles as a luminance ratio
+
+Dark circles were the cheek's mean L* minus the under-eye's, over a span of 30. On real photos a
++/-20% exposure change moved that 6.4 points against a noise floor of 2, because L* is not
+proportional to light. Now `darker = 1 - Y(under-eye) / Y(cheek)` with Y the mean linear luminance
+(CIE Y from each pixel's L*), over a span of 0.8: an exposure gain multiplies both and cancels.
+Still read against the person's own cheek, so no absolute colour or tone enters. Ordinary shading
+on the reference selfie gives about 0.4, which scores near 50 as before. Test: `zones.test.ts`
+(0.8x and 1.15x exposure move the reading by less than 2 points).

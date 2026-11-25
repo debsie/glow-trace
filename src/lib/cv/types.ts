@@ -2,7 +2,7 @@ import type { LengthBand } from "../hair-length";
 import type { ScanCategory } from "../types";
 
 /** Bumped whenever a formula or calibration constant changes, so stored reports stay traceable. */
-export const KERNEL_VERSION = "mojocv-v2.12.0-ts";
+export const KERNEL_VERSION = "mojocv-v2.13.0-ts";
 
 export type { ScanCategory };
 
