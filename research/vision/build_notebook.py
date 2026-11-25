@@ -69,10 +69,35 @@ if os.environ.get('ROBOFLOW_API_KEY') and not os.environ.get('GLOWTRACE_SKIP_ROB
         notes.append('Could not reach Roboflow to check the key; carrying on.')
 if not glob.glob(f'{ROOT}/input/**/glowtrace_team', recursive=True):
     notes.append('Team photos not attached (Input > Your Datasets > glowtrace-team). Training continues without them.')
+# Debbie's texture rounds must all be here: round 1 (SCIN) and round 2 (face skin). Training stops
+# rather than quietly run without one (v9 and v10 both ran on round 1 alone).
+REQUIRED_ROUNDS = {'a326117d6bc85876': 'round 1', '6aba2d5e473d6e3f': 'round 2'}
+# Gather every labels file from anywhere in the inputs (a second dataset, a subfolder from a zip)
+# into one folder, so no round is missed because it sits in a different place.
 label_npz = glob.glob(f'{ROOT}/input/**/label_patches*.npz', recursive=True)
-LABELS = os.path.dirname(label_npz[0]) if label_npz else None
-if LABELS:
+LABELS = None
+if label_npz:
     import numpy as np
+    LABELS = os.path.join(os.environ.get('GLOWTRACE_WORKDIR', f'{ROOT}/working'), 'labels')
+    shutil.rmtree(LABELS, ignore_errors=True)
+    os.makedirs(LABELS)
+    # One patch file and one answers file per round, even if a round is attached twice.
+    by_round = {}
+    for path in sorted(label_npz):
+        by_round.setdefault(str(np.load(path)['set_id']), path)
+    for sid, path in by_round.items():
+        shutil.copy(path, f'{LABELS}/label_patches_{sid}.npz')
+    best = {}
+    for path in sorted(glob.glob(f'{ROOT}/input/**/glowtrace_labels_*.json', recursive=True)):
+        try:
+            data = json.load(open(path))
+        except Exception:
+            continue
+        sid, n = data.get('setId'), len(data.get('answers', []))
+        if sid in by_round and n > best.get(sid, (None, -1))[1]:
+            best[sid] = (path, n)
+    for sid, (path, _) in best.items():
+        shutil.copy(path, f'{LABELS}/glowtrace_labels_{sid}.json')
     # Every labelling round has its own patch file; answers count only for a round that's attached.
     set_ids = {str(np.load(path)['set_id']) for path in glob.glob(f'{LABELS}/**/label_patches*.npz', recursive=True)}
     per_set = {}
@@ -84,13 +109,16 @@ if LABELS:
         if isinstance(data, dict) and data.get('setId') in set_ids:
             per_set[data['setId']] = per_set.get(data['setId'], 0) + sum(a.get('choice') in ('a', 'b', 'same') for a in data.get('answers', []))
     answers = sum(per_set.values())
+    missing = [name for sid, name in REQUIRED_ROUNDS.items() if per_set.get(sid, 0) < 50]
+    if missing:
+        problems.append("Debbie's labels " + ' and '.join(missing) + ' not found: in Input, remove glowtrace-labels and add it again (its newest version), with all 4 files: label_patches.npz, label_patches_round2.npz and both glowtrace_labels_*.json.')
     if answers < 50:
         notes.append(f"Debbie's labels attached but only {answers} usable answers: training without them.")
         LABELS = None
     else:
         notes.append(f"Debbie's labels: {answers} answers across {len(per_set)} rounds " + json.dumps(per_set) + ".")
 else:
-    notes.append("Debbie's labels not attached: training without them (fine; add glowtrace-labels when ready).")
+    problems.append("Debbie's labels not attached: Input > Add Input > Your Datasets > glowtrace-labels (newest version, all 4 files).")
 for n in notes: print('note:', n)
 if problems:
     raise SystemExit('Fix these, then Save Version again:\\n- ' + '\\n- '.join(problems))
