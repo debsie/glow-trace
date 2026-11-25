@@ -75,3 +75,49 @@ bands, with dark patches shown brighter on the page only (`--lift`).
   from the hair guide like every other hair photo.
 - **Not used:** LaPa (non-commercial licence), Fitzpatrick17k (CC BY-NC-SA 3.0), the Kaggle
   "skintone-dataset" (licence not confirmed).
+
+## Labelling round 3: redness on FairFace, weighted to deep skin
+
+Round 2's redness answers agreed with the app on only 67% of deep-skin pairs, and the labeller
+skipped half of them: the deep-skin patches were often dim. Round 3 (set `9cf2b47d7174bbc5`):
+
+1. 120 FairFace faces per group (CC BY 4.0, Hugging Face parquet, 0.25 padding), kept out of
+   the repo.
+2. `face_patches.cjs`: one patch per face through the app's own face guide, the 20% square
+   with a 4% margin that is 98% or more skin, enlarged to 128 px (646 of 840 faces).
+3. `pick_patches.py`: well lit, little clipping, no strong edges; 45 / 41 / 75 / 75 by band.
+4. `make_label_page.py --from-folder`, then `make_label_page.py ... --attribute redness`.
+
+## Roboflow "skin tone" dataset (aman-x15w6): owner's decision to train on it
+
+Listed as CC BY 4.0 (credit: "skin tone" by Aman, Roboflow Universe), but the page names no
+source for its photos and no consent; samples look like stock or editorial photos. The CC BY
+licence only holds if the uploader had the rights. The owner chose to train on it for its range
+of face angles. `fetch_datasets.py` downloads the owner's export (1,660 original photos; the 440
+"augmented_" copies, all in "dark", are dropped) into `data/skin/roboflow_skintone` and credits it.
+No photos are committed. If a rights holder objects: set `GLOWTRACE_NO_ROBOFLOW_SKINTONE=1`, retrain
+and ship the new weights. The Google Drive link must stay viewable by anyone with it for the
+training notebook to download it.
+
+Children are never trained on (Glowtrace is adults only): all 1,660 originals were checked by eye
+on numbered contact sheets, and 174 photos of children or people who may be under 18 are listed in
+`roboflow_skintone_exclude.txt` (when in doubt, excluded). The fetcher skips them, and skips the
+whole set if that list is missing. 1,486 adult photos remain (610 light, 624 fair, 252 dark).
+
+## Lighting-challenge analysis (`lighting_sets.cjs`)
+
+Turns lighting-challenge photos into release checks 2, 3 and 5 for every skin reading, through the
+app's own pipeline, on this machine only:
+
+1. Export the rows: in the Supabase SQL editor, run
+   `select path, set_id, lighting from training_photos where set_id is not null order by created_at;`
+   and download the result as JSON.
+2. Download the matching files from the `training-photos` storage bucket into a local folder, and
+   add each local file name to its row as `"file"` (the owner does this; photos never go in the repo).
+3. With the dev server on 127.0.0.1:8091: `node research/vision/lighting_sets.cjs manifest.json`.
+
+It reports, per reading: `light` (range across daylight, indoor and dim within one set), `floor`
+(measured noise floor, 2 x the standard deviation of same-person, same-light repeats), the
+`current` floor the trend uses, and both by skin-tone band, plus `coverage` (people per band; the
+bar wants 5 each). A set is one person in three lights, so same-light repeats need a person to do
+the challenge twice, a few minutes apart: ask testers to.

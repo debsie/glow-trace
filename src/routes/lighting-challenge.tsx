@@ -6,7 +6,7 @@ import { LineArt } from "@/components/art/line-art";
 import type { Motif } from "@/components/art/line-art";
 import { TrainingConsent } from "@/components/privacy/training-consent";
 import { Reveal } from "@/components/motion/reveal";
-import { BUTTON_PRIMARY } from "@/components/ui/bits";
+import { BUTTON_GHOST, BUTTON_PRIMARY } from "@/components/ui/bits";
 import { useAuth } from "@/context/auth";
 import { centreLook } from "@/lib/cv/consistency";
 import { loadImageData } from "@/lib/cv/image";
@@ -94,6 +94,15 @@ function LightingChallenge() {
       [id]: { blob: file, url: URL.createObjectURL(file), luma },
     }));
     setState("idle");
+  };
+
+  // A second round minutes later, in the same three spots, gives same-person repeats: how much
+  // readings move on their own (research/vision/lighting_sets.cjs).
+  const again = () => {
+    for (const shot of Object.values(shots)) if (shot) URL.revokeObjectURL(shot.url);
+    setShots({});
+    setState("idle");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const ready = STEPS.every((step) => shots[step.id]);
@@ -253,6 +262,17 @@ function LightingChallenge() {
                 deleted if you stop sharing.
               </p>
             </div>
+            {state === "sent" && (
+              <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                <p className="text-sm text-muted-foreground sm:max-w-xs sm:text-right">
+                  A second round in about five minutes, in the same three spots, shows how much
+                  readings move on their own. It helps as much as the first.
+                </p>
+                <button type="button" onClick={again} className={`${BUTTON_GHOST} shrink-0`}>
+                  Take a second round
+                </button>
+              </div>
+            )}
             {state !== "sent" && (
               <button
                 type="button"

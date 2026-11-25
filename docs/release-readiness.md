@@ -49,7 +49,13 @@ Every indicator shown with a number must pass all that apply:
 | 2            | 32      | 27          | 20 (74%)     |
 | 3 (deepest)  | 101     | 42          | **28 (67%)** |
 
-Deep skin is under the bar, and the labeller skipped half its pairs. Tuning the tone term (powers 0
+Round 3 (FairFace, weighted to deep skin, set `9cf2b47d7174bbc5`): 139 clear pairs, repeats
+consistent 9 of 9, skips now even across bands. Both rounds together (291 pairs): 75% overall;
+by band (lightest to deepest) 81%, 85%, 79%, **65%** (79 pairs, so roughly +/-10%). Within a band
+the tone term barely changes the order (deep band 63-72% for powers 0 to 1), so it stays at 0.75,
+which evens the response to blood across tones.
+
+Round 2 alone: deep skin was under the bar, and the labeller skipped half its pairs. Tuning the tone term (powers 0
 to 1.5) moves band 3 only between 27 and 30 of 42, so the limit is the evidence, not the formula:
 the public deep-skin patches are often dim or low contrast. Fix: a deep-skin labelling round from
 well-lit selfies (lighting challenge, bands 2 and 3 first), ideally with a second labeller who
