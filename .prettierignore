@@ -12,3 +12,4 @@ public/mediapipe
 src/lib/cv/hair-weights.json
 public/ocr
 public/data/places.json
+src/lib/cv/skin-surface-v11-weights.json
