@@ -411,12 +411,16 @@ const CLIPPED = 250;
  * Red and blue gains that move the photo's highlights to daylight, with green (and so brightness)
  * unchanged. A warm or cool light is a per-channel gain, so this cancels it exactly within the cap.
  */
-export const balanceGains = (image: PixelBuffer): { r: number; b: number } => {
+export const balanceGains = (
+  image: PixelBuffer,
+  mask: Uint8Array | null = null,
+): { r: number; b: number } => {
   const { data } = image;
   // Highlights are chosen by green alone: a warm or cool light scales red and blue, never green,
   // so the same pixels are picked whatever the light, even where red or blue clips.
   const greens: number[] = [];
   for (let i = 1; i < data.length; i += 4) {
+    if (mask && mask[(i - 1) / 4] !== 1) continue;
     const g = data[i] ?? 0;
     if (g < CLIPPED) greens.push(g);
   }
@@ -426,6 +430,7 @@ export const balanceGains = (image: PixelBuffer): { r: number; b: number } => {
   let sg = 0;
   let sb = 0;
   for (let i = 0; i < data.length; i += 4) {
+    if (mask && mask[i / 4] !== 1) continue;
     const g = data[i + 1] ?? 0;
     if (g >= CLIPPED || g < threshold) continue;
     sr += data[i] ?? 0;
@@ -440,8 +445,8 @@ export const balanceGains = (image: PixelBuffer): { r: number; b: number } => {
 };
 
 /** A copy of the photo as if taken in daylight-coloured light (see balanceGains). */
-export const balanceLight = (image: PixelBuffer): PixelBuffer => {
-  const { r, b } = balanceGains(image);
+export const balanceLight = (image: PixelBuffer, mask: Uint8Array | null = null): PixelBuffer => {
+  const { r, b } = balanceGains(image, mask);
   if (Math.abs(r - 1) < 1e-3 && Math.abs(b - 1) < 1e-3) return image;
   const data = new Uint8ClampedArray(image.data);
   for (let i = 0; i < data.length; i += 4) {
