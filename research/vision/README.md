@@ -75,3 +75,22 @@ bands, with dark patches shown brighter on the page only (`--lift`).
   from the hair guide like every other hair photo.
 - **Not used:** LaPa (non-commercial licence), Fitzpatrick17k (CC BY-NC-SA 3.0), the Kaggle
   "skintone-dataset" (licence not confirmed).
+
+## Labelling round 3: redness on FairFace, weighted to deep skin
+
+Round 2's redness answers agreed with the app on only 67% of deep-skin pairs, and the labeller
+skipped half of them: the deep-skin patches were often dim. Round 3 (set `9cf2b47d7174bbc5`):
+
+1. 120 FairFace faces per group (CC BY 4.0, Hugging Face parquet, 0.25 padding), kept out of
+   the repo.
+2. `face_patches.cjs`: one patch per face through the app's own face guide, the 20% square
+   with a 4% margin that is 98% or more skin, enlarged to 128 px (646 of 840 faces).
+3. `pick_patches.py`: well lit, little clipping, no strong edges; 45 / 41 / 75 / 75 by band.
+4. `make_label_page.py --from-folder`, then `make_label_page.py ... --attribute redness`.
+
+## Roboflow "skin tone" dataset (aman-x15w6): owner's decision
+
+Listed as CC BY 4.0, but the page names no source for its 2,100 images and no consent; samples
+look like stock or editorial photos. The owner chose to use it for its side and three-quarter
+profiles. Use is limited to local testing of the face guide on unusual angles: no training, no
+images or weights from it in the app or the repo. Revisit if the source is found.
