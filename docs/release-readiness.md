@@ -57,6 +57,14 @@ works with deep skin every day. ITA bands describe skin colour, not origin: Nort
 Middle Eastern skin falls mostly in bands 1-2, sub-Saharan skin mostly in bands 2-3, and every
 group spans more than one band.
 
+## Tried and rejected
+
+- **Even tone as a colour-ratio spread** (log red/green and blue/green over 3 px blocks): light
+  colour 2.9 -> 0.9, but exposure 2.0 -> 3.6 and same person 10.1 -> 15.1 on the real-photo gate,
+  so reverted. Brightening and darkening change which blocks count (clipping and near-black
+  cut-offs), and its 0-100 mapping is steeper than the old one, which often read near 0. The noise
+  floor of 2 for formula readings was never measured; the lighting-challenge sets will measure it.
+
 ## What's left, in order
 
 1. **More real people for the real-photo set**: at least 5 per skin-tone band, each with three
