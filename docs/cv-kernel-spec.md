@@ -490,3 +490,20 @@ proportional to light. Now `darker = 1 - Y(under-eye) / Y(cheek)` with Y the mea
 Still read against the person's own cheek, so no absolute colour or tone enters. Ordinary shading
 on the reference selfie gives about 0.4, which scores near 50 as before. Test: `zones.test.ts`
 (0.8x and 1.15x exposure move the reading by less than 2 points).
+
+## v2.14 (`mojocv-v2.14.0-ts`): skin texture from the v11 model alone
+
+v11 replaces v7 and v8 averaged (`skin-surface-v11-weights.json`, `public/models/skin-surface-v11.onnx`;
+new file names so a cached older model is never paired with new weights). Trained on Kaggle with
+17,679 skin photos (FairFace, Unsplash Lite, the Roboflow sets including the Roboflow skin tone set
+with children excluded, SCIN, team photos) and both labelling rounds (426 answers).
+
+- Training evaluation: texture r 0.919 (0.913, 0.930, 0.935, 0.916 by tone band), blur 94% of the
+  ideal, brightness 0.10 of the spread, labeller agreement 67.6% of 82 held-out pairs (her own
+  repeat consistency 62.9%, so 70% cannot be confirmed with these labels).
+- Real-photo gate (`real_photo_gate.cjs`, 6 photos, 4 people): blur pass, brightness 0.039, same
+  person 1.072, all better than v7 + v8 (0.07, 1.32); v7 + v11 averaged 0.068 and 1.27.
+- Raw signal on real selfies 0.035-0.063, the same range as v7, so `MODEL_TEXTURE_SPAN` (0.1) and
+  the score mapping are unchanged. Texture stays a Preview reading until the lighting-challenge
+  sets and a fresh labelling round confirm it.
+- Parity: the TypeScript forward pass matches PyTorch on the reference canvas (`skin-surface-model.test.ts`).

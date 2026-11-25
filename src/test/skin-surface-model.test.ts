@@ -4,8 +4,6 @@ import {
   skinPatches,
   skinSurfaceHeadMeans,
   skinSurfaceParity,
-  skinSurfaceV8HeadMeans,
-  skinSurfaceV8Parity,
   skinTextureSignal,
 } from "@/lib/cv/skin-surface-model";
 import type { PixelBuffer } from "@/lib/cv/types";
@@ -41,18 +39,10 @@ const skinImage = (rough: number, size = 300, seed = 11, height = size): PixelBu
 
 const fullMask = (size = 300) => new Uint8Array(size * size).fill(1);
 
-describe("skin-surface model (kernel v2.7)", () => {
+describe("skin-surface model (kernel v2.14, v11)", () => {
   it("reads exactly what PyTorch read on the reference canvas (5-channel parity)", () => {
     const want = skinSurfaceParity();
     const got = skinSurfaceHeadMeans(formulaCanvas());
-    for (const head of Object.keys(want)) {
-      expect(Math.abs((got[head] ?? Number.NaN) - (want[head] ?? 0))).toBeLessThan(1e-4);
-    }
-  });
-
-  it("reads exactly what PyTorch read for the v8 model too", () => {
-    const want = skinSurfaceV8Parity();
-    const got = skinSurfaceV8HeadMeans(formulaCanvas());
     for (const head of Object.keys(want)) {
       expect(Math.abs((got[head] ?? Number.NaN) - (want[head] ?? 0))).toBeLessThan(1e-4);
     }
