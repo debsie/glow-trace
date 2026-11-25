@@ -276,6 +276,46 @@ UNSPLASH_LITE = os.environ.get("GLOWTRACE_UNSPLASH_ZIP", "https://unsplash.com/d
 UNSPLASH_WORDS = {"selfie", "face", "headshot", "portrait", "skin", "close up", "closeup"}
 
 
+# Roboflow Universe "skin tone" by Aman (aman-x15w6/skin-tone-9drvk-n4aym), listed as CC BY 4.0, exported
+# by the owner (v1, folder structure) to Google Drive. The page names no source or consent for its
+# photos; the owner chose to train on it (research/vision/README.md). To remove it from training, set
+# GLOWTRACE_NO_ROBOFLOW_SKINTONE=1 (or empty this URL) and retrain.
+ROBOFLOW_SKINTONE_ZIP = "https://drive.usercontent.google.com/download?id=1D4alsHW0k3DGlkKO0Ytoe2JJDzdPevX6&export=download&confirm=t"
+
+
+def roboflow_skintone(credits):
+    """Faces at many angles (front, three-quarter, side) labelled light / fair / dark. Original photos
+    only: the export's "augmented_" files are flipped or altered copies (440, all in "dark")."""
+    import io
+    import zipfile
+
+    if os.environ.get("GLOWTRACE_NO_ROBOFLOW_SKINTONE") or not ROBOFLOW_SKINTONE_ZIP:
+        print("SKIP skin: Roboflow skin tone (switched off)")
+        return [c for c in credits if c.get("name") != "Roboflow skin tone (Aman)"]
+    target = os.path.join("data", "skin", "roboflow_skintone")
+    link = "https://universe.roboflow.com/aman-x15w6/skin-tone-9drvk-n4aym"
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(fetch_bytes(ROBOFLOW_SKINTONE_ZIP, timeout=1800)))
+        os.makedirs(target, exist_ok=True)
+        saved = 0
+        for name in archive.namelist():
+            base = os.path.basename(name)
+            if not base.lower().endswith((".jpg", ".jpeg", ".png")) or base.startswith("augmented"):
+                continue
+            if name.startswith("/") or ".." in name:
+                continue
+            tone = os.path.basename(os.path.dirname(name)) or "unknown"
+            open(os.path.join(target, f"{tone}_{saved:05d}{os.path.splitext(base)[1]}"), "wb").write(archive.read(name))
+            saved += 1
+        print(f"OK   skin: Roboflow skin tone ({saved} original photos, licence as listed: CC BY 4.0, source not stated)")
+        credits = [c for c in credits if c["link"] != link]
+        credits.append({"area": "skin", "name": "Roboflow skin tone (Aman)", "what": "Faces at many angles, light / fair / dark",
+                        "link": link, "licence": "CC BY 4.0 as listed by the uploader (no source stated)", "images": saved})
+    except Exception as error:
+        print(f"FAIL skin: Roboflow skin tone ({str(error)[:120]})")
+    return credits
+
+
 def unsplash_faces(credits, limit=min(1200, FETCH_LIMIT or 1200)):
     """Unsplash Lite (Unsplash Dataset Terms: commercial training for internal business use,
     never redistributed): photos tagged selfie, face, portrait, skin or close-up, 1024 px wide.
@@ -383,6 +423,7 @@ def main():
     if "skin" in areas:
         credits = fairface(credits)
         credits = unsplash_faces(credits)
+        credits = roboflow_skintone(credits)
     json.dump(credits, open(credits_path, "w"), indent=2)
     print(f"\nCredits written to {credits_path}. Check any 'not reported' licence on its page before shipping.")
 

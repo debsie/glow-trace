@@ -88,12 +88,16 @@ skipped half of them: the deep-skin patches were often dim. Round 3 (set `9cf2b4
 3. `pick_patches.py`: well lit, little clipping, no strong edges; 45 / 41 / 75 / 75 by band.
 4. `make_label_page.py --from-folder`, then `make_label_page.py ... --attribute redness`.
 
-## Roboflow "skin tone" dataset (aman-x15w6): owner's decision
+## Roboflow "skin tone" dataset (aman-x15w6): owner's decision to train on it
 
-Listed as CC BY 4.0, but the page names no source for its 2,100 images and no consent; samples
-look like stock or editorial photos. The owner chose to use it for its side and three-quarter
-profiles. Use is limited to local testing of the face guide on unusual angles: no training, no
-images or weights from it in the app or the repo. Revisit if the source is found.
+Listed as CC BY 4.0 (credit: "skin tone" by Aman, Roboflow Universe), but the page names no
+source for its photos and no consent; samples look like stock or editorial photos. The CC BY
+licence only holds if the uploader had the rights. The owner chose to train on it for its range
+of face angles. `fetch_datasets.py` downloads the owner's export (1,660 original photos; the 440
+"augmented_" copies, all in "dark", are dropped) into `data/skin/roboflow_skintone` and credits it.
+No photos are committed. If a rights holder objects: set `GLOWTRACE_NO_ROBOFLOW_SKINTONE=1`, retrain
+and ship the new weights. The Google Drive link must stay viewable by anyone with it for the
+training notebook to download it.
 
 ## Lighting-challenge analysis (`lighting_sets.cjs`)
 
