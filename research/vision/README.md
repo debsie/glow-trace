@@ -94,3 +94,21 @@ Listed as CC BY 4.0, but the page names no source for its 2,100 images and no co
 look like stock or editorial photos. The owner chose to use it for its side and three-quarter
 profiles. Use is limited to local testing of the face guide on unusual angles: no training, no
 images or weights from it in the app or the repo. Revisit if the source is found.
+
+## Lighting-challenge analysis (`lighting_sets.cjs`)
+
+Turns lighting-challenge photos into release checks 2, 3 and 5 for every skin reading, through the
+app's own pipeline, on this machine only:
+
+1. Export the rows: in the Supabase SQL editor, run
+   `select path, set_id, lighting from training_photos where set_id is not null order by created_at;`
+   and download the result as JSON.
+2. Download the matching files from the `training-photos` storage bucket into a local folder, and
+   add each local file name to its row as `"file"` (the owner does this; photos never go in the repo).
+3. With the dev server on 127.0.0.1:8091: `node research/vision/lighting_sets.cjs manifest.json`.
+
+It reports, per reading: `light` (range across daylight, indoor and dim within one set), `floor`
+(measured noise floor, 2 x the standard deviation of same-person, same-light repeats), the
+`current` floor the trend uses, and both by skin-tone band, plus `coverage` (people per band; the
+bar wants 5 each). A set is one person in three lights, so same-light repeats need a person to do
+the challenge twice, a few minutes apart: ask testers to.
