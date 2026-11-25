@@ -99,6 +99,11 @@ No photos are committed. If a rights holder objects: set `GLOWTRACE_NO_ROBOFLOW_
 and ship the new weights. The Google Drive link must stay viewable by anyone with it for the
 training notebook to download it.
 
+Children are never trained on (Glowtrace is adults only): all 1,660 originals were checked by eye
+on numbered contact sheets, and 174 photos of children or people who may be under 18 are listed in
+`roboflow_skintone_exclude.txt` (when in doubt, excluded). The fetcher skips them, and skips the
+whole set if that list is missing. 1,486 adult photos remain (610 light, 624 fair, 252 dark).
+
 ## Lighting-challenge analysis (`lighting_sets.cjs`)
 
 Turns lighting-challenge photos into release checks 2, 3 and 5 for every skin reading, through the

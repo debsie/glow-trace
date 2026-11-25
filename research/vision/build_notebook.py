@@ -164,12 +164,14 @@ print('Done: glowtrace_results_v8.zip')"""
 def main():
     multitask = open(os.path.join(HERE, "multitask.py")).read().rstrip("\n")
     fetch = open(os.path.join(HERE, "fetch_datasets.py")).read().rstrip("\n")
+    exclude = open(os.path.join(HERE, "roboflow_skintone_exclude.txt")).read().rstrip("\n")
     cells = [
         cell("markdown", INTRO),
         cell("code", PREFLIGHT),
         cell("code", SETUP),
         cell("code", "%%writefile multitask.py\n" + multitask),
         cell("code", "%%writefile fetch_datasets.py\n" + fetch),
+        cell("code", "%%writefile roboflow_skintone_exclude.txt\n" + exclude),
         cell("code", DOWNLOAD),
         cell("code", SMOKE),
         cell("code", TRAIN),

@@ -294,6 +294,13 @@ def roboflow_skintone(credits):
         return [c for c in credits if c.get("name") != "Roboflow skin tone (Aman)"]
     target = os.path.join("data", "skin", "roboflow_skintone")
     link = "https://universe.roboflow.com/aman-x15w6/skin-tone-9drvk-n4aym"
+    # Children are never used: Glowtrace is adults only (roboflow_skintone_exclude.txt, checked by eye).
+    here = os.path.dirname(os.path.abspath(__file__))
+    exclude_path = os.path.join(here, "roboflow_skintone_exclude.txt")
+    if not os.path.exists(exclude_path):
+        print("SKIP skin: Roboflow skin tone (children list missing; never train on it without)")
+        return credits
+    exclude = {line.strip() for line in open(exclude_path) if line.strip() and not line.startswith("#")}
     try:
         archive = zipfile.ZipFile(io.BytesIO(fetch_bytes(ROBOFLOW_SKINTONE_ZIP, timeout=1800)))
         os.makedirs(target, exist_ok=True)
@@ -302,12 +309,14 @@ def roboflow_skintone(credits):
             base = os.path.basename(name)
             if not base.lower().endswith((".jpg", ".jpeg", ".png")) or base.startswith("augmented"):
                 continue
+            if base in exclude:
+                continue
             if name.startswith("/") or ".." in name:
                 continue
             tone = os.path.basename(os.path.dirname(name)) or "unknown"
             open(os.path.join(target, f"{tone}_{saved:05d}{os.path.splitext(base)[1]}"), "wb").write(archive.read(name))
             saved += 1
-        print(f"OK   skin: Roboflow skin tone ({saved} original photos, licence as listed: CC BY 4.0, source not stated)")
+        print(f"OK   skin: Roboflow skin tone ({saved} original adult photos, {len(exclude)} children left out, licence as listed: CC BY 4.0, source not stated)")
         credits = [c for c in credits if c["link"] != link]
         credits.append({"area": "skin", "name": "Roboflow skin tone (Aman)", "what": "Faces at many angles, light / fair / dark",
                         "link": link, "licence": "CC BY 4.0 as listed by the uploader (no source stated)", "images": saved})
