@@ -76,17 +76,23 @@ export const Gauge = ({
   label,
   value,
   caption,
+  preview = false,
 }: {
   label: string;
   value: number;
   caption?: string;
+  /** Shown but not counted in scores or trends (lib/cv/preview.ts). */
+  preview?: boolean;
 }) => {
   const { ref, inView } = useInView<HTMLDivElement>("0px");
   const shown = useAnimatedNumber(value);
   return (
     <div ref={ref}>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+          {label}
+          {preview && <Badge tone="outline">Preview</Badge>}
+        </span>
         <span className="readout text-sm text-foreground">{shown.toFixed(1)}</span>
       </div>
       <div

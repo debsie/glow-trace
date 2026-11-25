@@ -1,3 +1,4 @@
+import { isPreview } from "@/lib/cv/preview";
 import { gaugesFor } from "../beauty";
 import { DEFAULT_DRIFT_PER_DAY, estimateTrend } from "../trend";
 import type { ScanRecord, InventoryItem, Product, ScanCategory } from "../types";
@@ -124,8 +125,9 @@ export const findingsFor = (scans: readonly ScanRecord[]): Finding[] => {
         const value = reading(scan, spec);
         return value ? [{ at: scan.created_at, value: value.health }] : [];
       });
+      // Preview readings (cv/preview.ts) still guide care, but make no trend claim.
       const estimate =
-        series.length >= 2
+        series.length >= 2 && !isPreview(area, spec.metric)
           ? estimateTrend(series, { readingSd: noise / 2, driftPerDay: DEFAULT_DRIFT_PER_DAY })
           : null;
       const change = estimate ? Math.round(estimate.change * 10) / 10 : null;

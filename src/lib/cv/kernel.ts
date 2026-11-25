@@ -13,6 +13,7 @@ import { analyzeNails } from "./nails";
 import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
 import { KERNEL_VERSION } from "./types";
+import { isPreview } from "./preview";
 import { faceDetails, faceZones } from "./zones";
 import type { FaceAreas } from "./face-mask";
 
@@ -110,7 +111,9 @@ export const analyzeBiomarkers = (
 /** Overall 0-100 score for a report: higher is healthier. Null when nothing was scored. */
 export const reportScore = (report: BiomarkerReport): number | null => {
   if (report.metrics.length === 0) return null;
-  const health = report.metrics.map((metric) =>
+  // Preview readings (preview.ts) are left out; if every reading is a preview, all count.
+  const counted = report.metrics.filter((metric) => !isPreview(report.category, metric.key));
+  const health = (counted.length > 0 ? counted : report.metrics).map((metric) =>
     metric.higherMeans === "better" ? metric.value : 100 - metric.value,
   );
   return Math.round(health.reduce((sum, value) => sum + value, 0) / health.length);

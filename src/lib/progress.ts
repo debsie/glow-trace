@@ -1,3 +1,4 @@
+import { isPreview } from "@/lib/cv/preview";
 import { gaugesFor, scanScore } from "./beauty";
 import type { ScanRecord, ScanCategory } from "./types";
 
@@ -73,12 +74,15 @@ type Reading = { key: string; label: string; value: number; higherIsBetter: bool
 
 const readings = (scan: ScanRecord): Reading[] =>
   scan.report && !scan.demo && scan.report.metrics.length > 0
-    ? scan.report.metrics.map((metric) => ({
-        key: metric.key,
-        label: metric.label,
-        value: metric.value,
-        higherIsBetter: metric.higherMeans === "better",
-      }))
+    ? scan.report.metrics
+        // Preview readings (cv/preview.ts) are shown on results but not tracked as change.
+        .filter((metric) => !isPreview(scan.category, metric.key))
+        .map((metric) => ({
+          key: metric.key,
+          label: metric.label,
+          value: metric.value,
+          higherIsBetter: metric.higherMeans === "better",
+        }))
     : gaugesFor(scan.category, scan.biomarkers).map((gauge) => ({
         // Older scans use care-dimension keys; align them with the analysis report's keys.
         key: LEGACY_KEYS[scan.category]?.[gauge.key] ?? gauge.key,
