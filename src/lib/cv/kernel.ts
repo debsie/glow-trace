@@ -1,6 +1,14 @@
 import type { Biomarkers } from "../types";
 import { analyzeHair } from "./hair";
-import { clamp100, gradientEnergy, highlightCast, meanLuma, round1, toPlanes } from "./image";
+import {
+  balanceLight,
+  clamp100,
+  gradientEnergy,
+  highlightCast,
+  meanLuma,
+  round1,
+  toPlanes,
+} from "./image";
 import { analyzeNails } from "./nails";
 import { analyzeSkin, skinTone } from "./skin";
 import type { BiomarkerReport, ImageQuality, PixelBuffer, ScanCategory } from "./types";
@@ -76,16 +84,18 @@ export const analyzeBiomarkers = (
   if (!quality.usable) {
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }
-  const area = areaMask ? toPlanes(image, areaMask) : planes;
+  // Skin colour readings see the photo as if lit by daylight (v2.11); quality is judged as taken.
+  const scene = category === "skin" ? balanceLight(image) : image;
+  const area = areaMask ? toPlanes(scene, areaMask) : scene === image ? planes : toPlanes(scene);
   const metrics =
     category === "skin"
-      ? analyzeSkin(area, image, precomputed.skinTexture ?? null)
+      ? analyzeSkin(area, scene, precomputed.skinTexture ?? null)
       : category === "hair"
         ? analyzeHair(area, image, areaMask, precomputed.hairTexture)
         : analyzeNails(area, precomputed.nailYellowing);
   const tone = category === "skin" ? skinTone(area) : null;
-  const zones = category === "skin" ? faceZones(image, areaMask) : null;
-  const face = category === "skin" ? faceDetails(image, precomputed.faceAreas ?? null) : null;
+  const zones = category === "skin" ? faceZones(scene, areaMask) : null;
+  const face = category === "skin" ? faceDetails(scene, precomputed.faceAreas ?? null) : null;
   return {
     kernelVersion: KERNEL_VERSION,
     category,

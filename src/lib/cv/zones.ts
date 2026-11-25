@@ -1,6 +1,6 @@
 import type { FaceAreas } from "./face-mask";
 import { rgbToLab, score } from "./image";
-import { rednessScore } from "./redness-model";
+import { rednessScore } from "./redness";
 import type { FaceDetails, FaceZones, PixelBuffer } from "./types";
 
 /** A zone needs this many face-skin pixels to be read on its own. */

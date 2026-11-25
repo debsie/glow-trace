@@ -441,3 +441,42 @@ are averaged; the score mapping is unchanged. v8 alone failed the same-person ch
 1.32) and agrees with the labeller on 69% of held-out clear pairs (75% on face skin), against 63%
 for v7 and 66% for v8. Still short of the 70% release bar (`docs/release-readiness.md`). Parity is
 tested for both models. Reading time roughly doubles (two forward passes per patch).
+
+## v2.11 (`mojocv-v2.11.0-ts`): skin colour readings corrected for the colour of the light
+
+The real-photo gate (`research/vision/indicator_gate.cjs`) showed redness moving 16 points, twice
+its noise floor, under an 8% warm or cool light. Skin scans are now read from a copy of the photo
+balanced to daylight (`balanceLight` in `image.ts`); the quality gate and the cast warning still
+judge the photo as taken, and hair and nails are unchanged.
+
+- Highlights: pixels at or above the 98th percentile of green, excluding green >= 250. Chosen by
+  green alone because a warm or cool light scales red and blue but not green, so the same pixels
+  are picked under any light even when red or blue clips.
+- Target: highlight red:green:blue of 1 : 1 : 0.95, the median of daylight selfies measured.
+- Gains: red and blue only (brightness unchanged), each `daylight / highlight` with the log gain
+  capped at +/-0.12 (`MAX_BALANCE`, about 12%). An everyday warm or cool room is cancelled fully. A
+  strong lamp is only partly corrected and the cast warning speaks. Skin-coloured highlights (soft
+  light with no shine) get a small fixed nudge. A fade back to "no correction" was tried and
+  rejected because it amplifies light changes inside the fade.
+- Applies to redness, even tone, skin tone (ITA), zones, nose redness and dark
+  circles. Texture (skin-surface models) reads the photo separately and is unchanged.
+- Tests: `src/test/light-balance.test.ts` (an 8% warm or cool light moves redness and even tone
+  by less than 2 points on a photo with shine); `robustness.test.ts` is unchanged and passes.
+
+## v2.12 (`mojocv-v2.12.0-ts`): redness from skin a*, evened across skin tones
+
+The trained redness model (v2) agreed with the labeller's "which looks redder" answers on 92 of
+152 clear pairs (61%), under the 70% release bar. Redness (and nose redness, and zone redness) is
+now `cv/redness.ts`:
+
+- `medianRedness` = median CIELAB a* of the skin pixels x (60 / median L*)^0.75 (L* floored at
+  15). Plain a* rose half as much on deep skin as on light skin for the same added blood (25.0,
+  20.5, 12.7 points on light, medium, deep patches); the lightness term evens it (24.8, 26.3,
+  25.0). Power 1 over-corrected (24.7, 28.4, 31.1).
+- Score = 10 + (value - 0.9) / (27.2 - 0.9) x 60, clamped: the 10th and 90th percentile of the
+  152 labelled patches land on 10 and 70, the same scale as v2.
+- Agreement with the labeller: 118 of 152 clear pairs (78%).
+- Read from the light-corrected photo (v2.11). The trained model, its weights and its test are
+  removed; its research stays in `research/redness/`.
+- Tests: `redness.test.ts`; `robustness.test.ts` (light changes within the redness noise floor of
+  8, equal blood within 10 points across tones) unchanged and passing.

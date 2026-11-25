@@ -275,7 +275,7 @@ export const brightnessVariance = (planes: Planes): number => {
   return spreads.length === 0 ? 0 : spreads.reduce((sum, value) => sum + value, 0) / spreads.length;
 };
 
-const median = (values: Float32Array): number => {
+export const median = (values: Float32Array): number => {
   if (values.length === 0) return 0;
   const sorted = Array.from(values).sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
@@ -395,4 +395,63 @@ export const loadImageData = async (
   } finally {
     URL.revokeObjectURL(url);
   }
+};
+
+// Light-colour correction (kernel v2.11). The brightest unclipped pixels reflect the light itself,
+// so their colour shows the light's tint. Under daylight they sit near this red:green:blue.
+export const DAYLIGHT_HIGHLIGHT = { r: 1, g: 1, b: 0.95 } as const;
+// At most this much tint (log ratio, about 12%: an everyday warm or cool room) is removed. A
+// strong lamp is only partly corrected and the photo's cast warning speaks; skin-coloured
+// highlights (soft light with no shine) get a fixed, small nudge. A cap never amplifies a change
+// in the light, which a fade back to "no correction" would.
+export const MAX_BALANCE = 0.12;
+const CLIPPED = 250;
+
+/**
+ * Red and blue gains that move the photo's highlights to daylight, with green (and so brightness)
+ * unchanged. A warm or cool light is a per-channel gain, so this cancels it exactly within the cap.
+ */
+export const balanceGains = (
+  image: PixelBuffer,
+  mask: Uint8Array | null = null,
+): { r: number; b: number } => {
+  const { data } = image;
+  // Highlights are chosen by green alone: a warm or cool light scales red and blue, never green,
+  // so the same pixels are picked whatever the light, even where red or blue clips.
+  const greens: number[] = [];
+  for (let i = 1; i < data.length; i += 4) {
+    if (mask && mask[(i - 1) / 4] !== 1) continue;
+    const g = data[i] ?? 0;
+    if (g < CLIPPED) greens.push(g);
+  }
+  if (greens.length < 50) return { r: 1, b: 1 };
+  const threshold = Float32Array.from(greens).sort()[Math.floor(greens.length * 0.98)] ?? 0;
+  let sr = 0;
+  let sg = 0;
+  let sb = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (mask && mask[i / 4] !== 1) continue;
+    const g = data[i + 1] ?? 0;
+    if (g >= CLIPPED || g < threshold) continue;
+    sr += data[i] ?? 0;
+    sg += g;
+    sb += data[i + 2] ?? 0;
+  }
+  if (sr <= 0 || sg <= 0 || sb <= 0) return { r: 1, b: 1 };
+  const lr = Math.log((DAYLIGHT_HIGHLIGHT.r * sg) / (DAYLIGHT_HIGHLIGHT.g * sr));
+  const lb = Math.log((DAYLIGHT_HIGHLIGHT.b * sg) / (DAYLIGHT_HIGHLIGHT.g * sb));
+  const cap = (v: number) => Math.min(MAX_BALANCE, Math.max(-MAX_BALANCE, v));
+  return { r: Math.exp(cap(lr)), b: Math.exp(cap(lb)) };
+};
+
+/** A copy of the photo as if taken in daylight-coloured light (see balanceGains). */
+export const balanceLight = (image: PixelBuffer, mask: Uint8Array | null = null): PixelBuffer => {
+  const { r, b } = balanceGains(image, mask);
+  if (Math.abs(r - 1) < 1e-3 && Math.abs(b - 1) < 1e-3) return image;
+  const data = new Uint8ClampedArray(image.data);
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = (data[i] ?? 0) * r;
+    data[i + 2] = (data[i + 2] ?? 0) * b;
+  }
+  return { width: image.width, height: image.height, data };
 };
