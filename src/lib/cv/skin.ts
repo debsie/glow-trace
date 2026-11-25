@@ -17,16 +17,8 @@ const TEXTURE_SPAN = 20;
 const HYDRATION_SPREAD_WEIGHT = 140;
 const HYDRATION_SPECULAR_WEIGHT = 120;
 const HYDRATION_SPECULAR_TARGET = 0.25;
-// Even tone (kernel v2.14): the spread of skin colour as linear red/green and blue/green log
-// ratios over small blocks. A brighter or darker photo leaves a ratio unchanged and a warm or cool
-// light shifts every block by the same amount, so neither changes the spread; averaging blocks
-// first keeps camera noise in darker skin from reading as patchiness. On the 234 labelled skin
-// patches (128 px, blocks of 8) the spread runs 0.156 (10th percentile) to 0.662 (90th); those map
-// to 10 and 70. Blocks of 3 px at MAX_DIM cover about the same skin as 8 px on a patch.
-const TONE_BLOCK = 3;
-const TONE_P10 = 0.156;
-const TONE_P90 = 0.662;
-const MIN_TONE_BLOCKS = 20;
+// Calibration: circular hue variance of even skin ≈ 0-0.05; patchy ≥ 0.25.
+const DISCOLORATION_WEIGHT = 400;
 
 /**
  * Kernel v2.12: median skin a* (see redness.ts), read from the light-corrected photo.
@@ -70,71 +62,13 @@ export const hydration = (planes: Planes): BiomarkerMetric => ({
   description: "Smooth, lightly glowing surfaces score higher.",
 });
 
-const linear = (v: number) => {
-  const c = v / 255;
-  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-};
-
-const iqr = (values: number[]) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const at = (q: number) => sorted[Math.floor((sorted.length - 1) * q)] ?? 0;
-  return at(0.75) - at(0.25);
-};
-
-/**
- * Colour spread of the skin (see TONE_BLOCK): the hypotenuse of the interquartile ranges of
- * log(R/G) and log(B/G) over blocks wholly inside the mask with no clipped or near-black pixel.
- * Null when fewer than MIN_TONE_BLOCKS blocks qualify.
- */
-export const toneSpread = (image: PixelBuffer, mask: Uint8Array | null = null): number | null => {
-  const { width, height, data } = image;
-  const red: number[] = [];
-  const blue: number[] = [];
-  for (let by = 0; by + TONE_BLOCK <= height; by += TONE_BLOCK) {
-    for (let bx = 0; bx + TONE_BLOCK <= width; bx += TONE_BLOCK) {
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      let ok = true;
-      for (let y = by; y < by + TONE_BLOCK && ok; y += 1) {
-        for (let x = bx; x < bx + TONE_BLOCK; x += 1) {
-          const i = y * width + x;
-          const R = data[i * 4] ?? 0;
-          const G = data[i * 4 + 1] ?? 0;
-          const B = data[i * 4 + 2] ?? 0;
-          if ((mask && mask[i] !== 1) || Math.min(R, G, B) < 12 || Math.max(R, G, B) >= 250) {
-            ok = false;
-            break;
-          }
-          r += linear(R);
-          g += linear(G);
-          b += linear(B);
-        }
-      }
-      if (!ok) continue;
-      red.push(Math.log(r / g));
-      blue.push(Math.log(b / g));
-    }
-  }
-  if (red.length < MIN_TONE_BLOCKS) return null;
-  return Math.hypot(iqr(red), iqr(blue));
-};
-
-export const discoloration = (planes: Planes, image: PixelBuffer): BiomarkerMetric => {
-  const spread = toneSpread(image, planes.mask);
-  return {
-    key: "discoloration",
-    label: "Discoloration",
-    // Fallback for very small skin areas: the v1 hue spread.
-    value: score(
-      spread === null
-        ? hueCircularVariance(planes) * 400
-        : 10 + ((spread - TONE_P10) / (TONE_P90 - TONE_P10)) * 60,
-    ),
-    higherMeans: "more",
-    description: "How patchy the colour is.",
-  };
-};
+export const discoloration = (planes: Planes): BiomarkerMetric => ({
+  key: "discoloration",
+  label: "Discoloration",
+  value: score(hueCircularVariance(planes) * DISCOLORATION_WEIGHT),
+  higherMeans: "more",
+  description: "How patchy the colour is.",
+});
 
 /** Median ITA° and hue angle of skin-coloured pixels (inside the mask). Null when too few. */
 export const skinTone = (planes: Planes): { ita: number; hueAngle: number } | null => {
@@ -167,5 +101,5 @@ export const analyzeSkin = (
   erythema(image, planes.mask),
   skinTexture(planes, textureSignal),
   hydration(planes),
-  discoloration(planes, image),
+  discoloration(planes),
 ];

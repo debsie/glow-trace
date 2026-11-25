@@ -490,21 +490,3 @@ proportional to light. Now `darker = 1 - Y(under-eye) / Y(cheek)` with Y the mea
 Still read against the person's own cheek, so no absolute colour or tone enters. Ordinary shading
 on the reference selfie gives about 0.4, which scores near 50 as before. Test: `zones.test.ts`
 (0.8x and 1.15x exposure move the reading by less than 2 points).
-
-## v2.14 (`mojocv-v2.14.0-ts`): even tone as a colour-ratio spread
-
-Even tone (`discoloration`) was the circular variance of hue over chromatic pixels, x 400. On real
-photos it failed exposure (2.0 of 2), light colour (2.9) and same person (10.1): hue is unstable in
-dim and near-grey pixels, and which pixels count as chromatic shifts with brightness. Now
-`toneSpread` in `skin.ts`:
-
-- Blocks of 3 x 3 px (at MAX_DIM 256), wholly inside the skin mask, no channel below 12 or at
-  250 and above. Per block, mean linear R, G, B; then log(R/G) and log(B/G).
-- Spread = hypot(IQR of log(R/G), IQR of log(B/G)). An exposure gain cancels in each ratio; a
-  red or blue gain adds the same constant to every block, which the IQR ignores.
-- Averaging blocks first keeps sensor noise in deep skin from reading as patchiness: on the 234
-  labelled patches, per-pixel spread read deep bands about 40% higher; with blocks the bands are
-  0.27, 0.31, 0.41, 0.33 (lightest to deepest), no longer ordered by tone.
-- Score = 10 + (spread - 0.156) / (0.662 - 0.156) x 60 (patch 10th and 90th percentile),
-  clamped. Fewer than 20 blocks: falls back to the v1 hue variance.
-- Tests: `even-tone.test.ts`.
