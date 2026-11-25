@@ -1,3 +1,4 @@
+import { isPreview } from "@/lib/cv/preview";
 import type { ScanCategory, ScanRecord } from "./types";
 
 /**
@@ -51,6 +52,7 @@ export const weatherInsights = (
   const keys = new Map<string, { label: string; higherIsBetter: boolean }>();
   for (const scan of own) {
     for (const metric of scan.report?.metrics ?? []) {
+      if (isPreview(scan.category, metric.key)) continue;
       keys.set(metric.key, {
         label: metric.label,
         higherIsBetter: metric.higherMeans === "better",

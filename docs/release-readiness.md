@@ -65,6 +65,13 @@ group spans more than one band.
   cut-offs), and its 0-100 mapping is steeper than the old one, which often read near 0. The noise
   floor of 2 for formula readings was never measured; the lighting-challenge sets will measure it.
 
+## Preview readings (in the app now)
+
+Skin even tone, hydration and texture are marked "Preview" on results (`src/lib/cv/preview.ts`):
+shown with a badge and a note, but left out of the scan score, progress changes, weather insights
+and the coach's trend claims. The coach still uses them for care advice. Remove a key from
+`preview.ts` once that reading passes the bar.
+
 ## What's left, in order
 
 1. **More real people for the real-photo set**: at least 5 per skin-tone band, each with three

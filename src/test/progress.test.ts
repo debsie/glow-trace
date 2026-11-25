@@ -55,12 +55,13 @@ describe("Progress", () => {
   it("builds an oldest-first series for one area, without unscored scans", () => {
     const series = seriesFor([late, demo, hair, early], "skin");
     expect(series.map((point) => point.id)).toEqual(["a", "b"]);
-    expect(series.map((point) => point.score)).toEqual([55, 61]);
-    expect(scoreChange(series)).toBe(6);
+    // Hydration is a preview reading (cv/preview.ts), so only redness counts in the score.
+    expect(series.map((point) => point.score)).toEqual([60, 70]);
+    expect(scoreChange(series)).toBe(10);
     expect(scoreChange(series.slice(0, 1))).toBeNull();
   });
 
-  it("calls lower redness better, higher hydration better, and small moves no change", () => {
+  it("calls lower redness better and leaves preview readings out of change", () => {
     const changes = compareScans(early, late);
     expect(changes).toEqual([
       {
@@ -71,7 +72,6 @@ describe("Progress", () => {
         delta: -10,
         verdict: "better",
       },
-      { key: "hydration", label: "Hydration", before: 50, after: 51, delta: 1, verdict: "same" },
     ]);
     expect(compareScans(late, early)[0]?.verdict).toBe("worse");
     // An older scan without a report still lines up with a new one, indicator by indicator.
@@ -81,7 +81,6 @@ describe("Progress", () => {
     });
     expect(compareScans(legacy, late).map((change) => [change.key, change.before])).toEqual([
       ["erythema", 50],
-      ["hydration", 40],
     ]);
   });
 });

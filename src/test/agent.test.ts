@@ -74,7 +74,8 @@ describe("Care agent findings", () => {
     const texture = findings[0];
     expect(texture?.severity).toBe("focus");
     expect(texture?.health).toBe(28);
-    expect(texture?.trend).toBe("worsening");
+    // Texture is a preview reading (cv/preview.ts): care advice, but no trend claim.
+    expect(texture?.trend).toBe("new");
     expect(findings.find((finding) => finding.concern === "redness")?.trend).toBe("improving");
     expect(findings.find((finding) => finding.concern === "tone")?.severity).toBe("good");
   });

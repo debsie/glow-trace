@@ -36,6 +36,7 @@ import { loadImageData, makeThumbnail, PHOTO_DIM } from "@/lib/cv/image";
 import { hairTextureSignalFast } from "@/lib/cv/hair-model";
 import { nailYellowingSignalFast } from "@/lib/cv/nails-model";
 import { analyzeBiomarkers, reportToBiomarkers } from "@/lib/cv/kernel";
+import { PREVIEW_NOTE, isPreview } from "@/lib/cv/preview";
 import { parseBiomarkerReport } from "@/lib/cv/schemas";
 import type { DetectionShape, Detections } from "@/lib/cv/detections";
 import type { FaceAreas } from "@/lib/cv/face-mask";
@@ -592,7 +593,8 @@ function ScanPage() {
                         key={metric.key}
                         label={metric.label}
                         value={metric.value}
-                        caption={`${metric.higherMeans === "better" ? "Higher is better." : "Higher means more."} ${metric.description}`}
+                        preview={isPreview(shown.category, metric.key)}
+                        caption={`${metric.higherMeans === "better" ? "Higher is better." : "Higher means more."} ${metric.description}${isPreview(shown.category, metric.key) ? ` ${PREVIEW_NOTE}` : ""}`}
                       />
                     ))
                   : gaugesFor(category, shown.biomarkers).map((gauge) => (

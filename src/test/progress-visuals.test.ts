@@ -50,7 +50,8 @@ describe("progress visuals", () => {
     expect(redness?.points.map((p) => p.value)).toEqual([50, 40]);
     expect(redness?.change).toBe(-10);
     expect(redness?.verdict).toBe("better");
-    expect(series.find((s) => s.key === "hydration")?.verdict).toBe("better");
+    // Hydration is a preview reading (cv/preview.ts): shown on results, not tracked.
+    expect(series.find((s) => s.key === "hydration")).toBeUndefined();
   });
 
   it("maps redness by face zone against the first zoned scan", () => {
