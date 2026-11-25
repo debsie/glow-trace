@@ -78,6 +78,15 @@ shown with a badge and a note, but left out of the scan score, progress changes,
 and the coach's trend claims. The coach still uses them for care advice. Remove a key from
 `preview.ts` once that reading passes the bar.
 
+## Texture v9 (Kaggle, 2026-11-25): not shipped
+
+Trained with the Roboflow skin tone set (1,486 adults) but only round 1 of the labels (the attached
+labels dataset lacked round 2). Real-photo gate: all pass (v9 same person 1.45; v7 + v9 1.10). On
+round 2's 198 clear pairs, which neither v7 nor v9 saw: v7 64.6%, v9 65.7%, v7 + v9 65.7%. The app
+keeps v7 + v8 (72.7% there, but v8 trained on round 2, so that figure is flattered). Next: v10 with
+both rounds attached, then a fresh texture round on FairFace and lighting-challenge selfies as an
+honest held-out test.
+
 ## What's left, in order
 
 1. **More real people for the real-photo set**: at least 5 per skin-tone band, each with three
