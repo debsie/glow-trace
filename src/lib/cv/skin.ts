@@ -7,7 +7,7 @@ import {
   score,
   specularRatio,
 } from "./image";
-import { rednessScore } from "./redness-model";
+import { rednessScore } from "./redness";
 import type { BiomarkerMetric, PixelBuffer } from "./types";
 
 // Calibration v1.1: on 256 px whole-area photos, smooth skin reads ≈ 8-11 gradient energy
@@ -21,8 +21,7 @@ const HYDRATION_SPECULAR_TARGET = 0.25;
 const DISCOLORATION_WEIGHT = 400;
 
 /**
- * Kernel v2: physics-supervised redness model (see redness-model.ts). Reads the photo itself,
- * not the shared planes, because it needs raw camera values for optical density.
+ * Kernel v2.12: median skin a* (see redness.ts), read from the light-corrected photo.
  */
 export const erythema = (image: PixelBuffer, mask: Uint8Array | null = null): BiomarkerMetric => ({
   key: "erythema",

@@ -85,7 +85,7 @@ export const analyzeBiomarkers = (
     return { kernelVersion: KERNEL_VERSION, category, quality, metrics: [] };
   }
   // Skin colour readings see the photo as if lit by daylight (v2.11); quality is judged as taken.
-  const scene = category === "skin" ? balanceLight(image, areaMask) : image;
+  const scene = category === "skin" ? balanceLight(image) : image;
   const area = areaMask ? toPlanes(scene, areaMask) : scene === image ? planes : toPlanes(scene);
   const metrics =
     category === "skin"

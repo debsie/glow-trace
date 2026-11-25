@@ -275,7 +275,7 @@ export const brightnessVariance = (planes: Planes): number => {
   return spreads.length === 0 ? 0 : spreads.reduce((sum, value) => sum + value, 0) / spreads.length;
 };
 
-const median = (values: Float32Array): number => {
+export const median = (values: Float32Array): number => {
   if (values.length === 0) return 0;
   const sorted = Array.from(values).sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);

@@ -150,7 +150,8 @@ const withBlood = (image: PixelBuffer, amount: number): PixelBuffer =>
       }) as [number, number, number],
   );
 
-// Kernel v2 measured 7.8 points between the lightest and deepest patch for the same blood.
+// Kernel v2 (trained model) measured 7.8 points between the lightest and deepest patch for the same
+// blood; v2.12 (tone-evened a*) measures about 1.5.
 const RISE_SPREAD = 10;
 
 describe("Skin-tone fairness", () => {
